@@ -297,13 +297,17 @@ button:hover { background: #ff1e2d; }
   top: 10px;
   right: 10px;
   z-index: 10;
-  background: #000;
-  color: #fff;
-  border: 1px solid #333;
+  background: none;
+  color: rgba(255, 255, 255, 0.51);
   width: 38px;
   height: 38px;
   border-radius: 50%;
   cursor: pointer;
+}
+.closeBtn:hover {
+  color: rgb(255, 255, 255);
+  background: none;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9);
 }
 
 /* VIDEO RESPONSIVE CONTAINER */
@@ -360,6 +364,13 @@ button:hover { background: #ff1e2d; }
   color: #fff;
   border: none;
   margin-bottom: 10px;
+}
+
+#episodeControls{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap; /* allows mobile wrap */
 }
 </style>
 </head>
@@ -869,7 +880,7 @@ function updateVideo(url){
 }
 
 
-async function renderTVControls(tvId){
+async function renderTVControls(tvId) {
   const box = document.getElementById("episodeControls");
   box.innerHTML = "Loading seasons...";
 
@@ -881,67 +892,61 @@ async function renderTVControls(tvId){
 
     box.innerHTML = "";
 
-    // season selector
+    // --- CREATE HORIZONTAL CONTAINER ---
+    const controlsRow = document.createElement("div");
+    controlsRow.style.display = "flex";
+    controlsRow.style.alignItems = "center";
+    controlsRow.style.gap = "10px";
+    controlsRow.style.flexWrap = "wrap"; // allows wrap on small screens
+
+    // --- SEASON SELECT ---
     const seasonSelect = document.createElement("select");
-
     data.seasons.forEach(season => {
-      if(season.season_number === 0) return; // skip specials
-
+      if (season.season_number === 0) return; // skip specials
       const opt = document.createElement("option");
       opt.value = season.season_number;
       opt.textContent = `Season ${season.season_number}`;
       seasonSelect.appendChild(opt);
     });
 
-    const episodeGrid = document.createElement("div");
-    episodeGrid.style.display = "flex";
-    episodeGrid.style.flexWrap = "wrap";
-    episodeGrid.style.gap = "8px";
-    episodeGrid.style.marginTop = "10px";
+    // --- EPISODE SELECT ---
+    const episodeSelect = document.createElement("select");
 
-    async function loadEpisodes(seasonNumber){
-      episodeGrid.innerHTML = "";
+    // function to load episodes for selected season
+    async function loadEpisodes(seasonNumber) {
+      episodeSelect.innerHTML = ""; // clear old options
 
       const res = await fetch(
         `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${TMDB_API_KEY}`
       );
       const seasonData = await res.json();
 
-      const epSelect = document.createElement("select");
-      epSelect.style.padding = "8px";
-      epSelect.style.borderRadius = "8px";
-      epSelect.style.marginTop = "10px";
-      epSelect.style.background = "#222";
-      epSelect.style.color = "#fff";
-      epSelect.style.border = "none";
-
       seasonData.episodes.forEach(ep => {
         const opt = document.createElement("option");
         opt.value = ep.episode_number;
         opt.textContent = `Episode ${ep.episode_number}`;
-        epSelect.appendChild(opt);
+        episodeSelect.appendChild(opt);
       });
 
-      epSelect.onchange = () => {
-        updateVideo(
-          `https://player.videasy.net/tv/${tvId}/${seasonNumber}/${epSelect.value}`
-        );
-      };
-
-      episodeGrid.appendChild(epSelect);
+      // play first episode by default
+      updateVideo(`https://player.videasy.net/tv/${tvId}/${seasonNumber}/${episodeSelect.value}`);
     }
 
-    // default load
-    loadEpisodes(1);
-
-    seasonSelect.onchange = () => {
-      loadEpisodes(seasonSelect.value);
+    // --- EVENT LISTENERS ---
+    seasonSelect.onchange = () => loadEpisodes(seasonSelect.value);
+    episodeSelect.onchange = () => {
+      updateVideo(`https://player.videasy.net/tv/${tvId}/${seasonSelect.value}/${episodeSelect.value}`);
     };
 
-    box.appendChild(seasonSelect);
-    box.appendChild(episodeGrid);
+    // --- ADD TO CONTAINER ---
+    controlsRow.appendChild(seasonSelect);
+    controlsRow.appendChild(episodeSelect);
+    box.appendChild(controlsRow);
 
-  } catch (e){
+    // --- LOAD FIRST SEASON BY DEFAULT ---
+    loadEpisodes(1);
+
+  } catch (e) {
     console.error(e);
     box.innerHTML = "Failed to load seasons";
   }
