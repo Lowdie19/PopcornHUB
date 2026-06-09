@@ -6,365 +6,633 @@
 <title>VIDEASY ID SEARCH V2</title>
 
 <style>
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#141414;
-  color:#fff;
+* { box-sizing: border-box; margin:0; padding:0; }
+body {
+  font-family: Arial, sans-serif;
+  background: #141414;
+  color: #fff;
 }
 
-.hero{
-  text-align:center;
-  padding:40px 20px;
-  background:linear-gradient(rgba(0,0,0,.7),rgba(20,20,20,1));
+/* HERO */
+.hero {
+  text-align: center;
+  padding: 60px 20px;
+  background: linear-gradient(rgba(0,0,0,0.7), rgba(20,20,20,1));
+}
+.hero h1 {
+  margin-bottom: 10px;
+  font-size: 48px;
+}
+.red { color: #e50914; }
+.hero p {
+  color: #ccc;
+  font-size: 18px;
 }
 
-.hero h1{
-  margin:0;
-  font-size:48px;
+/* SEARCH */
+#searchContainer {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #141414ee;
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid #222;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+#searchInput {
+  flex: 1;
+  min-width: 250px;
+  max-width: 500px;
+  padding: 12px 20px;
+  border-radius: 30px;
+  border: 1px solid #333;
+  outline: none;
+  background: #222;
+  color: #fff;
+  font-size: 16px;
+}
+button {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 30px;
+  background: #e50914;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.25s;
+}
+button:hover { background: #ff1e2d; }
+
+/* STATS */
+#stats {
+  text-align: center;
+  color: #aaa;
+  padding: 15px;
+  font-size: 14px;
 }
 
-.red{color:#e50914}
-
-.hero p{
-  color:#aaa;
-  margin-top:10px;
+/* CATEGORIES */
+.category {
+  padding: 25px 30px;
+}
+.category h2 {
+  margin-bottom: 15px;
+  font-size: 22px;
+  border-left: 5px solid #e50914;
+  padding-left: 10px;
 }
 
-#searchContainer{
-  position:sticky;
-  top:0;
-  z-index:100;
-  background:#141414ee;
-  backdrop-filter:blur(10px);
-  padding:20px;
-  text-align:center;
-  border-bottom:1px solid #222;
+/* ROW */
+.row {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  overflow-y: hidden;   /* IMPORTANT: prevents vertical jitter */
+  padding-bottom: 10px;
+  align-items: flex-start;
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable; /* prevents scrollbar shift */
+}
+.row::-webkit-scrollbar {
+  height: 8px;
+}
+.row::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 10px;
 }
 
-#searchInput{
-  width:450px;
-  max-width:80%;
-  padding:12px 15px;
-  border-radius:30px;
-  outline:none;
-  border:1px solid #333;
-  background:#222;
-  color:#fff;
+/* MOVIE CARDS */
+.movie {
+  min-width: 180px;
+  max-width: 180px;
+  height: 270px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+.movie:hover {
+  transform: scale(1.06);
+  z-index: 5;
+  will-change: transform;
+}
+.movie img {
+  width: 100%;
+  height: 100%;        /* IMPORTANT */
+  object-fit: cover;
+  display: block;      /* removes inline image gap bug */
+  border-radius: 8px;
+}
+.movieInfo {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 12px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.95));
+  opacity: 0;
+  transform: translateY(20px);
+  transition: 0.25s;
+}
+.movie:hover .movieInfo {
+  opacity: 1;
+  transform: translateY(0);
+}
+.genre {
+  font-size: 13px;
+  color: #ccc;
+  margin-top: 5px;
 }
 
-button{
-  padding:12px 20px;
-  border:none;
-  border-radius:30px;
-  margin-left:8px;
-  background:#e50914;
-  color:#fff;
-  font-weight:bold;
-  cursor:pointer;
+/* LOADING */
+#loading {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  z-index: 999;
+}
+#bar {
+  width: 300px;
+  height: 6px;
+  background: #333;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 15px;
+}
+#barFill {
+  height: 100%;
+  background: #e50914;
+  animation: load 1.5s infinite;
+}
+@keyframes load {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
 }
 
-button:hover{
-  background:#ff1e2d;
+/* COPY MODAL */
+#copyModal {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  background: #000;
+  border: 1px solid #e50914;
+  padding: 12px 18px;
+  border-radius: 10px;
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.25s;
+  z-index: 100;
+}
+#copyModal.show {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
 }
 
-#stats{
-  text-align:center;
-  color:#aaa;
-  padding:12px;
+.carousel {
+  position: relative;
 }
 
-#movies{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-  gap:20px;
-  padding:30px;
+.arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 58px;
+  cursor: pointer;
+  z-index: 10;
+
+  opacity: 0.4;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+
+  /* center the arrow text */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* add font shadow */
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9);
 }
 
-.movie{
-  position:relative;
-  overflow:hidden;
-  cursor:pointer;
-  transition:.25s;
+.arrow:hover {
+  background-color: transparent;
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
 }
 
-.movie:hover{
-  transform:scale(1.05);
-  z-index:5;
+.arrow.left {
+  left: 0;
 }
 
-.movie img{
-  width:100%;
-  aspect-ratio:2/3;
-  object-fit:cover;
-  border-radius:8px;
-  box-shadow:0 10px 20px rgba(0,0,0,.5);
-  transition:transform .35s ease;
+.arrow.right {
+  right: 0;
 }
 
-.movie:hover img{
-  transform:scale(1.1);
+@keyframes bounce {
+  0%   { transform: translateX(0); }
+  25%  { transform: translateX(-10px); }
+  50%  { transform: translateX(5px); }
+  75%  { transform: translateX(-5px); }
+  100% { transform: translateX(0); }
 }
 
-.movieInfo{
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:0;
-  padding:12px;
-  background:linear-gradient(transparent,rgba(0,0,0,.95));
-  opacity:0;
-  transform:translateY(20px);
-  transition:.25s;
-}
-
-.movie:hover .movieInfo{
-  opacity:1;
-  transform:translateY(0);
-}
-
-.genre{
-  color:#ccc;
-  font-size:13px;
-  margin-top:6px;
-}
-
-#loading{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.85);
-  display:none;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
-  z-index:999;
-}
-
-#bar{
-  width:300px;
-  height:6px;
-  background:#333;
-  overflow:hidden;
-  border-radius:6px;
-  margin-top:15px;
-}
-
-#barFill{
-  height:100%;
-  background:#e50914;
-  animation:load 1.5s infinite;
-}
-
-@keyframes load{
-  0%{width:0%}
-  50%{width:70%}
-  100%{width:100%}
-}
-
-#copyModal{
-  position:fixed;
-  bottom:40px;
-  left:50%;
-  transform:translateX(-50%) scale(.8);
-  background:#000;
-  border:1px solid #e50914;
-  padding:12px 18px;
-  border-radius:10px;
-  opacity:0;
-  transition:.25s;
-  pointer-events:none;
-}
-
-#copyModal.show{
-  opacity:1;
-  transform:translateX(-50%) scale(1);
+.row.bounce {
+  animation: bounce 0.3s ease;
 }
 </style>
 </head>
+
 <body>
 
 <header class="hero">
-  <h1><span class="red">VIDEASY</span> ID SEARCH</h1>
+  <h1 onclick="goHome()" style="cursor:pointer;">
+  <span class="red">VIDEASY</span> ID SEARCH</h1>
   <p>Search Movies, TV Shows & Anime IDs</p>
 </header>
 
 <div id="searchContainer">
-  <input id="searchInput" placeholder="Search movies, TV, anime...">
+  <input id="searchInput" placeholder="Search Movies, TV, Anime...">
   <button onclick="searchAll()">Search</button>
 </div>
 
 <div id="stats"></div>
 
 <div id="loading">
-  <div>Searching database...</div>
+  <div>Searching...</div>
   <div id="bar"><div id="barFill"></div></div>
 </div>
 
-<div id="movies"></div>
+<!-- CATEGORIES -->
+<div class="category" id="movieCategory">
+  <h2>🎬 Movies</h2>
+  <div class="carousel">
+    <button class="arrow left" data-target="movieResults">‹</button>
+    <div id="movieResults" class="row"></div>
+    <button class="arrow right" data-target="movieResults">›</button>
+  </div>
+</div>
+
+<div class="category" id="tvCategory">
+  <h2>📺 TV Shows</h2>
+  <div class="carousel">
+    <button class="arrow left" data-target="tvResults">‹</button>
+    <div id="tvResults" class="row"></div>
+    <button class="arrow right" data-target="tvResults">›</button>
+  </div>
+</div>
+
+<div class="category" id="animeCategory">
+  <h2>🎌 Anime</h2>
+  <div class="carousel">
+    <button class="arrow left" data-target="animeResults">‹</button>
+    <div id="animeResults" class="row"></div>
+    <button class="arrow right" data-target="animeResults">›</button>
+  </div>
+</div>
 
 <div id="copyModal">Copied: <span id="copyText"></span></div>
 
 <script>
 const TMDB_API_KEY = "7124d4e6e0feb015f07fc9a57bc27227";
 
-const moviesContainer = document.getElementById("movies");
 const loading = document.getElementById("loading");
 const copyModal = document.getElementById("copyModal");
 const copyText = document.getElementById("copyText");
 
-function showLoading(){loading.style.display="flex";}
-function hideLoading(){loading.style.display="none";}
-
-document.getElementById("searchInput").addEventListener("keydown",e=>{
- if(e.key==="Enter") searchAll();
-});
-
-let searchTimeout;
-document.getElementById("searchInput").addEventListener("input",()=>{
- clearTimeout(searchTimeout);
- searchTimeout=setTimeout(searchAll,700);
-});
-
-async function searchAll(){
- const query=document.getElementById("searchInput").value.trim();
- if(!query) return;
-
- showLoading();
- moviesContainer.innerHTML="";
-
- let movies=[],tv=[],anime=[];
-
- try{
-   const res=await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`);
-   const data=await res.json();
-
-   movies=(data.results||[])
-   .sort((a,b)=>b.popularity-a.popularity)
-   .map(m=>({
-      type:"movie",
-      id:m.id,
-      title:m.title,
-      poster:m.poster_path?`https://image.tmdb.org/t/p/w500${m.poster_path}`:""
-   }));
- }catch(e){console.error(e);}
-
- try{
-   const res=await fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`);
-   const data=await res.json();
-
-   tv=(data.results||[])
-   .sort((a,b)=>b.popularity-a.popularity)
-   .map(t=>({
-      type:"tv",
-      id:t.id,
-      title:t.name,
-      poster:t.poster_path?`https://image.tmdb.org/t/p/w500${t.poster_path}`:""
-   }));
- }catch(e){console.error(e);}
-
- try{
-   const res=await fetch("https://graphql.anilist.co",{
-     method:"POST",
-     headers:{"Content-Type":"application/json"},
-     body:JSON.stringify({
-       query:`query ($search: String) {
-         Page(perPage:10){
-           media(search:$search,type:ANIME){
-             id
-             title{romaji}
-             coverImage{large}
-           }
-         }
-       }`,
-       variables:{search:query}
-     })
-   });
-
-   const data=await res.json();
-
-   anime=(data?.data?.Page?.media||[]).map(a=>({
-      type:"anime",
-      id:a.id,
-      title:a.title.romaji,
-      poster:a.coverImage.large
-   }));
- }catch(e){console.error(e);}
-
- document.getElementById("stats").innerHTML=`
- 🎬 Movies: ${movies.length}
- &nbsp;&nbsp;&nbsp; 📺 TV Shows: ${tv.length}
- &nbsp;&nbsp;&nbsp; 🎌 Anime: ${anime.length}
- `;
-
- displayResults([...movies,...tv,...anime]);
-
- hideLoading();
-}
-
-function displayResults(list){
-
- moviesContainer.innerHTML="";
-
- if(!list.length){
-   moviesContainer.innerHTML=`
-   <div style="grid-column:1/-1;text-align:center;padding:80px;color:#777;font-size:20px;">
-   No results found.
-   </div>`;
-   return;
- }
-
- list.forEach(item=>{
-
-   const div=document.createElement("div");
-   div.className="movie";
-
-   let icon="",label="";
-   if(item.type==="movie"){icon="🎬";label="Movie";}
-   if(item.type==="tv"){icon="📺";label="TV Show";}
-   if(item.type==="anime"){icon="🎌";label="Anime";}
-
-   div.innerHTML=`
-   <img loading="lazy"
-   src="${item.poster || 'https://via.placeholder.com/300x450?text=No+Image'}"
-   onerror="this.src='https://via.placeholder.com/300x450?text=No+Image'">
-
-   <div class="movieInfo">
-      <strong>${item.title}</strong>
-      <div class="genre">${icon} ${label}</div>
-   </div>`;
-
-   div.onclick=async()=>{
-      try{
-        await navigator.clipboard.writeText(String(item.id));
-        showCopyModal(`${item.title} | ID: ${item.id}`);
-
-        div.animate(
-        [
-         {transform:'scale(1)'},
-         {transform:'scale(.92)'},
-         {transform:'scale(1)'}
-        ],
-        {duration:250}
-        );
-      }catch(err){
-        console.error(err);
-      }
-   };
-
-   moviesContainer.appendChild(div);
- });
-}
+function showLoading(){ loading.style.display="flex"; }
+function hideLoading(){ loading.style.display="none"; }
 
 function showCopyModal(text){
- copyText.textContent=text;
- copyModal.classList.add("show");
-
- setTimeout(()=>{
-   copyModal.classList.remove("show");
- },1500);
+  copyText.textContent = text;
+  copyModal.classList.add("show");
+  setTimeout(()=>copyModal.classList.remove("show"),1500);
 }
+
+/* =========================
+   ENTER + DEBOUNCE SEARCH
+========================= */
+document.getElementById("searchInput").addEventListener("keydown", e=>{
+  if(e.key==="Enter") searchAll();
+});
+
+let timeout;
+document.getElementById("searchInput").addEventListener("input", ()=>{
+  clearTimeout(timeout);
+  timeout = setTimeout(searchAll, 600);
+});
+
+/* =========================
+   HOME LOAD (TOP CONTENT)
+========================= */
+async function loadHome(){
+  showLoading();
+
+  let movies=[], tv=[], anime=[];
+
+  try{
+    const [m,t,a] = await Promise.all([
+      fetch(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`),
+      fetch(`https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`),
+      fetch("https://graphql.anilist.co",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          query:`query {
+            Page(perPage:10){
+              media(type:ANIME, sort:POPULARITY_DESC){
+                id
+                title{romaji}
+                coverImage{large}
+              }
+            }
+          }`
+        })
+      })
+    ]);
+
+    const md = await m.json();
+    const td = await t.json();
+    const ad = await a.json();
+
+    movies = (md.results||[]).map(i=>({
+      type:"movie",
+      id:i.id,
+      title:i.title,
+      poster:i.poster_path
+        ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+        : ""
+    }));
+
+    tv = (td.results||[]).map(i=>({
+      type:"tv",
+      id:i.id,
+      title:i.name,
+      poster:i.poster_path
+        ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+        : ""
+    }));
+
+    anime = (ad?.data?.Page?.media||[]).map(i=>({
+      type:"anime",
+      id:i.id,
+      title:i.title.romaji,
+      poster:i.coverImage.large
+    }));
+
+  }catch(e){
+    console.error(e);
+  }
+
+  render("movieCategory","movieResults",movies);
+  render("tvCategory","tvResults",tv);
+  render("animeCategory","animeResults",anime);
+
+  hideLoading();
+}
+
+async function searchAll(){
+  const input = document.getElementById("searchInput");
+  const query = input.value.trim();
+
+  // ✅ NEW: if empty → go home immediately
+  if(!query){
+    document.getElementById("stats").innerHTML = "";
+    loadHome();
+    return;
+  }
+
+  showLoading();
+
+  let movies=[], tv=[], anime=[];
+
+  try{
+    const [m,t,a] = await Promise.all([
+      fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${query}`),
+      fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${query}`),
+      fetch("https://graphql.anilist.co",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          query:`query ($search:String){
+            Page(perPage:10){
+              media(search:$search,type:ANIME){
+                id
+                title{romaji}
+                coverImage{large}
+              }
+            }
+          }`,
+          variables:{search:query}
+        })
+      })
+    ]);
+
+    const md = await m.json();
+    const td = await t.json();
+    const ad = await a.json();
+
+    movies = (md.results||[]).map(i=>({
+      type:"movie",
+      id:i.id,
+      title:i.title,
+      poster:i.poster_path
+        ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+        : ""
+    }));
+
+    tv = (td.results||[]).map(i=>({
+      type:"tv",
+      id:i.id,
+      title:i.name,
+      poster:i.poster_path
+        ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+        : ""
+    }));
+
+    anime = (ad?.data?.Page?.media||[]).map(i=>({
+      type:"anime",
+      id:i.id,
+      title:i.title.romaji,
+      poster:i.coverImage.large
+    }));
+
+  }catch(e){
+    console.error(e);
+  }
+
+  document.getElementById("stats").innerHTML =
+    `🎬 ${movies.length} Movies | 📺 ${tv.length} TV | 🎌 ${anime.length} Anime`;
+
+  render("movieCategory","movieResults",movies);
+  render("tvCategory","tvResults",tv);
+  render("animeCategory","animeResults",anime);
+
+  hideLoading();
+}
+
+/* =========================
+   RENDER FUNCTION
+========================= */
+function render(catId,rowId,data){
+  const cat = document.getElementById(catId);
+  const row = document.getElementById(rowId);
+
+  row.innerHTML = "";
+
+  if(!data.length){
+    cat.style.display = "none";
+    return;
+  }
+
+  cat.style.display = "block";
+
+  data.forEach(item=>{
+    const div = document.createElement("div");
+    div.className = "movie";
+
+    div.innerHTML = `
+      <img src="${item.poster || 'https://via.placeholder.com/300x450?text=No+Image'}">
+      <div class="movieInfo">
+        <strong>${item.title}</strong>
+        <div class="genre">${item.type.toUpperCase()}</div>
+      </div>
+    `;
+
+    div.onclick = async ()=>{
+      await navigator.clipboard.writeText(String(item.id));
+      showCopyModal(`${item.title} | ID: ${item.id}`);
+    };
+
+    row.appendChild(div);
+  });
+}
+
+/* =========================
+   INIT HOME ON LOAD
+========================= */
+loadHome();
+
+function goHome(){
+  document.getElementById("searchInput").value = "";
+  document.getElementById("stats").innerHTML = "";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  loadHome();
+}
+
+/* =========================
+   horizontal scroll (desktop) and Touch drag (mobile swipe)
+========================= */
+document.querySelectorAll(".row").forEach(row => {
+
+  function bounce() {
+    row.classList.remove("bounce");
+    void row.offsetWidth; // restart animation
+    row.classList.add("bounce");
+  }
+
+  function isAtStart() {
+    return row.scrollLeft <= 0;
+  }
+
+  function isAtEnd() {
+    return row.scrollLeft >= row.scrollWidth - row.clientWidth - 1;
+  }
+
+  /* =========================
+     MOUSE WHEEL SCROLL
+  ========================= */
+  row.addEventListener("wheel", e => {
+    e.preventDefault();
+    const scrollStep = 600;
+
+    if (e.deltaY > 0) {
+      if (isAtEnd()) {
+        bounce();
+        return;
+      }
+      // scroll but don't exceed end
+      row.scrollLeft = Math.min(row.scrollLeft + scrollStep, row.scrollWidth - row.clientWidth);
+    } else {
+      if (isAtStart()) {
+        bounce();
+        return;
+      }
+      row.scrollLeft = Math.max(row.scrollLeft - scrollStep, 0);
+    }
+  }, { passive: false });
+
+  /* =========================
+     TOUCH DRAG (MOBILE SWIPE)
+  ========================= */
+  let isDown = false, startX = 0, scrollLeftStart = 0;
+
+  row.addEventListener("touchstart", e => {
+    isDown = true;
+    startX = e.touches[0].pageX;
+    scrollLeftStart = row.scrollLeft;
+  });
+
+  row.addEventListener("touchmove", e => {
+    if (!isDown) return;
+    e.preventDefault();
+
+    const x = e.touches[0].pageX;
+    const walk = (x - startX) * 1.5;
+    let nextScroll = scrollLeftStart - walk;
+
+    if (nextScroll < 0) {
+      row.scrollLeft = 0;
+      bounce();
+    } else if (nextScroll > row.scrollWidth - row.clientWidth) {
+      row.scrollLeft = row.scrollWidth - row.clientWidth;
+      bounce();
+    } else {
+      row.scrollLeft = nextScroll;
+    }
+  }, { passive: false });
+
+  row.addEventListener("touchend", () => {
+    isDown = false;
+  });
+});
+
+const scrollAmount = 600;
+
+/* =========================
+   ARROW SCROLL
+========================= */
+document.querySelectorAll(".arrow").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const target = document.getElementById(btn.dataset.target);
+    let scrollByAmount = btn.classList.contains("left") ? -scrollAmount : scrollAmount;
+
+    // Compute new scroll position
+    let newScroll = target.scrollLeft + scrollByAmount;
+
+    // Check boundaries
+    if (newScroll < 0 || newScroll > target.scrollWidth - target.clientWidth) {
+      // Restart bounce animation
+      target.classList.remove("bounce");
+      void target.offsetWidth; // force reflow
+      target.classList.add("bounce");
+    } else {
+      target.scrollBy({ left: scrollByAmount, behavior: "smooth" });
+    }
+  });
+});
+
 </script>
 
 </body>
