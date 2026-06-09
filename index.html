@@ -251,10 +251,146 @@ button:hover { background: #ff1e2d; }
 .row.bounce {
   animation: bounce 0.3s ease;
 }
+
+/* =========================
+   VIDEO MODAL (NETFLIX STYLE)
+========================= */
+
+.detailModal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 9999;
+}
+
+.detailModal.show {
+  display: block;
+}
+
+/* DARK BACKDROP */
+.modalBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+}
+
+/* MODAL BOX */
+.videoModalContent {
+  position: relative;
+  width: 92%;
+  max-width: 1000px;
+  margin: 3% auto;
+  background: #111;
+  border-radius: 14px;
+  overflow: hidden;
+  animation: modalPop 0.2s ease;
+}
+
+@keyframes modalPop {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* CLOSE BUTTON */
+.closeBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  background: #000;
+  color: #fff;
+  border: 1px solid #333;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* VIDEO RESPONSIVE CONTAINER */
+.videoContainer {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 ratio */
+  height: 0;
+  background: #000;
+}
+
+.videoContainer iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* INFO AREA */
+.videoMeta {
+  padding: 15px 18px;
+  color: #fff;
+}
+
+.videoMeta h2 {
+  margin-bottom: 5px;
+  font-size: 20px;
+}
+
+.videoMeta p {
+  margin: 3px 0;
+  color: #aaa;
+}
+
+.modalButtons button {
+  margin-top: 10px;
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: none;
+  background: #e50914;
+  color: #fff;
+  cursor: pointer;
+}
+
+#episodeControls button:hover {
+  background: #e50914 !important;
+}
+
+#episodeControls select {
+  padding: 8px;
+  border-radius: 8px;
+  background: #222;
+  color: #fff;
+  border: none;
+  margin-bottom: 10px;
+}
 </style>
 </head>
 
 <body>
+
+<!-- VIDEO MODAL -->
+<div id="detailModal" class="detailModal">
+  <!-- dark background -->
+  <div class="modalBackdrop" onclick="closeModal()"></div>
+
+  <!-- modal box -->
+  <div class="videoModalContent">
+
+    <!-- close button -->
+    <button class="closeBtn" onclick="closeModal()">✕</button>
+
+    <!-- VIDEO AREA -->
+    <div class="videoContainer" id="videoContainer"></div>
+
+    <!-- INFO SECTION -->
+    <div class="videoMeta">
+      <h2 id="modalTitle">Title</h2>
+      <p id="modalOverview" style="color:#aaa; line-height:1.4;"></p>
+
+      <!-- ONLY FOR TV / ANIME -->
+      <div id="episodeControls" style="margin-top:15px;"></div>
+    </div>
+
+  </div>
+</div>
 
 <header class="hero">
   <h1 onclick="goHome()" style="cursor:pointer;">
@@ -305,6 +441,8 @@ button:hover { background: #ff1e2d; }
 <div id="copyModal">Copied: <span id="copyText"></span></div>
 
 <script>
+let currentItem = null;
+  
 const TMDB_API_KEY = "7124d4e6e0feb015f07fc9a57bc27227";
 
 const loading = document.getElementById("loading");
@@ -366,30 +504,35 @@ async function loadHome(){
     const td = await t.json();
     const ad = await a.json();
 
-    movies = (md.results||[]).map(i=>({
-      type:"movie",
-      id:i.id,
-      title:i.title,
-      poster:i.poster_path
-        ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-        : ""
-    }));
+  movies = (md.results||[]).map(i=>({
+    type:"movie",
+    id:i.id,
+    title:i.title,
+    poster:i.poster_path
+      ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+      : "",
+    videasyUrl: `https://player.videasy.net/movie/${i.id}`
+  }));
 
-    tv = (td.results||[]).map(i=>({
-      type:"tv",
-      id:i.id,
-      title:i.name,
-      poster:i.poster_path
-        ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-        : ""
-    }));
+  tv = (td.results||[]).map(i=>({
+    type:"tv",
+    id:i.id,
+    title:i.name,
+    poster:i.poster_path
+      ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+      : "",
+    // default to season 1 episode 1
+    videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
+  }));
 
-    anime = (ad?.data?.Page?.media||[]).map(i=>({
-      type:"anime",
-      id:i.id,
-      title:i.title.romaji,
-      poster:i.coverImage.large
-    }));
+  anime = (ad?.data?.Page?.media||[]).map(i=>({
+    type:"anime",
+    id:i.id,
+    title:i.title.romaji,
+    poster:i.coverImage.large,
+    // default to episode 1 (or full movie)
+    videasyUrl: `https://player.videasy.net/anime/${i.id}/1`
+  }));
 
   }catch(e){
     console.error(e);
@@ -485,20 +628,22 @@ async function searchAll(){
 /* =========================
    RENDER FUNCTION
 ========================= */
-function render(catId,rowId,data){
+function render(catId, rowId, data) {
   const cat = document.getElementById(catId);
   const row = document.getElementById(rowId);
 
+  // clear previous content
   row.innerHTML = "";
 
-  if(!data.length){
+  // hide category if empty
+  if (!data.length) {
     cat.style.display = "none";
     return;
   }
 
   cat.style.display = "block";
 
-  data.forEach(item=>{
+  data.forEach(item => {
     const div = document.createElement("div");
     div.className = "movie";
 
@@ -510,15 +655,47 @@ function render(catId,rowId,data){
       </div>
     `;
 
-    div.onclick = async ()=>{
-      await navigator.clipboard.writeText(String(item.id));
-      showCopyModal(`${item.title} | ID: ${item.id}`);
-    };
+    // ✅ CLICK OPENS VIDEO MODAL
+    div.onclick = () => openModal(item);
 
     row.appendChild(div);
   });
 }
 
+function copyId(){
+  if(!currentItem) return;
+  navigator.clipboard.writeText(String(currentItem.id));
+  showCopyModal(`${currentItem.title} | ID: ${currentItem.id}`);
+}
+
+function closeModal(){
+  document.getElementById("detailModal").classList.remove("show");
+  document.getElementById("videoContainer").innerHTML = "";
+  currentItem = null;
+}
+  
+function openModal(item){
+  currentItem = item;
+
+  document.getElementById("modalTitle").textContent = item.title;
+
+  const container = document.getElementById("videoContainer");
+  container.innerHTML = "";
+
+  const iframe = document.createElement("iframe");
+  iframe.allowFullscreen = true;
+  iframe.setAttribute("allow", "encrypted-media");
+  iframe.src = item.videasyUrl;
+
+  container.appendChild(iframe);
+
+  document.getElementById("detailModal").classList.add("show");
+
+  // 🔥 LOAD DESCRIPTION + CONTROLS
+  loadDetails(item);
+}
+  
+  
 /* =========================
    INIT HOME ON LOAD
 ========================= */
@@ -633,6 +810,171 @@ document.querySelectorAll(".arrow").forEach(btn => {
   });
 });
 
+async function loadDetails(item){
+  const overviewEl = document.getElementById("modalOverview");
+  const box = document.getElementById("episodeControls");
+
+  box.innerHTML = ""; // ✅ always reset first
+
+  try {
+
+    // MOVIE
+    if(item.type === "movie"){
+      box.style.display = "none"; // hide controls
+      const res = await fetch(
+        `https://api.themoviedb.org/3/movie/${item.id}?api_key=${TMDB_API_KEY}`
+      );
+      const data = await res.json();
+
+      overviewEl.textContent = data.overview || "No description available.";
+      return;
+    }
+
+    // TV SHOW
+    if(item.type === "tv"){
+      box.style.display = "block"; // show controls
+      const res = await fetch(
+        `https://api.themoviedb.org/3/tv/${item.id}?api_key=${TMDB_API_KEY}`
+      );
+      const data = await res.json();
+
+      overviewEl.textContent = data.overview || "No description available.";
+
+      renderTVControls(item.id);
+      return;
+    }
+
+    // ANIME
+    box.style.display = "block"; // show episode buttons
+    overviewEl.textContent = "Anime details loading... (AniList API can be added later)";
+    renderAnimeControls(item.id);
+
+  } catch (e){
+    console.error(e);
+    overviewEl.textContent = "No description available.";
+  }
+}
+  
+
+function updateVideo(url){
+  const container = document.getElementById("videoContainer");
+  container.innerHTML = "";
+
+  const iframe = document.createElement("iframe");
+  iframe.allowFullscreen = true;
+  iframe.setAttribute("allow", "encrypted-media");
+  iframe.src = url;
+
+  container.appendChild(iframe);
+}
+
+
+async function renderTVControls(tvId){
+  const box = document.getElementById("episodeControls");
+  box.innerHTML = "Loading seasons...";
+
+  try {
+    const res = await fetch(
+      `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}`
+    );
+    const data = await res.json();
+
+    box.innerHTML = "";
+
+    // season selector
+    const seasonSelect = document.createElement("select");
+
+    data.seasons.forEach(season => {
+      if(season.season_number === 0) return; // skip specials
+
+      const opt = document.createElement("option");
+      opt.value = season.season_number;
+      opt.textContent = `Season ${season.season_number}`;
+      seasonSelect.appendChild(opt);
+    });
+
+    const episodeGrid = document.createElement("div");
+    episodeGrid.style.display = "flex";
+    episodeGrid.style.flexWrap = "wrap";
+    episodeGrid.style.gap = "8px";
+    episodeGrid.style.marginTop = "10px";
+
+    async function loadEpisodes(seasonNumber){
+      episodeGrid.innerHTML = "";
+
+      const res = await fetch(
+        `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${TMDB_API_KEY}`
+      );
+      const seasonData = await res.json();
+
+      const epSelect = document.createElement("select");
+      epSelect.style.padding = "8px";
+      epSelect.style.borderRadius = "8px";
+      epSelect.style.marginTop = "10px";
+      epSelect.style.background = "#222";
+      epSelect.style.color = "#fff";
+      epSelect.style.border = "none";
+
+      seasonData.episodes.forEach(ep => {
+        const opt = document.createElement("option");
+        opt.value = ep.episode_number;
+        opt.textContent = `Episode ${ep.episode_number}`;
+        epSelect.appendChild(opt);
+      });
+
+      epSelect.onchange = () => {
+        updateVideo(
+          `https://player.videasy.net/tv/${tvId}/${seasonNumber}/${epSelect.value}`
+        );
+      };
+
+      episodeGrid.appendChild(epSelect);
+    }
+
+    // default load
+    loadEpisodes(1);
+
+    seasonSelect.onchange = () => {
+      loadEpisodes(seasonSelect.value);
+    };
+
+    box.appendChild(seasonSelect);
+    box.appendChild(episodeGrid);
+
+  } catch (e){
+    console.error(e);
+    box.innerHTML = "Failed to load seasons";
+  }
+}
+
+function renderAnimeControls(animeId){
+  const box = document.getElementById("episodeControls");
+  box.innerHTML = "";
+
+  const epSelect = document.createElement("select");
+
+  epSelect.style.padding = "8px";
+  epSelect.style.borderRadius = "8px";
+  epSelect.style.background = "#222";
+  epSelect.style.color = "#fff";
+  epSelect.style.border = "none";
+
+  // optional default limit (you can increase later)
+  const MAX_EP = 100;
+
+  for(let i = 1; i <= MAX_EP; i++){
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = `Episode ${i}`;
+    epSelect.appendChild(opt);
+  }
+
+  epSelect.onchange = () => {
+    updateVideo(`https://player.videasy.net/anime/${animeId}/${epSelect.value}`);
+  };
+
+  box.appendChild(epSelect);
+}
 </script>
 
 </body>
