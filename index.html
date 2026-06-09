@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VIDEASY ID SEARCH V2</title>
+<title>FREE FLICKS</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
 * { box-sizing: border-box; margin:0; padding:0; }
@@ -405,8 +406,8 @@ button:hover { background: #ff1e2d; }
 
 <header class="hero">
   <h1 onclick="goHome()" style="cursor:pointer;">
-  <span class="red">VIDEASY</span> ID SEARCH</h1>
-  <p>Search Movies, TV Shows & Anime IDs</p>
+  <span class="red">FREE</span> FLICKS</h1>
+  <p>Watch Movies, TV Shows & Anime for Free</p>
 </header>
 
 <div id="searchContainer">
@@ -423,7 +424,7 @@ button:hover { background: #ff1e2d; }
 
 <!-- CATEGORIES -->
 <div class="category" id="movieCategory">
-  <h2>🎬 Movies</h2>
+  <h2><i class="fa-solid fa-film"></i> Movies</h2>
   <div class="carousel">
     <button class="arrow left" data-target="movieResults">‹</button>
     <div id="movieResults" class="row"></div>
@@ -432,7 +433,7 @@ button:hover { background: #ff1e2d; }
 </div>
 
 <div class="category" id="tvCategory">
-  <h2>📺 TV Shows</h2>
+  <h2><i class="fa-solid fa-tv"></i> TV Shows</h2>
   <div class="carousel">
     <button class="arrow left" data-target="tvResults">‹</button>
     <div id="tvResults" class="row"></div>
@@ -441,7 +442,7 @@ button:hover { background: #ff1e2d; }
 </div>
 
 <div class="category" id="animeCategory">
-  <h2>🎌 Anime</h2>
+  <h2><i class="fa-solid fa-clapperboard"></i> Anime</h2>
   <div class="carousel">
     <button class="arrow left" data-target="animeResults">‹</button>
     <div id="animeResults" class="row"></div>
