@@ -742,9 +742,31 @@ async function searchAll(){
     const td = await t.json();
     const ad = await a.json();
 
-    const movies = (md.results||[]).map(i=>({ type:"movie", id:i.id, title:i.title, poster:i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}` : "" }));
-    const tv = (td.results||[]).map(i=>({ type:"tv", id:i.id, title:i.name, poster:i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}` : "" }));
-    const anime = (ad?.data?.Page?.media||[]).map(i=>({ type:"anime", id:i.id, title:i.title.romaji, poster:i.coverImage.large }));
+    const movies = (md.results||[]).map(i=>({
+      type:"movie",
+      id:i.id,
+      title:i.title,
+      poster:i.poster_path
+        ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+        : "",
+      videasyUrl:`https://player.videasy.net/movie/${i.id}`
+    }));
+    const tv = (td.results||[]).map(i=>({
+      type:"tv",
+      id:i.id,
+      title:i.name,
+      poster:i.poster_path
+        ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+        : "",
+      videasyUrl:`https://player.videasy.net/tv/${i.id}/1/1`
+    }));
+    const anime = (ad?.data?.Page?.media||[]).map(i=>({
+      type:"anime",
+      id:i.id,
+      title:i.title.romaji,
+      poster:i.coverImage.large,
+      videasyUrl:`https://player.videasy.net/anime/${i.id}/1`
+    }));
 
     document.getElementById("stats").innerHTML =
       `<span class="statLink" onclick="scrollToCategory('movieCategory')"><i class="fa-solid fa-film"></i> ${movies.length} Movies</span>
