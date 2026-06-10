@@ -93,18 +93,23 @@ button:hover { background: #ff1e2d; }
   display: flex;
   gap: 15px;
   overflow-x: auto;
-  overflow-y: hidden;   /* IMPORTANT: prevents vertical jitter */
+  overflow-y: hidden;
   padding-bottom: 10px;
   align-items: flex-start;
   scroll-behavior: smooth;
-  scrollbar-gutter: stable; /* prevents scrollbar shift */
+  touch-action: pan-y;
+ -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
 }
 .row::-webkit-scrollbar {
-  height: 8px;
-}
-.row::-webkit-scrollbar-thumb {
-  background: #444;
-  border-radius: 10px;
+  display: none;
 }
 
 /* MOVIE CARDS */
@@ -127,6 +132,10 @@ button:hover { background: #ff1e2d; }
   object-fit: cover;
   display: block;      /* removes inline image gap bug */
   border-radius: 8px;
+  
+  user-drag: none;
+  -webkit-user-drag: none; 
+  pointer-events: none;
 }
 .movieInfo {
   position: absolute;
@@ -368,10 +377,20 @@ button:hover { background: #ff1e2d; }
 }
 
 #episodeControls{
-  display: flex;
+  display: none;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap; /* allows mobile wrap */
+  flex-wrap: wrap;
+}
+
+
+.statLink{
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.statLink:hover{
+  color:#e50914;
 }
 </style>
 </head>
@@ -424,7 +443,7 @@ button:hover { background: #ff1e2d; }
 
 <!-- CATEGORIES -->
 <div class="category" id="movieCategory">
-  <h2><i class="fa-solid fa-film"></i> Movies</h2>
+  <h2><i style= "color: darkgray" class="fa-solid fa-film"></i> Movies</h2>
   <div class="carousel">
     <button class="arrow left" data-target="movieResults">‹</button>
     <div id="movieResults" class="row"></div>
@@ -433,7 +452,7 @@ button:hover { background: #ff1e2d; }
 </div>
 
 <div class="category" id="tvCategory">
-  <h2><i class="fa-solid fa-tv"></i> TV Shows</h2>
+  <h2><i style= "color: darkgray" class="fa-solid fa-clapperboard"></i> TV Shows</h2>
   <div class="carousel">
     <button class="arrow left" data-target="tvResults">‹</button>
     <div id="tvResults" class="row"></div>
@@ -442,7 +461,7 @@ button:hover { background: #ff1e2d; }
 </div>
 
 <div class="category" id="animeCategory">
-  <h2><i class="fa-solid fa-clapperboard"></i> Anime</h2>
+  <h2><i style= "color: darkgray" class="fa-solid fa-tv"></i> Anime</h2>
   <div class="carousel">
     <button class="arrow left" data-target="animeResults">‹</button>
     <div id="animeResults" class="row"></div>
@@ -454,43 +473,30 @@ button:hover { background: #ff1e2d; }
 
 <script>
 let currentItem = null;
-  
 const TMDB_API_KEY = "7124d4e6e0feb015f07fc9a57bc27227";
 
 const loading = document.getElementById("loading");
 const copyModal = document.getElementById("copyModal");
 const copyText = document.getElementById("copyText");
 
+// Loading / Copy Modal
 function showLoading(){ loading.style.display="flex"; }
 function hideLoading(){ loading.style.display="none"; }
-
 function showCopyModal(text){
   copyText.textContent = text;
   copyModal.classList.add("show");
   setTimeout(()=>copyModal.classList.remove("show"),1500);
 }
 
-/* =========================
-   ENTER + DEBOUNCE SEARCH
-========================= */
-document.getElementById("searchInput").addEventListener("keydown", e=>{
-  if(e.key==="Enter") searchAll();
-});
-
+// Debounced search
 let timeout;
-document.getElementById("searchInput").addEventListener("input", ()=>{
-  clearTimeout(timeout);
-  timeout = setTimeout(searchAll, 600);
-});
+const searchInput = document.getElementById("searchInput");
+searchInput.addEventListener("keydown", e => { if(e.key==="Enter") searchAll(); });
+searchInput.addEventListener("input", () => { clearTimeout(timeout); timeout = setTimeout(searchAll, 600); });
 
-/* =========================
-   HOME LOAD (TOP CONTENT)
-========================= */
+// Load top content
 async function loadHome(){
   showLoading();
-
-  let movies=[], tv=[], anime=[];
-
   try{
     const [m,t,a] = await Promise.all([
       fetch(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`),
@@ -499,15 +505,7 @@ async function loadHome(){
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
-          query:`query {
-            Page(perPage:10){
-              media(type:ANIME, sort:POPULARITY_DESC){
-                id
-                title{romaji}
-                coverImage{large}
-              }
-            }
-          }`
+          query:`query { Page(perPage:10){ media(type:ANIME, sort:POPULARITY_DESC){ id title{romaji} coverImage{large} } } }`
         })
       })
     ]);
@@ -516,62 +514,38 @@ async function loadHome(){
     const td = await t.json();
     const ad = await a.json();
 
-  movies = (md.results||[]).map(i=>({
-    type:"movie",
-    id:i.id,
-    title:i.title,
-    poster:i.poster_path
-      ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-      : "",
-    videasyUrl: `https://player.videasy.net/movie/${i.id}`
-  }));
+    const movies = (md.results||[]).map(i=>({
+      type:"movie", id:i.id, title:i.title,
+      poster:i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}` : "",
+      videasyUrl:`https://player.videasy.net/movie/${i.id}`
+    }));
 
-  tv = (td.results||[]).map(i=>({
-    type:"tv",
-    id:i.id,
-    title:i.name,
-    poster:i.poster_path
-      ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-      : "",
-    // default to season 1 episode 1
-    videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
-  }));
+    const tv = (td.results||[]).map(i=>({
+      type:"tv", id:i.id, title:i.name,
+      poster:i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}` : "",
+      videasyUrl:`https://player.videasy.net/tv/${i.id}/1/1`
+    }));
 
-  anime = (ad?.data?.Page?.media||[]).map(i=>({
-    type:"anime",
-    id:i.id,
-    title:i.title.romaji,
-    poster:i.coverImage.large,
-    // default to episode 1 (or full movie)
-    videasyUrl: `https://player.videasy.net/anime/${i.id}/1`
-  }));
+    const anime = (ad?.data?.Page?.media||[]).map(i=>({
+      type:"anime", id:i.id, title:i.title.romaji,
+      poster:i.coverImage.large,
+      videasyUrl:`https://player.videasy.net/anime/${i.id}/1`
+    }));
 
-  }catch(e){
-    console.error(e);
-  }
+    render("movieCategory","movieResults",movies);
+    render("tvCategory","tvResults",tv);
+    render("animeCategory","animeResults",anime);
 
-  render("movieCategory","movieResults",movies);
-  render("tvCategory","tvResults",tv);
-  render("animeCategory","animeResults",anime);
-
+  }catch(e){ console.error(e); }
   hideLoading();
 }
 
+// Search
 async function searchAll(){
-  const input = document.getElementById("searchInput");
-  const query = input.value.trim();
-
-  // ✅ NEW: if empty → go home immediately
-  if(!query){
-    document.getElementById("stats").innerHTML = "";
-    loadHome();
-    return;
-  }
+  const query = searchInput.value.trim();
+  if(!query){ document.getElementById("stats").innerHTML = ""; loadHome(); return; }
 
   showLoading();
-
-  let movies=[], tv=[], anime=[];
-
   try{
     const [m,t,a] = await Promise.all([
       fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${query}`),
@@ -580,15 +554,7 @@ async function searchAll(){
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
-          query:`query ($search:String){
-            Page(perPage:10){
-              media(search:$search,type:ANIME){
-                id
-                title{romaji}
-                coverImage{large}
-              }
-            }
-          }`,
+          query:`query ($search:String){ Page(perPage:10){ media(search:$search,type:ANIME){ id title{romaji} coverImage{large} } } }`,
           variables:{search:query}
         })
       })
@@ -598,241 +564,72 @@ async function searchAll(){
     const td = await t.json();
     const ad = await a.json();
 
-    movies = (md.results||[]).map(i=>({
-      type:"movie",
-      id:i.id,
-      title:i.title,
-      poster:i.poster_path
-        ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-        : ""
-    }));
+    const movies = (md.results||[]).map(i=>({ type:"movie", id:i.id, title:i.title, poster:i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}` : "" }));
+    const tv = (td.results||[]).map(i=>({ type:"tv", id:i.id, title:i.name, poster:i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}` : "" }));
+    const anime = (ad?.data?.Page?.media||[]).map(i=>({ type:"anime", id:i.id, title:i.title.romaji, poster:i.coverImage.large }));
 
-    tv = (td.results||[]).map(i=>({
-      type:"tv",
-      id:i.id,
-      title:i.name,
-      poster:i.poster_path
-        ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-        : ""
-    }));
+    document.getElementById("stats").innerHTML =
+      `<span class="statLink" onclick="scrollToCategory('movieCategory')"><i class="fa-solid fa-film"></i> ${movies.length} Movies</span>
+       &nbsp;|&nbsp;
+       <span class="statLink" onclick="scrollToCategory('tvCategory')"><i class="fa-solid fa-clapperboard"></i> ${tv.length} TV Shows</span>
+       &nbsp;|&nbsp;
+       <span class="statLink" onclick="scrollToCategory('animeCategory')"><i class="fa-solid fa-tv"></i> ${anime.length} Anime</span>`;
 
-    anime = (ad?.data?.Page?.media||[]).map(i=>({
-      type:"anime",
-      id:i.id,
-      title:i.title.romaji,
-      poster:i.coverImage.large
-    }));
+    render("movieCategory","movieResults",movies);
+    render("tvCategory","tvResults",tv);
+    render("animeCategory","animeResults",anime);
 
-  }catch(e){
-    console.error(e);
-  }
-
-  document.getElementById("stats").innerHTML =
-    `🎬 ${movies.length} Movies | 📺 ${tv.length} TV | 🎌 ${anime.length} Anime`;
-
-  render("movieCategory","movieResults",movies);
-  render("tvCategory","tvResults",tv);
-  render("animeCategory","animeResults",anime);
-
+  }catch(e){ console.error(e); }
   hideLoading();
 }
 
-/* =========================
-   RENDER FUNCTION
-========================= */
-function render(catId, rowId, data) {
+// Render
+function render(catId,rowId,data){
   const cat = document.getElementById(catId);
   const row = document.getElementById(rowId);
-
-  // clear previous content
   row.innerHTML = "";
+  if(!data.length){ cat.style.display="none"; return; }
+  cat.style.display="block";
 
-  // hide category if empty
-  if (!data.length) {
-    cat.style.display = "none";
-    return;
-  }
-
-  cat.style.display = "block";
-
-  data.forEach(item => {
+  data.forEach(item=>{
     const div = document.createElement("div");
     div.className = "movie";
-
-    div.innerHTML = `
-      <img src="${item.poster || 'https://via.placeholder.com/300x450?text=No+Image'}">
-      <div class="movieInfo">
-        <strong>${item.title}</strong>
-        <div class="genre">${item.type.toUpperCase()}</div>
-      </div>
-    `;
-
-    // ✅ CLICK OPENS VIDEO MODAL
-    div.onclick = () => openModal(item);
-
+    div.innerHTML = `<img src="${item.poster || 'https://via.placeholder.com/300x450?text=No+Image'}">
+                     <div class="movieInfo"><strong>${item.title}</strong><div class="genre">${item.type.toUpperCase()}</div></div>`;
+    div.onclick = ()=>openModal(item);
     row.appendChild(div);
   });
 }
 
-function copyId(){
-  if(!currentItem) return;
-  navigator.clipboard.writeText(String(currentItem.id));
-  showCopyModal(`${currentItem.title} | ID: ${currentItem.id}`);
-}
-
-function closeModal(){
-  document.getElementById("detailModal").classList.remove("show");
-  document.getElementById("videoContainer").innerHTML = "";
-  currentItem = null;
-}
-  
+// Modals
+function copyId(){ if(!currentItem) return; navigator.clipboard.writeText(String(currentItem.id)); showCopyModal(`${currentItem.title} | ID: ${currentItem.id}`); }
+function closeModal(){ document.getElementById("detailModal").classList.remove("show"); document.getElementById("videoContainer").innerHTML=""; currentItem=null; }
 function openModal(item){
   currentItem = item;
-
   document.getElementById("modalTitle").textContent = item.title;
-
   const container = document.getElementById("videoContainer");
-  container.innerHTML = "";
-
+  container.innerHTML="";
   const iframe = document.createElement("iframe");
   iframe.allowFullscreen = true;
-  iframe.setAttribute("allow", "encrypted-media");
-  iframe.src = item.videasyUrl;
-
+  iframe.setAttribute("allow","encrypted-media");
+  iframe.src=item.videasyUrl;
   container.appendChild(iframe);
-
   document.getElementById("detailModal").classList.add("show");
-
-  // 🔥 LOAD DESCRIPTION + CONTROLS
   loadDetails(item);
 }
-  
-  
-/* =========================
-   INIT HOME ON LOAD
-========================= */
-loadHome();
 
-function goHome(){
-  document.getElementById("searchInput").value = "";
-  document.getElementById("stats").innerHTML = "";
-  window.scrollTo({ top: 0, behavior: "smooth" });
-  loadHome();
-}
-
-/* =========================
-   horizontal scroll (desktop) and Touch drag (mobile swipe)
-========================= */
-document.querySelectorAll(".row").forEach(row => {
-
-  function bounce() {
-    row.classList.remove("bounce");
-    void row.offsetWidth; // restart animation
-    row.classList.add("bounce");
-  }
-
-  function isAtStart() {
-    return row.scrollLeft <= 0;
-  }
-
-  function isAtEnd() {
-    return row.scrollLeft >= row.scrollWidth - row.clientWidth - 1;
-  }
-
-  /* =========================
-     MOUSE WHEEL SCROLL
-  ========================= */
-  row.addEventListener("wheel", e => {
-    e.preventDefault();
-    const scrollStep = 600;
-
-    if (e.deltaY > 0) {
-      if (isAtEnd()) {
-        bounce();
-        return;
-      }
-      // scroll but don't exceed end
-      row.scrollLeft = Math.min(row.scrollLeft + scrollStep, row.scrollWidth - row.clientWidth);
-    } else {
-      if (isAtStart()) {
-        bounce();
-        return;
-      }
-      row.scrollLeft = Math.max(row.scrollLeft - scrollStep, 0);
-    }
-  }, { passive: false });
-
-  /* =========================
-     TOUCH DRAG (MOBILE SWIPE)
-  ========================= */
-  let isDown = false, startX = 0, scrollLeftStart = 0;
-
-  row.addEventListener("touchstart", e => {
-    isDown = true;
-    startX = e.touches[0].pageX;
-    scrollLeftStart = row.scrollLeft;
-  });
-
-  row.addEventListener("touchmove", e => {
-    if (!isDown) return;
-    e.preventDefault();
-
-    const x = e.touches[0].pageX;
-    const walk = (x - startX) * 1.5;
-    let nextScroll = scrollLeftStart - walk;
-
-    if (nextScroll < 0) {
-      row.scrollLeft = 0;
-      bounce();
-    } else if (nextScroll > row.scrollWidth - row.clientWidth) {
-      row.scrollLeft = row.scrollWidth - row.clientWidth;
-      bounce();
-    } else {
-      row.scrollLeft = nextScroll;
-    }
-  }, { passive: false });
-
-  row.addEventListener("touchend", () => {
-    isDown = false;
-  });
-});
-
-const scrollAmount = 600;
-
-/* =========================
-   ARROW SCROLL
-========================= */
-document.querySelectorAll(".arrow").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const target = document.getElementById(btn.dataset.target);
-    let scrollByAmount = btn.classList.contains("left") ? -scrollAmount : scrollAmount;
-
-    // Compute new scroll position
-    let newScroll = target.scrollLeft + scrollByAmount;
-
-    // Check boundaries
-    if (newScroll < 0 || newScroll > target.scrollWidth - target.clientWidth) {
-      // Restart bounce animation
-      target.classList.remove("bounce");
-      void target.offsetWidth; // force reflow
-      target.classList.add("bounce");
-    } else {
-      target.scrollBy({ left: scrollByAmount, behavior: "smooth" });
-    }
-  });
-});
 
 async function loadDetails(item){
   const overviewEl = document.getElementById("modalOverview");
   const box = document.getElementById("episodeControls");
 
-  box.innerHTML = ""; // ✅ always reset first
+  box.innerHTML = "";
 
   try {
 
-    // MOVIE
     if(item.type === "movie"){
-      box.style.display = "none"; // hide controls
+      box.style.display = "none";
+
       const res = await fetch(
         `https://api.themoviedb.org/3/movie/${item.id}?api_key=${TMDB_API_KEY}`
       );
@@ -842,23 +639,21 @@ async function loadDetails(item){
       return;
     }
 
-    // TV SHOW
     if(item.type === "tv"){
-      box.style.display = "block"; // show controls
+      box.style.display = "block";   // 🔥 RESTORE THIS
+
       const res = await fetch(
         `https://api.themoviedb.org/3/tv/${item.id}?api_key=${TMDB_API_KEY}`
       );
       const data = await res.json();
 
       overviewEl.textContent = data.overview || "No description available.";
-
       renderTVControls(item.id);
       return;
     }
 
-    // ANIME
-    box.style.display = "block"; // show episode buttons
-    overviewEl.textContent = "Anime details loading... (AniList API can be added later)";
+    box.style.display = "block"; // 🔥 RESTORE THIS
+    overviewEl.textContent = "Anime details loading...";
     renderAnimeControls(item.id);
 
   } catch (e){
@@ -866,121 +661,109 @@ async function loadDetails(item){
     overviewEl.textContent = "No description available.";
   }
 }
-  
 
+
+
+// Update video
 function updateVideo(url){
   const container = document.getElementById("videoContainer");
-  container.innerHTML = "";
-
+  container.innerHTML="";
   const iframe = document.createElement("iframe");
   iframe.allowFullscreen = true;
-  iframe.setAttribute("allow", "encrypted-media");
+  iframe.setAttribute("allow","encrypted-media");
   iframe.src = url;
-
   container.appendChild(iframe);
 }
 
-
-async function renderTVControls(tvId) {
-  const box = document.getElementById("episodeControls");
-  box.innerHTML = "Loading seasons...";
-
-  try {
-    const res = await fetch(
-      `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}`
-    );
+// Render TV/Anime Controls
+async function renderTVControls(tvId){
+  const box=document.getElementById("episodeControls");
+  box.innerHTML="Loading seasons...";
+  try{
+    const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}`);
     const data = await res.json();
+    box.innerHTML="";
+    const controlsRow=document.createElement("div");
+    controlsRow.style.display="flex"; controlsRow.style.alignItems="center"; controlsRow.style.gap="10px"; controlsRow.style.flexWrap="wrap";
 
-    box.innerHTML = "";
+    const seasonSelect=document.createElement("select");
+    data.seasons.forEach(season=>{ if(season.season_number===0) return; const opt=document.createElement("option"); opt.value=season.season_number; opt.textContent=`Season ${season.season_number}`; seasonSelect.appendChild(opt); });
+    const episodeSelect=document.createElement("select");
 
-    // --- CREATE HORIZONTAL CONTAINER ---
-    const controlsRow = document.createElement("div");
-    controlsRow.style.display = "flex";
-    controlsRow.style.alignItems = "center";
-    controlsRow.style.gap = "10px";
-    controlsRow.style.flexWrap = "wrap"; // allows wrap on small screens
-
-    // --- SEASON SELECT ---
-    const seasonSelect = document.createElement("select");
-    data.seasons.forEach(season => {
-      if (season.season_number === 0) return; // skip specials
-      const opt = document.createElement("option");
-      opt.value = season.season_number;
-      opt.textContent = `Season ${season.season_number}`;
-      seasonSelect.appendChild(opt);
-    });
-
-    // --- EPISODE SELECT ---
-    const episodeSelect = document.createElement("select");
-
-    // function to load episodes for selected season
-    async function loadEpisodes(seasonNumber) {
-      episodeSelect.innerHTML = ""; // clear old options
-
-      const res = await fetch(
-        `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${TMDB_API_KEY}`
-      );
+    async function loadEpisodes(seasonNumber){
+      episodeSelect.innerHTML="";
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${TMDB_API_KEY}`);
       const seasonData = await res.json();
-
-      seasonData.episodes.forEach(ep => {
-        const opt = document.createElement("option");
-        opt.value = ep.episode_number;
-        opt.textContent = `Episode ${ep.episode_number}`;
-        episodeSelect.appendChild(opt);
-      });
-
-      // play first episode by default
+      seasonData.episodes.forEach(ep=>{ const opt=document.createElement("option"); opt.value=ep.episode_number; opt.textContent=`Episode ${ep.episode_number}`; episodeSelect.appendChild(opt); });
       updateVideo(`https://player.videasy.net/tv/${tvId}/${seasonNumber}/${episodeSelect.value}`);
     }
 
-    // --- EVENT LISTENERS ---
-    seasonSelect.onchange = () => loadEpisodes(seasonSelect.value);
-    episodeSelect.onchange = () => {
-      updateVideo(`https://player.videasy.net/tv/${tvId}/${seasonSelect.value}/${episodeSelect.value}`);
-    };
-
-    // --- ADD TO CONTAINER ---
-    controlsRow.appendChild(seasonSelect);
-    controlsRow.appendChild(episodeSelect);
-    box.appendChild(controlsRow);
-
-    // --- LOAD FIRST SEASON BY DEFAULT ---
+    seasonSelect.onchange = ()=>loadEpisodes(seasonSelect.value);
+    episodeSelect.onchange = ()=>updateVideo(`https://player.videasy.net/tv/${tvId}/${seasonSelect.value}/${episodeSelect.value}`);
+    controlsRow.appendChild(seasonSelect); controlsRow.appendChild(episodeSelect); box.appendChild(controlsRow);
     loadEpisodes(1);
 
-  } catch (e) {
-    console.error(e);
-    box.innerHTML = "Failed to load seasons";
-  }
+  }catch(e){ console.error(e); box.innerHTML="Failed to load seasons"; }
 }
 
 function renderAnimeControls(animeId){
-  const box = document.getElementById("episodeControls");
-  box.innerHTML = "";
-
-  const epSelect = document.createElement("select");
-
-  epSelect.style.padding = "8px";
-  epSelect.style.borderRadius = "8px";
-  epSelect.style.background = "#222";
-  epSelect.style.color = "#fff";
-  epSelect.style.border = "none";
-
-  // optional default limit (you can increase later)
-  const MAX_EP = 100;
-
-  for(let i = 1; i <= MAX_EP; i++){
-    const opt = document.createElement("option");
-    opt.value = i;
-    opt.textContent = `Episode ${i}`;
-    epSelect.appendChild(opt);
-  }
-
-  epSelect.onchange = () => {
-    updateVideo(`https://player.videasy.net/anime/${animeId}/${epSelect.value}`);
-  };
-
+  const box=document.getElementById("episodeControls");
+  box.innerHTML="";
+  const epSelect=document.createElement("select");
+  epSelect.style.padding="8px"; epSelect.style.borderRadius="8px"; epSelect.style.background="#222"; epSelect.style.color="#fff"; epSelect.style.border="none";
+  const MAX_EP=100;
+  for(let i=1;i<=MAX_EP;i++){ const opt=document.createElement("option"); opt.value=i; opt.textContent=`Episode ${i}`; epSelect.appendChild(opt);}
+  epSelect.onchange=()=>updateVideo(`https://player.videasy.net/anime/${animeId}/${epSelect.value}`);
   box.appendChild(epSelect);
 }
+
+// Scroll to category
+function scrollToCategory(id){ document.getElementById(id).scrollIntoView({ behavior:"smooth", block:"start" }); }
+
+// Home button
+function goHome(){ searchInput.value=""; document.getElementById("stats").innerHTML=""; window.scrollTo({ top:0, behavior:"smooth" }); loadHome(); }
+
+// Horizontal drag + arrow scroll
+document.querySelectorAll(".row").forEach(row=>{
+  const scrollAmount=600;
+  const bounce=()=>{ row.classList.remove("bounce"); void row.offsetWidth; row.classList.add("bounce"); };
+
+  // Desktop drag
+  let mouseDown=false, mouseStartX=0, mouseScrollStart=0;
+  row.addEventListener("mousedown", e=>{ mouseDown=true; mouseStartX=e.pageX; mouseScrollStart=row.scrollLeft; row.style.cursor="grabbing"; });
+  window.addEventListener("mouseup", ()=>{ mouseDown=false; row.style.cursor="grab"; });
+  row.addEventListener("mousemove", e=>{ if(!mouseDown) return; e.preventDefault(); const walk=e.pageX-mouseStartX; let next=row.scrollLeft-walk; if(next<0){ row.scrollLeft=0; bounce(); return;} if(next>row.scrollWidth-row.clientWidth){ row.scrollLeft=row.scrollWidth-row.clientWidth; bounce(); return;} row.scrollLeft=next; });
+
+  // Touch drag
+  let isDown=false, startX=0, startY=0, scrollLeftStart=0, isDraggingHorizontally=false;
+  row.addEventListener("touchstart", e=>{ isDown=true; isDraggingHorizontally=false; startX=e.touches[0].pageX; startY=e.touches[0].pageY; scrollLeftStart=row.scrollLeft; });
+  row.addEventListener("touchmove", e=>{
+    if(!isDown) return;
+    const x=e.touches[0].pageX, y=e.touches[0].pageY;
+    const deltaX=Math.abs(x-startX), deltaY=Math.abs(y-startY);
+    if(!isDraggingHorizontally){ if(deltaY>deltaX) return; if(deltaX>25 && deltaX>deltaY*1.5) isDraggingHorizontally=true; }
+    if(!isDraggingHorizontally) return;
+    e.preventDefault();
+    const walk=x-startX;
+    let next=scrollLeftStart-walk;
+    if(next<0){ row.scrollLeft=0; bounce(); } else if(next>row.scrollWidth-row.clientWidth){ row.scrollLeft=row.scrollWidth-row.clientWidth; bounce(); } else row.scrollLeft=next;
+  }, { passive:false });
+  row.addEventListener("touchend", ()=>{ isDown=false; });
+
+  // Arrow scroll
+  document.querySelectorAll(".arrow").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const target=document.getElementById(btn.dataset.target);
+      const scrollByAmount=btn.classList.contains("left")?-scrollAmount:scrollAmount;
+      let newScroll=target.scrollLeft+scrollByAmount;
+      if(newScroll<0 || newScroll>target.scrollWidth-target.clientWidth){ target.classList.remove("bounce"); void target.offsetWidth; target.classList.add("bounce"); } 
+      else target.scrollBy({ left:scrollByAmount, behavior:"smooth" });
+    });
+  });
+});
+
+// Initial load
+loadHome();
 </script>
 
 </body>
