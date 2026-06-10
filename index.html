@@ -38,17 +38,19 @@ body {
   background: #141414ee;
   backdrop-filter: blur(10px);
   padding: 20px;
-  text-align: center;
   border-bottom: 1px solid #222;
+
   display: flex;
   justify-content: center;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* prevent wrapping */
+  flex-direction: row;
 }
+
 #searchInput {
-  flex: 1;
-  min-width: 250px;
-  max-width: 500px;
+  flex: 1 1 auto;       /* flexible width */
+  min-width: 150px;     /* won't shrink too small */
+  max-width: 600px;     /* won't grow too big */
   padding: 12px 20px;
   border-radius: 30px;
   border: 1px solid #333;
@@ -289,10 +291,10 @@ button:hover { background: #ff1e2d; }
 .videoModalContent {
   position: relative;
 
-  width: min(1000px, calc(100vw - 20px));
-  height: min(900px, calc(100dvh - 20px));
+  width: min(1200px, calc(100vw - 40px));
+  height: min(800px, calc(100vh - 40px));
 
-  margin: 10px auto;
+  margin: 20px auto;
 
   display: flex;
   flex-direction: column;
@@ -300,7 +302,7 @@ button:hover { background: #ff1e2d; }
   background: #111;
   border-radius: 14px;
   overflow: hidden;
-  z-index: 2
+  z-index: 2;
 }
 
 @keyframes modalPop {
@@ -415,12 +417,12 @@ button:hover { background: #ff1e2d; }
 ========================= */
 @media (max-width: 768px) {
 
-  .arrow {
-    display: none;
-  }
+
 
   .videoModalContent {
-    display: flex;
+    width: calc(100vw - 20px);
+    height: calc(100vh - 20px);
+    margin: 10px auto;
   }
 
   /* VIDEO SIDE */
@@ -487,7 +489,8 @@ button:hover { background: #ff1e2d; }
 
 @media (orientation: portrait) {
   .videoModalContent {
-    height: 70vh;
+    height: auto;
+    max-height: 90dvh;
     flex-direction: column;
   }
 
@@ -514,22 +517,28 @@ button:hover { background: #ff1e2d; }
 
 @media (orientation: landscape) {
   .videoModalContent {
+    overscroll-behavior: contain;
     flex-direction: row;
   }
 
   .videoContainer {
-    flex: 2.3;
+    flex: 1.5;
     height: 100%;
   }
 
   .videoMeta {
+    margin-right: 50px;
     flex: 1;
     overflow-y: auto;
+  }
+  .videoMeta::-webkit-scrollbar {
+    display: none;
   }
 
   #episodeControls {
     margin-top: auto;
   }
+  
   .closeBtn {
     width: 30px;
     height: 30px;
