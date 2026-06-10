@@ -596,7 +596,7 @@ button:hover { background: #ff1e2d; }
 
 <!-- CATEGORIES -->
 <div class="category" id="movieCategory">
-  <h2><i style= "color: darkgray" class="fa-solid fa-film"></i> Movies</h2>
+  <h2 id="movieCategoryTitle"><i style="color: darkgray" class="fa-solid fa-film"></i> Movies</h2>
   <div class="carousel">
     <button class="arrow left" data-target="movieResults">‹</button>
     <div id="movieResults" class="row"></div>
@@ -641,14 +641,31 @@ function showCopyModal(text){
   setTimeout(()=>copyModal.classList.remove("show"),1500);
 }
 
+// ======================
 // Debounced search
+// ======================
 let timeout;
 const searchInput = document.getElementById("searchInput");
 searchInput.addEventListener("keydown", e => { if(e.key==="Enter") searchAll(); });
 searchInput.addEventListener("input", () => { clearTimeout(timeout); timeout = setTimeout(searchAll, 600); });
 
-// Load top content
+// ======================
+// Category Titles Helper
+// ======================
+function setCategoryTitles(isHome){
+  document.querySelector("#movieCategory h2").innerHTML =
+    `<i style="color: darkgray" class="fa-solid fa-film"></i> ${isHome ? "Popular Movies" : "Movies"}`;
+  document.querySelector("#tvCategory h2").innerHTML =
+    `<i style="color: darkgray" class="fa-solid fa-clapperboard"></i> ${isHome ? "Popular TV Shows" : "TV Shows"}`;
+  document.querySelector("#animeCategory h2").innerHTML =
+    `<i style="color: darkgray" class="fa-solid fa-tv"></i> ${isHome ? "Popular Anime" : "Anime"}`;
+}
+
+// ======================
+// Load top content (Home)
+// ======================
 async function loadHome(){
+  setCategoryTitles(true); // Home: Popular titles
   showLoading();
   try{
     const [m,t,a] = await Promise.all([
@@ -693,10 +710,18 @@ async function loadHome(){
   hideLoading();
 }
 
+// ======================
 // Search
+// ======================
 async function searchAll(){
   const query = searchInput.value.trim();
-  if(!query){ document.getElementById("stats").innerHTML = ""; loadHome(); return; }
+  if(!query){ 
+    document.getElementById("stats").innerHTML = ""; 
+    loadHome(); 
+    return; 
+  }
+
+  setCategoryTitles(false); // Search results: remove "Popular"
 
   showLoading();
   try{
@@ -735,6 +760,7 @@ async function searchAll(){
   }catch(e){ console.error(e); }
   hideLoading();
 }
+
 
 // Render
 function render(catId,rowId,data){
