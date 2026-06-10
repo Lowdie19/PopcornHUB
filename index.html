@@ -282,18 +282,25 @@ button:hover { background: #ff1e2d; }
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,0.85);
+  z-index: 1;
 }
 
 /* MODAL BOX */
 .videoModalContent {
   position: relative;
-  width: 92%;
-  max-width: 1000px;
-  margin: 3% auto;
+
+  width: min(1000px, calc(100vw - 20px));
+  height: min(900px, calc(100dvh - 20px));
+
+  margin: 10px auto;
+
+  display: flex;
+  flex-direction: column;
+
   background: #111;
   border-radius: 14px;
   overflow: hidden;
-  animation: modalPop 0.2s ease;
+  z-index: 2
 }
 
 @keyframes modalPop {
@@ -306,41 +313,50 @@ button:hover { background: #ff1e2d; }
   position: absolute;
   top: 10px;
   right: 10px;
-  z-index: 10;
   background: none;
   color: rgba(255, 255, 255, 0.51);
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+  z-index: 9999;
 }
 .closeBtn:hover {
   color: rgb(255, 255, 255);
   background: none;
   text-shadow: 0 2px 8px rgba(0,0,0,0.9);
 }
+.closeBtn.flash-red {
+  color: red;
+  text-shadow: 0 2px 8px rgba(255, 0, 0, 0.5);
+}
 
 /* VIDEO RESPONSIVE CONTAINER */
 .videoContainer {
+  flex: 1.2;
   position: relative;
-  padding-bottom: 56.25%; /* 16:9 ratio */
-  height: 0;
-  background: #000;
+  min-height: 200px;
 }
 
 .videoContainer iframe {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   border: none;
+  z-index: 1 !important;
 }
 
 /* INFO AREA */
 .videoMeta {
-  padding: 15px 18px;
-  color: #fff;
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
 }
 
 .videoMeta h2 {
@@ -391,6 +407,134 @@ button:hover { background: #ff1e2d; }
 
 .statLink:hover{
   color:#e50914;
+}
+
+
+/* =========================
+   MOBILE HORIZONTAL MODAL
+========================= */
+@media (max-width: 768px) {
+
+  .arrow {
+    display: none;
+  }
+
+  .videoModalContent {
+    display: flex;
+  }
+
+  /* VIDEO SIDE */
+  .videoContainer {
+    flex: 1.3;
+    height: 100%;
+    position: relative;
+  }
+
+  .videoContainer iframe {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+  }
+
+  /* RIGHT PANEL */
+  .videoMeta {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    overflow-y: auto;
+    background: #111;
+    gap: 10px;
+  }
+
+  /* TITLE + DESCRIPTION */
+  #modalTitle {
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  #modalOverview {
+    font-size: 13px;
+    color: #aaa;
+  }
+
+  /* EPISODE CONTROLS FIX */
+  #episodeControls {
+    display: flex !important;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+  }
+
+  #episodeControls select {
+    width: 100%;
+    font-size: 14px;
+  }
+
+  .hero {
+    padding: 20px 20px 0px 20px;
+  }
+  .hero h1 {
+    font-size: 30px;
+  }
+  .category {
+    transform: scale(0.8);
+    transform-origin: top left;
+    width: 125vw;
+  }
+}
+
+@media (orientation: portrait) {
+  .videoModalContent {
+    height: 70vh;
+    flex-direction: column;
+  }
+
+  .videoContainer {
+    flex: none;
+    height: 40vh;
+  }
+
+  .videoMeta {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  #episodeControls {
+    margin-top: auto;
+  }
+  .closeBtn {
+    width: 40px;
+    height: 40px;
+    font-size: 20px; /* makes the ✕ bigger */
+    z-index: 9999 !important;
+  }
+}
+
+@media (orientation: landscape) {
+  .videoModalContent {
+    flex-direction: row;
+  }
+
+  .videoContainer {
+    flex: 2.3;
+    height: 100%;
+  }
+
+  .videoMeta {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  #episodeControls {
+    margin-top: auto;
+  }
+  .closeBtn {
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
+  }
 }
 </style>
 </head>
@@ -603,7 +747,22 @@ function render(catId,rowId,data){
 
 // Modals
 function copyId(){ if(!currentItem) return; navigator.clipboard.writeText(String(currentItem.id)); showCopyModal(`${currentItem.title} | ID: ${currentItem.id}`); }
-function closeModal(){ document.getElementById("detailModal").classList.remove("show"); document.getElementById("videoContainer").innerHTML=""; currentItem=null; }
+function closeModal() {
+  const closeBtn = document.querySelector(".closeBtn");
+  
+  // Flash red first
+  closeBtn.classList.add("flash-red");
+
+  // Wait for the transition to finish before closing
+  setTimeout(() => {
+    document.getElementById("detailModal").classList.remove("show");
+    document.getElementById("videoContainer").innerHTML = "";
+    currentItem = null;
+
+    // Reset the button color
+    closeBtn.classList.remove("flash-red");
+  }, 300); // match the CSS transition duration
+}
 function openModal(item){
   currentItem = item;
   document.getElementById("modalTitle").textContent = item.title;
@@ -723,44 +882,191 @@ function scrollToCategory(id){ document.getElementById(id).scrollIntoView({ beha
 // Home button
 function goHome(){ searchInput.value=""; document.getElementById("stats").innerHTML=""; window.scrollTo({ top:0, behavior:"smooth" }); loadHome(); }
 
-// Horizontal drag + arrow scroll
-document.querySelectorAll(".row").forEach(row=>{
-  const scrollAmount=600;
-  const bounce=()=>{ row.classList.remove("bounce"); void row.offsetWidth; row.classList.add("bounce"); };
+// ================================
+// HORIZONTAL SCROLL + ARROWS + BOUNCE
+// ================================
 
-  // Desktop drag
-  let mouseDown=false, mouseStartX=0, mouseScrollStart=0;
-  row.addEventListener("mousedown", e=>{ mouseDown=true; mouseStartX=e.pageX; mouseScrollStart=row.scrollLeft; row.style.cursor="grabbing"; });
-  window.addEventListener("mouseup", ()=>{ mouseDown=false; row.style.cursor="grab"; });
-  row.addEventListener("mousemove", e=>{ if(!mouseDown) return; e.preventDefault(); const walk=e.pageX-mouseStartX; let next=row.scrollLeft-walk; if(next<0){ row.scrollLeft=0; bounce(); return;} if(next>row.scrollWidth-row.clientWidth){ row.scrollLeft=row.scrollWidth-row.clientWidth; bounce(); return;} row.scrollLeft=next; });
+function setupRowScrolling() {
+  const scrollAmount = 600;
+  const rows = document.querySelectorAll(".row");
 
-  // Touch drag
-  let isDown=false, startX=0, startY=0, scrollLeftStart=0, isDraggingHorizontally=false;
-  row.addEventListener("touchstart", e=>{ isDown=true; isDraggingHorizontally=false; startX=e.touches[0].pageX; startY=e.touches[0].pageY; scrollLeftStart=row.scrollLeft; });
-  row.addEventListener("touchmove", e=>{
-    if(!isDown) return;
-    const x=e.touches[0].pageX, y=e.touches[0].pageY;
-    const deltaX=Math.abs(x-startX), deltaY=Math.abs(y-startY);
-    if(!isDraggingHorizontally){ if(deltaY>deltaX) return; if(deltaX>25 && deltaX>deltaY*1.5) isDraggingHorizontally=true; }
-    if(!isDraggingHorizontally) return;
-    e.preventDefault();
-    const walk=x-startX;
-    let next=scrollLeftStart-walk;
-    if(next<0){ row.scrollLeft=0; bounce(); } else if(next>row.scrollWidth-row.clientWidth){ row.scrollLeft=row.scrollWidth-row.clientWidth; bounce(); } else row.scrollLeft=next;
-  }, { passive:false });
-  row.addEventListener("touchend", ()=>{ isDown=false; });
+  rows.forEach(row => {
 
-  // Arrow scroll
-  document.querySelectorAll(".arrow").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const target=document.getElementById(btn.dataset.target);
-      const scrollByAmount=btn.classList.contains("left")?-scrollAmount:scrollAmount;
-      let newScroll=target.scrollLeft+scrollByAmount;
-      if(newScroll<0 || newScroll>target.scrollWidth-target.clientWidth){ target.classList.remove("bounce"); void target.offsetWidth; target.classList.add("bounce"); } 
-      else target.scrollBy({ left:scrollByAmount, behavior:"smooth" });
+    // =========================
+    // ROW STATE (IMPORTANT FIX)
+    // =========================
+    row._isMouseDown = false;
+    row._isTouchDown = false;
+    row._isDraggingHorizontally = false;
+
+    // =========================
+    // BOUNCE
+    // =========================
+    const bounce = () => {
+      row.classList.remove("bounce");
+      void row.offsetWidth;
+      row.classList.add("bounce");
+    };
+
+    const maxScroll = () => row.scrollWidth - row.clientWidth;
+
+    // =========================
+    // DESKTOP DRAG
+    // =========================
+    row.addEventListener("mousedown", e => {
+      row._isMouseDown = true;
+      row._startX = e.pageX;
+      row._scrollStart = row.scrollLeft;
+      row.style.cursor = "grabbing";
+    });
+
+    window.addEventListener("mouseup", () => {
+      row._isMouseDown = false;
+      row.style.cursor = "grab";
+    });
+
+    row.addEventListener("mousemove", e => {
+      if (!row._isMouseDown) return;
+
+      e.preventDefault();
+
+      const walk = e.pageX - row._startX;
+      let next = row._scrollStart - walk;
+
+      if (next < 0) {
+        row.scrollLeft = 0;
+        bounce();
+        return;
+      }
+
+      if (next > maxScroll()) {
+        row.scrollLeft = maxScroll();
+        bounce();
+        return;
+      }
+
+      row.scrollLeft = next;
+    });
+
+    // =========================
+    // TOUCH DRAG
+    // =========================
+    row.addEventListener("touchstart", e => {
+      row._isTouchDown = true;
+      row._isDraggingHorizontally = false;
+
+      row._touchStartX = e.touches[0].pageX;
+      row._touchStartY = e.touches[0].pageY;
+      row._touchScrollStart = row.scrollLeft;
+    });
+
+    row.addEventListener("touchmove", e => {
+      if (!row._isTouchDown) return;
+
+      const x = e.touches[0].pageX;
+      const y = e.touches[0].pageY;
+
+      const deltaX = Math.abs(x - row._touchStartX);
+      const deltaY = Math.abs(y - row._touchStartY);
+
+      // decide scroll direction
+      if (!row._isDraggingHorizontally) {
+        if (deltaY > deltaX) return;
+        if (deltaX > 25 && deltaX > deltaY * 1.5) {
+          row._isDraggingHorizontally = true;
+        }
+      }
+
+      if (!row._isDraggingHorizontally) return;
+
+      e.preventDefault();
+
+      let next = row._touchScrollStart - (x - row._touchStartX);
+
+      if (next < 0) {
+        row.scrollLeft = 0;
+        bounce();
+        return;
+      }
+
+      if (next > maxScroll()) {
+        row.scrollLeft = maxScroll();
+        bounce();
+        return;
+      }
+
+      row.scrollLeft = next;
+    }, { passive: false });
+
+    row.addEventListener("touchend", () => {
+      row._isTouchDown = false;
+    });
+
+  });
+
+  // =========================
+  // ARROW BUTTONS (FIXED)
+  // =========================
+  document.querySelectorAll(".arrow").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const target = document.getElementById(btn.dataset.target);
+      const scrollByAmount = btn.classList.contains("left")
+        ? -scrollAmount
+        : scrollAmount;
+
+      const maxScroll = target.scrollWidth - target.clientWidth;
+      const newScroll = target.scrollLeft + scrollByAmount;
+
+      if (newScroll < 0) {
+        target.scrollLeft = 0;
+        bounceTarget(target);
+        resetRowState(target);
+        return;
+      }
+
+      if (newScroll > maxScroll) {
+        target.scrollLeft = maxScroll;
+        bounceTarget(target);
+        resetRowState(target);
+        return;
+      }
+
+      target.scrollBy({ left: scrollByAmount, behavior: "smooth" });
+
+      resetRowState(target);
     });
   });
-});
+
+  function resetRowState(row) {
+    row._isMouseDown = false;
+    row._isTouchDown = false;
+    row._isDraggingHorizontally = false;
+  }
+
+  function bounceTarget(row) {
+    // Prevent drag interference
+    row._isMouseDown = false;
+    row._isTouchDown = false;
+    row._isDraggingHorizontally = false;
+
+    // Trigger bounce
+    row.classList.remove("bounce");
+    void row.offsetWidth;
+    row.classList.add("bounce");
+
+    // After animation ends, ensure scroll and flags are correct
+    row.addEventListener("animationend", function handler() {
+      row.classList.remove("bounce");
+      row._isMouseDown = false;
+      row._isTouchDown = false;
+      row._isDraggingHorizontally = false;
+      row.removeEventListener("animationend", handler);
+    });
+  }
+}
+
+// INIT
+setupRowScrolling();
 
 // Initial load
 loadHome();
