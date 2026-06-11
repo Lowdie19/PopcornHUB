@@ -376,31 +376,132 @@ button:hover {
   color: #aaa;
 }
 
+  
+/* --- Netflix-Style Season & Episode UI --- */
+#episodeControls {
+    display: none;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+}
+
+/* Season Pill Selector */
+.seasonRow {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 15px;
+    scrollbar-width: none;
+}
+.seasonRow::-webkit-scrollbar { display: none; }
+
+.seasonPill {
+    padding: 8px 16px;
+    border-radius: 4px;
+    background: #222;
+    color: #fff;
+    cursor: pointer;
+    font-weight: bold;
+    border: 1px solid #444;
+    white-space: nowrap;
+    transition: 0.3s;
+}
+.seasonPill.active {
+    background: #bbf523;
+    color: #000;
+    border-color: #bbf523;
+}
+
+/* Episode Grid */
+.episodeGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.episodeItem {
+    background: #181818;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.episodeItem:hover { background: #2f2f2f; }
+.episodeItem img {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+}
+.epMeta { padding: 10px; }
+.epMeta div { font-size: 0.9rem; font-weight: bold; }
+.epMeta p { font-size: 0.75rem; color: #888; margin-top: 4px; }
 
 #episodeControls select,
 .episodeSelect {
   padding: 8px;
   border-radius: 8px;
-  background: #506b07;
+  background: #d3d3d3;  /* green like your buttons */
   color: #fff;
   text-align: center;
   border: none;
   outline: none;
   cursor: pointer;
+  transition: 0.25s;
 }
 
-/* optional hover */
 #episodeControls select:hover,
 .episodeSelect:hover {
+  background: #bbf523;  /* hover bright green */
+  color: #111;
+}
+.episodeSelect option:checked {
   background: #bbf523;
   color: #111;
 }
 
-#episodeControls{
-  display: none;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+.episodeSearch {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: #222;
+  color: #fff;
+  width: 100%;
+}
+
+.episodeItem {
+  padding: 8px;
+  text-align: center;
+  border-radius: 6px;
+  background: #000000;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  transition: background 0.3s, color 0.3s, outline 0.3s;
+}
+
+.episodeItem:hover {
+  background: #222;
+  color: white;
+  outline: 2px solid #bbf523;
+  outline-offset: 2px;
+}
+
+.episodeItem.active {
+  background: #222;
+  color: white;
+}
+
+.episodeItem.played {
+  filter: brightness(0.5);
+}
+
+.episodeItem.active {
+  outline: 2px solid #bbf523; /* current episode */
 }
 
 
@@ -492,6 +593,42 @@ button:hover {
     transform-origin: top left;
     width: 125vw;
   }
+
+
+  .episodeGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .episodeItem {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+  }
+
+  .episodeItem img {
+    width: 90px;
+    height: 50px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .epMeta {
+    padding: 0;
+    text-align: left;
+  }
+
+  .epMeta div {
+    font-size: 12px;
+  }
+
+  .epMeta p {
+    font-size: 10px;
+  }
 }
 
 @media (orientation: portrait) {
@@ -577,7 +714,7 @@ button:hover {
       <p id="modalOverview" style="color:#aaa; line-height:1.4;"></p>
 
       <!-- ONLY FOR TV / ANIME -->
-      <div id="episodeControls" style="margin-top:15px;"></div>
+      <div id="episodeControls" class="episodeGridContainer"></div>
     </div>
 
   </div>
@@ -599,7 +736,7 @@ button:hover {
 <div id="stats"></div>
 
 <div id="loading">
-  <div>Searching...</div>
+  <div>loading...</div>
   <div id="bar"><div id="barFill"></div></div>
 </div>
 
@@ -743,27 +880,17 @@ async function searchAll(){
     const ad = await a.json();
 
     const movies = (md.results||[]).map(i=>({
-      type:"movie",
-      id:i.id,
-      title:i.title,
-      poster:i.poster_path
-        ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-        : "",
+      type:"movie", id:i.id, title:i.title,
+      poster:i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}` : "",
       videasyUrl:`https://player.videasy.net/movie/${i.id}`
     }));
     const tv = (td.results||[]).map(i=>({
-      type:"tv",
-      id:i.id,
-      title:i.name,
-      poster:i.poster_path
-        ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-        : "",
+      type:"tv", id:i.id, title:i.name,
+      poster:i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}` : "",
       videasyUrl:`https://player.videasy.net/tv/${i.id}/1/1`
     }));
     const anime = (ad?.data?.Page?.media||[]).map(i=>({
-      type:"anime",
-      id:i.id,
-      title:i.title.romaji,
+      type:"anime", id:i.id, title:i.title.romaji,
       poster:i.coverImage.large,
       videasyUrl:`https://player.videasy.net/anime/${i.id}/1`
     }));
@@ -782,7 +909,6 @@ async function searchAll(){
   }catch(e){ console.error(e); }
   hideLoading();
 }
-
 
 // Render
 function render(catId,rowId,data){
@@ -805,20 +931,15 @@ function render(catId,rowId,data){
 // Modals
 function closeModal() {
   const closeBtn = document.querySelector(".closeBtn");
-  
-  // Flash red first
   closeBtn.classList.add("flash-red");
-
-  // Wait for the transition to finish before closing
   setTimeout(() => {
     document.getElementById("detailModal").classList.remove("show");
     document.getElementById("videoContainer").innerHTML = "";
     currentItem = null;
-
-    // Reset the button color
     closeBtn.classList.remove("flash-red");
-  }, 300); // match the CSS transition duration
+  }, 300);
 }
+
 function openModal(item){
   currentItem = item;
   document.getElementById("modalTitle").textContent = item.title;
@@ -833,51 +954,29 @@ function openModal(item){
   loadDetails(item);
 }
 
-
 async function loadDetails(item){
   const overviewEl = document.getElementById("modalOverview");
   const box = document.getElementById("episodeControls");
-
   box.innerHTML = "";
 
   try {
-
     if(item.type === "movie"){
       box.style.display = "none";
-
-      const res = await fetch(
-        `https://api.themoviedb.org/3/movie/${item.id}?api_key=${TMDB_API_KEY}`
-      );
+      const res = await fetch(`https://api.themoviedb.org/3/movie/${item.id}?api_key=${TMDB_API_KEY}`);
       const data = await res.json();
-
       overviewEl.textContent = data.overview || "No description available.";
-      return;
-    }
-
-    if(item.type === "tv"){
-      box.style.display = "block";   // 🔥 RESTORE THIS
-
-      const res = await fetch(
-        `https://api.themoviedb.org/3/tv/${item.id}?api_key=${TMDB_API_KEY}`
-      );
+    } else {
+      box.style.display = "block";
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${item.id}?api_key=${TMDB_API_KEY}`);
       const data = await res.json();
-
       overviewEl.textContent = data.overview || "No description available.";
       renderTVControls(item.id);
-      return;
     }
-
-    box.style.display = "block"; // 🔥 RESTORE THIS
-    overviewEl.textContent = "Anime details loading...";
-    renderAnimeControls(item.id);
-
   } catch (e){
     console.error(e);
     overviewEl.textContent = "No description available.";
   }
 }
-
-
 
 // Update video
 function updateVideo(url){
@@ -890,74 +989,75 @@ function updateVideo(url){
   container.appendChild(iframe);
 }
 
-// Render TV/Anime Controls
-async function renderTVControls(tvId){
-  const box=document.getElementById("episodeControls");
-  box.innerHTML="Loading seasons...";
-  try{
+async function renderTVControls(tvId) {
+    const box = document.getElementById("episodeControls");
+    box.style.display = "block";
+    box.innerHTML = "Loading...";
+
     const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}`);
     const data = await res.json();
-    box.innerHTML="";
-    const controlsRow=document.createElement("div");
-    controlsRow.style.display="flex"; controlsRow.style.alignItems="center"; controlsRow.style.gap="10px"; controlsRow.style.flexWrap="wrap";
+    box.innerHTML = "";
 
-    const seasonSelect=document.createElement("select");
-    data.seasons.forEach(season=>{ if(season.season_number===0) return; const opt=document.createElement("option"); opt.value=season.season_number; opt.textContent=`Season ${season.season_number}`; seasonSelect.appendChild(opt); });
-    const episodeSelect=document.createElement("select");
+    const seasonRow = document.createElement("div");
+    seasonRow.className = "seasonRow";
+    const grid = document.createElement("div");
+    grid.className = "episodeGrid";
 
-    async function loadEpisodes(seasonNumber){
-      episodeSelect.innerHTML="";
-      const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${TMDB_API_KEY}`);
-      const seasonData = await res.json();
-      seasonData.episodes.forEach(ep=>{ const opt=document.createElement("option"); opt.value=ep.episode_number; opt.textContent=`Episode ${ep.episode_number}`; episodeSelect.appendChild(opt); });
-      updateVideo(`https://player.videasy.net/tv/${tvId}/${seasonNumber}/${episodeSelect.value}`);
+    data.seasons.forEach(season => {
+        if (season.season_number === 0) return;
+        const pill = document.createElement("button");
+        pill.className = "seasonPill";
+        pill.textContent = `Season ${season.season_number}`;
+        pill.onclick = () => {
+            document.querySelectorAll(".seasonPill").forEach(p => p.classList.remove("active"));
+            pill.classList.add("active");
+            loadEpisodes(season.season_number);
+        };
+        seasonRow.appendChild(pill);
+    });
+
+    box.appendChild(seasonRow);
+    box.appendChild(grid);
+
+    async function loadEpisodes(sNum) {
+        grid.innerHTML = "Loading episodes...";
+        const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${sNum}?api_key=${TMDB_API_KEY}`);
+        const sData = await res.json();
+        grid.innerHTML = "";
+
+        sData.episodes.forEach(ep => {
+            const card = document.createElement("div");
+            card.className = "episodeItem";
+            card.innerHTML = `
+                <img src="${ep.still_path ? 'https://image.tmdb.org/t/p/w500'+ep.still_path : 'https://via.placeholder.com/500x281'}">
+                <div class="epMeta">
+                    <div>${ep.episode_number}. ${ep.name}</div>
+                    <p>${ep.overview ? ep.overview.substring(0, 60)+'...' : 'No description'}</p>
+                </div>
+            `;
+            card.onclick = () => updateVideo(`https://player.videasy.net/tv/${tvId}/${sNum}/${ep.episode_number}`);
+            grid.appendChild(card);
+        });
     }
-
-    seasonSelect.onchange = ()=>loadEpisodes(seasonSelect.value);
-    episodeSelect.onchange = ()=>updateVideo(`https://player.videasy.net/tv/${tvId}/${seasonSelect.value}/${episodeSelect.value}`);
-    controlsRow.appendChild(seasonSelect); controlsRow.appendChild(episodeSelect); box.appendChild(controlsRow);
-    loadEpisodes(1);
-
-  }catch(e){ console.error(e); box.innerHTML="Failed to load seasons"; }
+    if (seasonRow.firstChild) seasonRow.firstChild.click();
 }
 
-function renderAnimeControls(animeId){
-  const box=document.getElementById("episodeControls");
-  box.innerHTML="";
-  const epSelect=document.createElement("select");
-  epSelect.className = "episodeSelect";
-  const MAX_EP=100;
-  for(let i=1;i<=MAX_EP;i++){ const opt=document.createElement("option"); opt.value=i; opt.textContent=`Episode ${i}`; epSelect.appendChild(opt);}
-  epSelect.onchange=()=>updateVideo(`https://player.videasy.net/anime/${animeId}/${epSelect.value}`);
-  box.appendChild(epSelect);
-}
-
-// Scroll to category
 function scrollToCategory(id){ document.getElementById(id).scrollIntoView({ behavior:"smooth", block:"start" }); }
 
-// Home button
 function goHome(){ searchInput.value=""; document.getElementById("stats").innerHTML=""; window.scrollTo({ top:0, behavior:"smooth" }); loadHome(); }
 
 // ================================
 // HORIZONTAL SCROLL + ARROWS + BOUNCE
 // ================================
-
 function setupRowScrolling() {
   const scrollAmount = 600;
   const rows = document.querySelectorAll(".row");
 
   rows.forEach(row => {
-
-    // =========================
-    // ROW STATE (IMPORTANT FIX)
-    // =========================
     row._isMouseDown = false;
     row._isTouchDown = false;
     row._isDraggingHorizontally = false;
 
-    // =========================
-    // BOUNCE
-    // =========================
     const bounce = () => {
       row.classList.remove("bounce");
       void row.offsetWidth;
@@ -966,9 +1066,6 @@ function setupRowScrolling() {
 
     const maxScroll = () => row.scrollWidth - row.clientWidth;
 
-    // =========================
-    // DESKTOP DRAG
-    // =========================
     row.addEventListener("mousedown", e => {
       row._isMouseDown = true;
       row._startX = e.pageX;
@@ -983,34 +1080,17 @@ function setupRowScrolling() {
 
     row.addEventListener("mousemove", e => {
       if (!row._isMouseDown) return;
-
       e.preventDefault();
-
       const walk = e.pageX - row._startX;
       let next = row._scrollStart - walk;
-
-      if (next < 0) {
-        row.scrollLeft = 0;
-        bounce();
-        return;
-      }
-
-      if (next > maxScroll()) {
-        row.scrollLeft = maxScroll();
-        bounce();
-        return;
-      }
-
+      if (next < 0) { row.scrollLeft = 0; bounce(); return; }
+      if (next > maxScroll()) { row.scrollLeft = maxScroll(); bounce(); return; }
       row.scrollLeft = next;
     });
 
-    // =========================
-    // TOUCH DRAG
-    // =========================
     row.addEventListener("touchstart", e => {
       row._isTouchDown = true;
       row._isDraggingHorizontally = false;
-
       row._touchStartX = e.touches[0].pageX;
       row._touchStartY = e.touches[0].pageY;
       row._touchScrollStart = row.scrollLeft;
@@ -1018,77 +1098,35 @@ function setupRowScrolling() {
 
     row.addEventListener("touchmove", e => {
       if (!row._isTouchDown) return;
-
       const x = e.touches[0].pageX;
       const y = e.touches[0].pageY;
-
       const deltaX = Math.abs(x - row._touchStartX);
       const deltaY = Math.abs(y - row._touchStartY);
-
-      // decide scroll direction
       if (!row._isDraggingHorizontally) {
         if (deltaY > deltaX) return;
-        if (deltaX > 25 && deltaX > deltaY * 1.5) {
-          row._isDraggingHorizontally = true;
-        }
+        if (deltaX > 25 && deltaX > deltaY * 1.5) { row._isDraggingHorizontally = true; }
       }
-
       if (!row._isDraggingHorizontally) return;
-
       e.preventDefault();
-
       let next = row._touchScrollStart - (x - row._touchStartX);
-
-      if (next < 0) {
-        row.scrollLeft = 0;
-        bounce();
-        return;
-      }
-
-      if (next > maxScroll()) {
-        row.scrollLeft = maxScroll();
-        bounce();
-        return;
-      }
-
+      if (next < 0) { row.scrollLeft = 0; bounce(); return; }
+      if (next > maxScroll()) { row.scrollLeft = maxScroll(); bounce(); return; }
       row.scrollLeft = next;
     }, { passive: false });
 
-    row.addEventListener("touchend", () => {
-      row._isTouchDown = false;
-    });
-
+    row.addEventListener("touchend", () => { row._isTouchDown = false; });
   });
 
-  // =========================
-  // ARROW BUTTONS (FIXED)
-  // =========================
   document.querySelectorAll(".arrow").forEach(btn => {
     btn.addEventListener("click", () => {
       const target = document.getElementById(btn.dataset.target);
-      const scrollByAmount = btn.classList.contains("left")
-        ? -scrollAmount
-        : scrollAmount;
-
+      const scrollByAmount = btn.classList.contains("left") ? -scrollAmount : scrollAmount;
       const maxScroll = target.scrollWidth - target.clientWidth;
       const newScroll = target.scrollLeft + scrollByAmount;
 
-      if (newScroll < 0) {
-        target.scrollLeft = 0;
-        bounceTarget(target);
-        resetRowState(target);
-        return;
-      }
-
-      if (newScroll > maxScroll) {
-        target.scrollLeft = maxScroll;
-        bounceTarget(target);
-        resetRowState(target);
-        return;
-      }
-
+      if (newScroll < 0) { target.scrollLeft = 0; bounceTarget(target); resetRowState(target); return; }
+      if (newScroll > maxScroll) { target.scrollLeft = maxScroll; bounceTarget(target); resetRowState(target); return; }
       target.scrollBy({ left: scrollByAmount, behavior: "smooth" });
-
       resetRowState(target);
     });
   });
@@ -1100,31 +1138,20 @@ function setupRowScrolling() {
   }
 
   function bounceTarget(row) {
-    // Prevent drag interference
     row._isMouseDown = false;
     row._isTouchDown = false;
     row._isDraggingHorizontally = false;
-
-    // Trigger bounce
     row.classList.remove("bounce");
     void row.offsetWidth;
     row.classList.add("bounce");
-
-    // After animation ends, ensure scroll and flags are correct
     row.addEventListener("animationend", function handler() {
       row.classList.remove("bounce");
-      row._isMouseDown = false;
-      row._isTouchDown = false;
-      row._isDraggingHorizontally = false;
       row.removeEventListener("animationend", handler);
     });
   }
 }
 
-// INIT
 setupRowScrolling();
-
-// Initial load
 loadHome();
 </script>
 
