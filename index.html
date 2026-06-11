@@ -1003,6 +1003,8 @@ async function renderTVControls(tvId) {
     const grid = document.createElement("div");
     grid.className = "episodeGrid";
 
+    let activeEpisode = null; // Track selected episode
+
     data.seasons.forEach(season => {
         if (season.season_number === 0) return;
         const pill = document.createElement("button");
@@ -1035,10 +1037,23 @@ async function renderTVControls(tvId) {
                     <p>${ep.overview ? ep.overview.substring(0, 60)+'...' : 'No description'}</p>
                 </div>
             `;
-            card.onclick = () => updateVideo(`https://player.videasy.net/tv/${tvId}/${sNum}/${ep.episode_number}`);
+
+            card.onclick = () => {
+                // Remove active class from previously selected
+                if (activeEpisode) activeEpisode.classList.remove("active");
+                // Mark this episode as active
+                card.classList.add("active");
+                activeEpisode = card;
+
+                // Update video player
+                updateVideo(`https://player.videasy.net/tv/${tvId}/${sNum}/${ep.episode_number}`);
+            };
+
             grid.appendChild(card);
         });
     }
+
+    // Automatically click first season pill
     if (seasonRow.firstChild) seasonRow.firstChild.click();
 }
 
