@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FREE FLICKS</title>
+<title>Popcorn HUB</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
@@ -17,17 +17,38 @@ body {
 /* HERO */
 .hero {
   text-align: center;
-  padding: 60px 20px;
-  background: linear-gradient(rgba(0,0,0,0.7), rgba(20,20,20,1));
+  padding: 40px 20px 10px;
 }
-.hero h1 {
-  margin-bottom: 10px;
-  font-size: 48px;
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  cursor: pointer;
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  user-select: none;
 }
-.red { color: #e50914; }
+
+.logo .popcorn {
+  color: #ffffff;
+}
+
+.logo .hub {
+  background: #bbf523;
+  color: #111;
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-size: 0.8em;
+  line-height: 1.1;
+}
+
 .hero p {
-  color: #ccc;
-  font-size: 18px;
+  margin-top: 10px;
+  color: #aaa;
+  font-size: 1rem;
 }
 
 /* SEARCH */
@@ -63,13 +84,17 @@ button {
   padding: 12px 25px;
   border: none;
   border-radius: 30px;
-  background: #e50914;
-  color: #fff;
+  background: #506b07;
+  color: white;
+  font-weight: 100;
   font-weight: bold;
   cursor: pointer;
   transition: 0.25s;
 }
-button:hover { background: #ff1e2d; }
+button:hover {
+  color: black;
+  background: #bbf523;
+}
 
 /* STATS */
 #stats {
@@ -86,7 +111,7 @@ button:hover { background: #ff1e2d; }
 .category h2 {
   margin-bottom: 15px;
   font-size: 22px;
-  border-left: 5px solid #e50914;
+  border-left: 5px solid #bbf523;
   padding-left: 10px;
 }
 
@@ -179,33 +204,13 @@ button:hover { background: #ff1e2d; }
 }
 #barFill {
   height: 100%;
-  background: #e50914;
+  background: #bbf523;
   animation: load 1.5s infinite;
 }
 @keyframes load {
   0% { width: 0%; }
   50% { width: 70%; }
   100% { width: 100%; }
-}
-
-/* COPY MODAL */
-#copyModal {
-  position: fixed;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%) scale(0.8);
-  background: #000;
-  border: 1px solid #e50914;
-  padding: 12px 18px;
-  border-radius: 10px;
-  opacity: 0;
-  pointer-events: none;
-  transition: 0.25s;
-  z-index: 100;
-}
-#copyModal.show {
-  opacity: 1;
-  transform: translateX(-50%) scale(1);
 }
 
 .carousel {
@@ -220,8 +225,8 @@ button:hover { background: #ff1e2d; }
   height: 100%;
   border: none;
   border-radius: 0;
-  background: transparent;
-  color: #fff;
+  background: none;
+  color: #ffffff;
   font-size: 58px;
   cursor: pointer;
   z-index: 10;
@@ -229,7 +234,6 @@ button:hover { background: #ff1e2d; }
   opacity: 0.4;
   transition: opacity 0.2s ease, transform 0.2s ease;
 
-  /* center the arrow text */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -239,6 +243,7 @@ button:hover { background: #ff1e2d; }
 }
 
 .arrow:hover {
+  color: white;
   background-color: transparent;
   opacity: 1;
   transform: translateY(-50%) scale(1.1);
@@ -371,27 +376,24 @@ button:hover { background: #ff1e2d; }
   color: #aaa;
 }
 
-.modalButtons button {
-  margin-top: 10px;
-  padding: 10px 16px;
-  border-radius: 20px;
-  border: none;
-  background: #e50914;
+
+#episodeControls select,
+.episodeSelect {
+  padding: 8px;
+  border-radius: 8px;
+  background: #506b07;
   color: #fff;
+  text-align: center;
+  border: none;
+  outline: none;
   cursor: pointer;
 }
 
-#episodeControls button:hover {
-  background: #e50914 !important;
-}
-
-#episodeControls select {
-  padding: 8px;
-  border-radius: 8px;
-  background: #222;
-  color: #fff;
-  border: none;
-  margin-bottom: 10px;
+/* optional hover */
+#episodeControls select:hover,
+.episodeSelect:hover {
+  background: #bbf523;
+  color: #111;
 }
 
 #episodeControls{
@@ -408,7 +410,7 @@ button:hover { background: #ff1e2d; }
 }
 
 .statLink:hover{
-  color:#e50914;
+  color:#bbf523;
 }
 
 
@@ -416,8 +418,6 @@ button:hover { background: #ff1e2d; }
    MOBILE HORIZONTAL MODAL
 ========================= */
 @media (max-width: 768px) {
-
-
 
   .videoModalContent {
     width: calc(100vw - 20px);
@@ -475,11 +475,18 @@ button:hover { background: #ff1e2d; }
   }
 
   .hero {
-    padding: 20px 20px 0px 20px;
+    padding: 20px 15px 5px;
   }
-  .hero h1 {
-    font-size: 30px;
+
+  .logo {
+    font-size: 2rem;
+    gap: 6px;
   }
+
+  .hero p {
+    font-size: 0.85rem;
+  }
+  
   .category {
     transform: scale(0.8);
     transform-origin: top left;
@@ -577,8 +584,10 @@ button:hover { background: #ff1e2d; }
 </div>
 
 <header class="hero">
-  <h1 onclick="goHome()" style="cursor:pointer;">
-  <span class="red">FREE</span> FLICKS</h1>
+  <h1 onclick="goHome()" class="logo">
+    <span class="popcorn">Popcorn</span>
+    <span class="hub">HUB</span>
+  </h1>
   <p>Watch Movies, TV Shows & Anime for Free</p>
 </header>
 
@@ -622,24 +631,15 @@ button:hover { background: #ff1e2d; }
   </div>
 </div>
 
-<div id="copyModal">Copied: <span id="copyText"></span></div>
-
 <script>
 let currentItem = null;
 const TMDB_API_KEY = "7124d4e6e0feb015f07fc9a57bc27227";
 
 const loading = document.getElementById("loading");
-const copyModal = document.getElementById("copyModal");
-const copyText = document.getElementById("copyText");
 
 // Loading / Copy Modal
 function showLoading(){ loading.style.display="flex"; }
 function hideLoading(){ loading.style.display="none"; }
-function showCopyModal(text){
-  copyText.textContent = text;
-  copyModal.classList.add("show");
-  setTimeout(()=>copyModal.classList.remove("show"),1500);
-}
 
 // ======================
 // Debounced search
@@ -803,7 +803,6 @@ function render(catId,rowId,data){
 }
 
 // Modals
-function copyId(){ if(!currentItem) return; navigator.clipboard.writeText(String(currentItem.id)); showCopyModal(`${currentItem.title} | ID: ${currentItem.id}`); }
 function closeModal() {
   const closeBtn = document.querySelector(".closeBtn");
   
@@ -926,7 +925,7 @@ function renderAnimeControls(animeId){
   const box=document.getElementById("episodeControls");
   box.innerHTML="";
   const epSelect=document.createElement("select");
-  epSelect.style.padding="8px"; epSelect.style.borderRadius="8px"; epSelect.style.background="#222"; epSelect.style.color="#fff"; epSelect.style.border="none";
+  epSelect.className = "episodeSelect";
   const MAX_EP=100;
   for(let i=1;i<=MAX_EP;i++){ const opt=document.createElement("option"); opt.value=i; opt.textContent=`Episode ${i}`; epSelect.appendChild(opt);}
   epSelect.onchange=()=>updateVideo(`https://player.videasy.net/anime/${animeId}/${epSelect.value}`);
