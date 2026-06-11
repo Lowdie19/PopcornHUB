@@ -767,6 +767,7 @@ button:hover {
 </div>
 
 <script>
+let currentEpisodeKey = null;
 let currentItem = null;
 const TMDB_API_KEY = "7124d4e6e0feb015f07fc9a57bc27227";
 
@@ -945,7 +946,7 @@ function openModal(item){
   container.innerHTML="";
   const iframe = document.createElement("iframe");
   iframe.allowFullscreen = true;
-  iframe.setAttribute("allow","encrypted-media");
+  iframe.setAttribute("allow", "autoplay; encrypted-media");
   iframe.src=item.videasyUrl;
   container.appendChild(iframe);
   document.getElementById("detailModal").classList.add("show");
@@ -977,15 +978,78 @@ async function loadDetails(item){
 }
 
 // Update video
-function updateVideo(url){
-  const container = document.getElementById("videoContainer");
-  container.innerHTML="";
-  const iframe = document.createElement("iframe");
-  iframe.allowFullscreen = true;
-  iframe.setAttribute("allow","encrypted-media");
-  iframe.src = url;
-  container.appendChild(iframe);
+function updateVideo(url, options = {}) {
+    const container = document.getElementById("videoContainer");
+    container.innerHTML = "";
+
+    const params = new URLSearchParams();
+
+    // core features
+    if (options.progress != null) params.set("progress", options.progress);
+    if (options.autoplayNextEpisode) params.set("autoplayNextEpisode", "true");
+    if (options.nextEpisode) params.set("nextEpisode", "true");
+    if (options.episodeSelector) params.set("episodeSelector", "true");
+    if (options.overlay) params.set("overlay", "true");
+    if (options.color) params.set("color", options.color);
+
+    const iframe = document.createElement("iframe");
+    iframe.id = "videoFrame";
+
+    iframe.allowFullscreen = true;
+    iframe.setAttribute("allow", "autoplay; encrypted-media");
+
+    iframe.src = url + (params.toString() ? "?" + params.toString() : "");
+
+    container.appendChild(iframe);
 }
+
+function setActiveEpisode(_, season, episode) {
+    document.querySelectorAll(".episodeItem")
+        .forEach(el => el.classList.remove("active"));
+
+    const target = document.querySelector(
+        `.episodeItem[data-season="${season}"][data-ep="${episode}"]`
+    );
+
+    if (target) {
+        target.classList.add("active");
+        target.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "center"
+        });
+    }
+}
+
+function saveProgress(contentId, progress) {
+    localStorage.setItem("progress_" + contentId, progress);
+}
+
+function getProgress(contentId) {
+    return localStorage.getItem("progress_" + contentId);
+}
+
+window.addEventListener("message", function (event) {
+    let data;
+
+    try {
+        data = typeof event.data === "string"
+            ? JSON.parse(event.data)
+            : event.data;
+    } catch {
+        return;
+    }
+
+    if (!data) return;
+
+    const season = data.season ?? data.season_number ?? data.s;
+    const episode = data.episode ?? data.episode_number ?? data.e;
+
+    if (!season || !episode) return;
+
+    // 🔥 IMPORTANT: use currentItem.id instead of iframe id
+    setActiveEpisode(currentItem?.id, season, episode);
+});
 
 async function renderTVControls(tvId) {
     const box = document.getElementById("episodeControls");
@@ -1033,6 +1097,9 @@ async function renderTVControls(tvId) {
             const card = document.createElement("div");
             card.className = "episodeItem";
 
+            card.dataset.ep = ep.episode_number;
+            card.dataset.season = sNum;
+
             card.innerHTML = `
                 <img src="${
                   ep.still_path
@@ -1051,18 +1118,25 @@ async function renderTVControls(tvId) {
 
             if (!firstCard) firstCard = card;
 
-            card.onclick = () => {
-                // remove old highlight
-                grid.querySelectorAll(".episodeItem.active")
-                    .forEach(el => el.classList.remove("active"));
+        card.onclick = () => {
 
-                // add highlight to selected episode
-                card.classList.add("active");
+            currentEpisodeKey = `${tvId}-${sNum}-${ep.episode_number}`;
+            setActiveEpisode(tvId, sNum, ep.episode_number);
 
-                updateVideo(
-                  `https://player.videasy.net/tv/${tvId}/${sNum}/${ep.episode_number}`
-                );
-            };
+            const savedProgress = getProgress(currentEpisodeKey) || 0;
+
+            updateVideo(
+                `https://player.videasy.net/tv/${tvId}/${sNum}/${ep.episode_number}`,
+                {
+                    autoplayNextEpisode: true,
+                    nextEpisode: true,
+                    episodeSelector: true,
+                    overlay: true,
+                    color: "#bbf523",
+                    progress: savedProgress
+                }
+            );
+        };
 
             grid.appendChild(card);
         });
