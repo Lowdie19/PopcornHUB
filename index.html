@@ -493,15 +493,13 @@ button:hover {
 
 .episodeItem.active {
   background: #222;
-  color: white;
+  outline: 2px solid #bbf523;
+  outline-offset: 2px;
+  box-shadow: 0 0 15px rgba(187,245,35,0.5);
 }
 
 .episodeItem.played {
   filter: brightness(0.5);
-}
-
-.episodeItem.active {
-  outline: 2px solid #bbf523; /* current episode */
 }
 
 
@@ -736,7 +734,7 @@ button:hover {
 <div id="stats"></div>
 
 <div id="loading">
-  <div>loading...</div>
+  <div>Loading...</div>
   <div id="bar"><div id="barFill"></div></div>
 </div>
 
@@ -1023,34 +1021,61 @@ async function renderTVControls(tvId) {
 
     async function loadEpisodes(sNum) {
         grid.innerHTML = "Loading episodes...";
-        const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${sNum}?api_key=${TMDB_API_KEY}`);
+        const res = await fetch(
+          `https://api.themoviedb.org/3/tv/${tvId}/season/${sNum}?api_key=${TMDB_API_KEY}`
+        );
         const sData = await res.json();
         grid.innerHTML = "";
+
+        let firstCard = null;
 
         sData.episodes.forEach(ep => {
             const card = document.createElement("div");
             card.className = "episodeItem";
+
             card.innerHTML = `
-                <img src="${ep.still_path ? 'https://image.tmdb.org/t/p/w500'+ep.still_path : 'https://via.placeholder.com/500x281'}">
+                <img src="${
+                  ep.still_path
+                    ? 'https://image.tmdb.org/t/p/w500' + ep.still_path
+                    : 'https://via.placeholder.com/500x281'
+                }">
                 <div class="epMeta">
                     <div>${ep.episode_number}. ${ep.name}</div>
-                    <p>${ep.overview ? ep.overview.substring(0, 60)+'...' : 'No description'}</p>
+                    <p>${
+                      ep.overview
+                        ? ep.overview.substring(0, 60) + '...'
+                        : 'No description'
+                    }</p>
                 </div>
             `;
 
-            card.onclick = () => {
-                // Remove active class from previously selected
-                if (activeEpisode) activeEpisode.classList.remove("active");
-                // Mark this episode as active
-                card.classList.add("active");
-                activeEpisode = card;
+            if (!firstCard) firstCard = card;
 
-                // Update video player
-                updateVideo(`https://player.videasy.net/tv/${tvId}/${sNum}/${ep.episode_number}`);
+            card.onclick = () => {
+                // remove old highlight
+                grid.querySelectorAll(".episodeItem.active")
+                    .forEach(el => el.classList.remove("active"));
+
+                // add highlight to selected episode
+                card.classList.add("active");
+
+                updateVideo(
+                  `https://player.videasy.net/tv/${tvId}/${sNum}/${ep.episode_number}`
+                );
             };
 
             grid.appendChild(card);
         });
+
+        // Auto-select first episode
+        if (firstCard) {
+            firstCard.classList.add("active");
+
+            const firstEp = sData.episodes[0];
+            updateVideo(
+              `https://player.videasy.net/tv/${tvId}/${sNum}/${firstEp.episode_number}`
+            );
+        }
     }
 
     // Automatically click first season pill
