@@ -364,7 +364,48 @@ button:hover {
   flex: 1;
   overflow-y: auto;
   padding: 12px;
+  margin: 10px;
 }
+.videoMeta::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to bottom, transparent, #111);
+  pointer-events: none;
+}
+
+.videoMeta,
+.seasonRow {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(170, 170, 170, 0.1) transparent;
+}
+
+/* Chrome / Edge / Safari */
+.videoMeta::-webkit-scrollbar,
+.seasonRow::-webkit-scrollbar {
+  width: 6px;
+}
+
+.videoMeta::-webkit-scrollbar-track,
+.seasonRow::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.videoMeta::-webkit-scrollbar-thumb,
+.seasonRow::-webkit-scrollbar-thumb, {
+  background-color: rgba(170, 170, 170, 0.5); /* 50% */
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.videoMeta::-webkit-scrollbar-thumb:hover,
+.seasonRow::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(170, 170, 170, 1); /* 100% */
+}
+
 
 .videoMeta h2 {
   margin-bottom: 5px;
@@ -376,8 +417,6 @@ button:hover {
   color: #aaa;
 }
 
-  
-/* --- Netflix-Style Season & Episode UI --- */
 #episodeControls {
     display: none;
     margin-top: 20px;
@@ -390,10 +429,8 @@ button:hover {
     display: flex;
     gap: 10px;
     overflow-x: auto;
-    padding-bottom: 15px;
-    scrollbar-width: none;
+    padding-bottom: 10px;
 }
-.seasonRow::-webkit-scrollbar { display: none; }
 
 .seasonPill {
     padding: 8px 16px;
@@ -729,7 +766,7 @@ button:hover {
   }
 
   .videoMeta {
-    margin-right: 50px;
+    margin: 20px 31px 20px 20px;
     flex: 1;
     overflow-y: auto;
   }
