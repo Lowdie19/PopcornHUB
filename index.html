@@ -554,17 +554,13 @@ button:hover {
   color: #aaa;
   line-height: 1.5;
   font-size: 14px;
-
   overflow: hidden;
-
-  /* smooth collapse/expand */
-  max-height: 7.2em; /* ~4 lines */
+  max-height: 7.2em;
   transition: max-height 0.35s ease;
-
   position: relative;
 }
 
-/* fade bottom like Netflix */
+/* fade effect (DEFAULT hidden) */
 .description::after {
   content: "";
   position: absolute;
@@ -574,16 +570,20 @@ button:hover {
   height: 60px;
   background: linear-gradient(to bottom, transparent, #111);
   pointer-events: none;
-  opacity: 1;
+  opacity: 0;
   transition: opacity 0.25s ease;
+}
+
+/* ONLY show fade when expandable */
+.description.hasFade::after {
+  opacity: 1;
 }
 
 /* expanded state */
 .description.expanded {
-  max-height: 500px; /* big enough for full text */
+  max-height: 500px;
 }
 
-/* hide fade when expanded */
 .description.expanded::after {
   opacity: 0;
 }
@@ -1494,6 +1494,7 @@ function setDescription(text) {
   const isMovie = currentItem?.type === "movie";
 
   overviewEl.className = "description";
+  overviewEl.classList.remove("hasFade");
   overviewEl.textContent = text || "No description available.";
 
   // remove old button if exists
@@ -1525,10 +1526,11 @@ function setDescription(text) {
       btn.textContent = "Read more ⌄";
     }
   };
-
-  if (text && text.length > 180) {
-    overviewEl.after(btn);
-  }
+  
+    if (text && text.length > 180) {
+      overviewEl.classList.add("hasFade"); // enable fade only if needed
+      overviewEl.after(btn);
+    }
 }
 
 </script>
