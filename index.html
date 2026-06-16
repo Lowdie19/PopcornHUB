@@ -1311,36 +1311,40 @@ function scrollToCategory(id){ document.getElementById(id).scrollIntoView({ beha
 function goHome(){ searchInput.value=""; document.getElementById("stats").innerHTML=""; window.scrollTo({ top:0, behavior:"smooth" }); loadHome(); }
 
 // ================================
-// HORIZONTAL SCROLL + RUBBER + BOUNCE
+// HORIZONTAL SCROLL + RUBBER + EDGE BOUNCE ONLY
 // ================================
 function setupRowScrolling() {
   const scrollAmount = 600;
   const rows = document.querySelectorAll(".row");
 
-  // ----------------------------
-  // RUBBER FUNCTION
-  // ----------------------------
   function rubber(value, min, max, strength = 0.25) {
     if (value < min) return min + (value - min) * strength;
     if (value > max) return max + (value - max) * strength;
     return value;
   }
 
-  rows.forEach(row => {
-    row._velocity = 0;
-    row._lastMoveTime = 0;
-    row._lastScrollLeft = 0;
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
 
+  rows.forEach(row => {
+
+    row._velocity = 0;
     row._isMouseDown = false;
     row._isTouchDown = false;
-    row._isDraggingHorizontally = false;
 
     const maxScroll = () => row.scrollWidth - row.clientWidth;
 
-    const bounce = () => {
-      row.classList.remove("bounce");
-      void row.offsetWidth;
-      row.classList.add("bounce");
+    // ======================
+    // EDGE BOUNCE ONLY (SAFE)
+    // ======================
+    const bounceIfNeeded = () => {
+      const max = maxScroll();
+      if (row.scrollLeft <= 0 || row.scrollLeft >= max) {
+        row.classList.remove("bounce");
+        void row.offsetWidth;
+        row.classList.add("bounce");
+      }
     };
 
     // ======================
@@ -1354,33 +1358,22 @@ function setupRowScrolling() {
     });
 
     // ======================
-    // MOUSE MOVE (RUBBER DRAG)
+    // MOUSE MOVE
     // ======================
     row.addEventListener("mousemove", e => {
       if (!row._isMouseDown) return;
-
       e.preventDefault();
 
-      const now = performance.now();
       const walk = e.pageX - row._startX;
 
       const raw = row._scrollStart - walk;
       const max = maxScroll();
 
-      // real rubber effect (DO NOT clamp hard)
       row.scrollLeft = rubber(raw, 0, max, 0.35);
-
-      // velocity tracking
-      const dt = now - row._lastMoveTime || 16;
-      const dx = row.scrollLeft - row._lastScrollLeft;
-
-      row._velocity = dx / dt;
-      row._lastMoveTime = now;
-      row._lastScrollLeft = row.scrollLeft;
     });
 
     // ======================
-    // MOUSE UP (INERTIA + BOUNCE)
+    // MOUSE UP (INERTIA ONLY, NO BOUNCE)
     // ======================
     window.addEventListener("mouseup", () => {
       if (!row._isMouseDown) return;
@@ -1388,24 +1381,24 @@ function setupRowScrolling() {
       row._isMouseDown = false;
       row.style.cursor = "grab";
 
-      let velocity = row._velocity * 50;
+      let velocity = row._velocity * 40;
       const friction = 0.92;
 
       const animate = () => {
-        if (Math.abs(velocity) < 0.5) {
-          bounce();
+        const max = maxScroll();
+
+        if (Math.abs(velocity) < 0.3) {
+          bounceIfNeeded(); // ONLY if at edge
           return;
         }
 
-        const max = maxScroll();
         let next = row.scrollLeft - velocity;
 
-        // edge resistance
         if (next < 0 || next > max) {
           velocity *= 0.6;
         }
 
-        row.scrollLeft = rubber(next, 0, max, 0.25);
+        row.scrollLeft = clamp(next, 0, max);
 
         velocity *= friction;
 
@@ -1420,66 +1413,49 @@ function setupRowScrolling() {
     // ======================
     row.addEventListener("touchstart", e => {
       row._isTouchDown = true;
-      row._isDraggingHorizontally = false;
-
-      row._touchStartX = e.touches[0].pageX;
-      row._touchStartY = e.touches[0].pageY;
-      row._touchScrollStart = row.scrollLeft;
-    });
+      row._startX = e.touches[0].pageX;
+      row._scrollStart = row.scrollLeft;
+    }, { passive: true });
 
     // ======================
-    // TOUCH MOVE (RUBBER DRAG)
+    // TOUCH MOVE
     // ======================
     row.addEventListener("touchmove", e => {
       if (!row._isTouchDown) return;
 
       const x = e.touches[0].pageX;
-      const y = e.touches[0].pageY;
+      const walk = x - row._startX;
 
-      const deltaX = Math.abs(x - row._touchStartX);
-      const deltaY = Math.abs(y - row._touchStartY);
-
-      if (!row._isDraggingHorizontally) {
-        if (deltaY > deltaX) return;
-        if (deltaX > 25 && deltaX > deltaY * 1.5) {
-          row._isDraggingHorizontally = true;
-        }
-      }
-
-      if (!row._isDraggingHorizontally) return;
-
-      e.preventDefault();
-
-      const raw = row._touchScrollStart - (x - row._touchStartX);
+      const raw = row._scrollStart - walk;
       const max = maxScroll();
 
-      // IMPORTANT: rubber instead of clamp
       row.scrollLeft = rubber(raw, 0, max, 0.35);
     }, { passive: false });
 
     // ======================
-    // TOUCH END (INERTIA + BOUNCE)
+    // TOUCH END (NO BOUNCE HERE)
     // ======================
     row.addEventListener("touchend", () => {
       row._isTouchDown = false;
 
-      let velocity = row._velocity * 50;
+      let velocity = row._velocity * 40;
       const friction = 0.92;
 
       const animate = () => {
-        if (Math.abs(velocity) < 0.5) {
-          bounce();
+        const max = maxScroll();
+
+        if (Math.abs(velocity) < 0.3) {
+          bounceIfNeeded(); // ONLY edge bounce
           return;
         }
 
-        const max = maxScroll();
         let next = row.scrollLeft - velocity;
 
         if (next < 0 || next > max) {
           velocity *= 0.6;
         }
 
-        row.scrollLeft = rubber(next, 0, max, 0.25);
+        row.scrollLeft = clamp(next, 0, max);
 
         velocity *= friction;
 
@@ -1491,7 +1467,7 @@ function setupRowScrolling() {
   });
 
   // ======================
-  // ARROWS
+  // ARROWS (UNCHANGED)
   // ======================
   document.querySelectorAll(".arrow").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -1502,7 +1478,8 @@ function setupRowScrolling() {
       const next = target.scrollLeft + amount;
 
       if (next < 0 || next > max) {
-        target.scrollLeft = Math.max(0, Math.min(max, next));
+        target.scrollLeft = clamp(next, 0, max);
+
         target.classList.remove("bounce");
         void target.offsetWidth;
         target.classList.add("bounce");
