@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Popcorn HUB</title>
+<title>PopcornHUB</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
@@ -259,14 +259,14 @@ button:hover {
 
 @keyframes bounce {
   0%   { transform: translateX(0); }
-  25%  { transform: translateX(-10px); }
-  50%  { transform: translateX(5px); }
-  75%  { transform: translateX(-5px); }
+  30%  { transform: translateX(var(--b, -18px)); }
+  55%  { transform: translateX(calc(var(--b, -18px) * -0.5)); }
+  75%  { transform: translateX(calc(var(--b, -18px) * 0.2)); }
   100% { transform: translateX(0); }
 }
 
 .row.bounce {
-  animation: bounce 0.3s ease;
+  animation: bounce 0.45s cubic-bezier(.2,.9,.2,1);
 }
 
 /* =========================
@@ -1311,16 +1311,31 @@ function scrollToCategory(id){ document.getElementById(id).scrollIntoView({ beha
 function goHome(){ searchInput.value=""; document.getElementById("stats").innerHTML=""; window.scrollTo({ top:0, behavior:"smooth" }); loadHome(); }
 
 // ================================
-// HORIZONTAL SCROLL + ARROWS + BOUNCE
+// HORIZONTAL SCROLL + RUBBER + BOUNCE
 // ================================
 function setupRowScrolling() {
   const scrollAmount = 600;
   const rows = document.querySelectorAll(".row");
 
+  // ----------------------------
+  // RUBBER FUNCTION
+  // ----------------------------
+  function rubber(value, min, max, strength = 0.25) {
+    if (value < min) return min + (value - min) * strength;
+    if (value > max) return max + (value - max) * strength;
+    return value;
+  }
+
   rows.forEach(row => {
+    row._velocity = 0;
+    row._lastMoveTime = 0;
+    row._lastScrollLeft = 0;
+
     row._isMouseDown = false;
     row._isTouchDown = false;
     row._isDraggingHorizontally = false;
+
+    const maxScroll = () => row.scrollWidth - row.clientWidth;
 
     const bounce = () => {
       row.classList.remove("bounce");
@@ -1328,8 +1343,9 @@ function setupRowScrolling() {
       row.classList.add("bounce");
     };
 
-    const maxScroll = () => row.scrollWidth - row.clientWidth;
-
+    // ======================
+    // MOUSE DOWN
+    // ======================
     row.addEventListener("mousedown", e => {
       row._isMouseDown = true;
       row._startX = e.pageX;
@@ -1337,82 +1353,165 @@ function setupRowScrolling() {
       row.style.cursor = "grabbing";
     });
 
-    window.addEventListener("mouseup", () => {
-      row._isMouseDown = false;
-      row.style.cursor = "grab";
-    });
-
+    // ======================
+    // MOUSE MOVE (RUBBER DRAG)
+    // ======================
     row.addEventListener("mousemove", e => {
       if (!row._isMouseDown) return;
+
       e.preventDefault();
+
+      const now = performance.now();
       const walk = e.pageX - row._startX;
-      let next = row._scrollStart - walk;
-      if (next < 0) { row.scrollLeft = 0; bounce(); return; }
-      if (next > maxScroll()) { row.scrollLeft = maxScroll(); bounce(); return; }
-      row.scrollLeft = next;
+
+      const raw = row._scrollStart - walk;
+      const max = maxScroll();
+
+      // real rubber effect (DO NOT clamp hard)
+      row.scrollLeft = rubber(raw, 0, max, 0.35);
+
+      // velocity tracking
+      const dt = now - row._lastMoveTime || 16;
+      const dx = row.scrollLeft - row._lastScrollLeft;
+
+      row._velocity = dx / dt;
+      row._lastMoveTime = now;
+      row._lastScrollLeft = row.scrollLeft;
     });
 
+    // ======================
+    // MOUSE UP (INERTIA + BOUNCE)
+    // ======================
+    window.addEventListener("mouseup", () => {
+      if (!row._isMouseDown) return;
+
+      row._isMouseDown = false;
+      row.style.cursor = "grab";
+
+      let velocity = row._velocity * 50;
+      const friction = 0.92;
+
+      const animate = () => {
+        if (Math.abs(velocity) < 0.5) {
+          bounce();
+          return;
+        }
+
+        const max = maxScroll();
+        let next = row.scrollLeft - velocity;
+
+        // edge resistance
+        if (next < 0 || next > max) {
+          velocity *= 0.6;
+        }
+
+        row.scrollLeft = rubber(next, 0, max, 0.25);
+
+        velocity *= friction;
+
+        requestAnimationFrame(animate);
+      };
+
+      requestAnimationFrame(animate);
+    });
+
+    // ======================
+    // TOUCH START
+    // ======================
     row.addEventListener("touchstart", e => {
       row._isTouchDown = true;
       row._isDraggingHorizontally = false;
+
       row._touchStartX = e.touches[0].pageX;
       row._touchStartY = e.touches[0].pageY;
       row._touchScrollStart = row.scrollLeft;
     });
 
+    // ======================
+    // TOUCH MOVE (RUBBER DRAG)
+    // ======================
     row.addEventListener("touchmove", e => {
       if (!row._isTouchDown) return;
+
       const x = e.touches[0].pageX;
       const y = e.touches[0].pageY;
+
       const deltaX = Math.abs(x - row._touchStartX);
       const deltaY = Math.abs(y - row._touchStartY);
+
       if (!row._isDraggingHorizontally) {
         if (deltaY > deltaX) return;
-        if (deltaX > 25 && deltaX > deltaY * 1.5) { row._isDraggingHorizontally = true; }
+        if (deltaX > 25 && deltaX > deltaY * 1.5) {
+          row._isDraggingHorizontally = true;
+        }
       }
+
       if (!row._isDraggingHorizontally) return;
+
       e.preventDefault();
-      let next = row._touchScrollStart - (x - row._touchStartX);
-      if (next < 0) { row.scrollLeft = 0; bounce(); return; }
-      if (next > maxScroll()) { row.scrollLeft = maxScroll(); bounce(); return; }
-      row.scrollLeft = next;
+
+      const raw = row._touchScrollStart - (x - row._touchStartX);
+      const max = maxScroll();
+
+      // IMPORTANT: rubber instead of clamp
+      row.scrollLeft = rubber(raw, 0, max, 0.35);
     }, { passive: false });
 
-    row.addEventListener("touchend", () => { row._isTouchDown = false; });
+    // ======================
+    // TOUCH END (INERTIA + BOUNCE)
+    // ======================
+    row.addEventListener("touchend", () => {
+      row._isTouchDown = false;
+
+      let velocity = row._velocity * 50;
+      const friction = 0.92;
+
+      const animate = () => {
+        if (Math.abs(velocity) < 0.5) {
+          bounce();
+          return;
+        }
+
+        const max = maxScroll();
+        let next = row.scrollLeft - velocity;
+
+        if (next < 0 || next > max) {
+          velocity *= 0.6;
+        }
+
+        row.scrollLeft = rubber(next, 0, max, 0.25);
+
+        velocity *= friction;
+
+        requestAnimationFrame(animate);
+      };
+
+      requestAnimationFrame(animate);
+    });
   });
 
+  // ======================
+  // ARROWS
+  // ======================
   document.querySelectorAll(".arrow").forEach(btn => {
     btn.addEventListener("click", () => {
       const target = document.getElementById(btn.dataset.target);
-      const scrollByAmount = btn.classList.contains("left") ? -scrollAmount : scrollAmount;
-      const maxScroll = target.scrollWidth - target.clientWidth;
-      const newScroll = target.scrollLeft + scrollByAmount;
+      const amount = btn.classList.contains("left") ? -scrollAmount : scrollAmount;
 
-      if (newScroll < 0) { target.scrollLeft = 0; bounceTarget(target); resetRowState(target); return; }
-      if (newScroll > maxScroll) { target.scrollLeft = maxScroll; bounceTarget(target); resetRowState(target); return; }
-      target.scrollBy({ left: scrollByAmount, behavior: "smooth" });
-      resetRowState(target);
+      const max = target.scrollWidth - target.clientWidth;
+      const next = target.scrollLeft + amount;
+
+      if (next < 0 || next > max) {
+        target.scrollLeft = Math.max(0, Math.min(max, next));
+        target.classList.remove("bounce");
+        void target.offsetWidth;
+        target.classList.add("bounce");
+        return;
+      }
+
+      target.scrollBy({ left: amount, behavior: "smooth" });
     });
   });
-
-  function resetRowState(row) {
-    row._isMouseDown = false;
-    row._isTouchDown = false;
-    row._isDraggingHorizontally = false;
-  }
-
-  function bounceTarget(row) {
-    row._isMouseDown = false;
-    row._isTouchDown = false;
-    row._isDraggingHorizontally = false;
-    row.classList.remove("bounce");
-    void row.offsetWidth;
-    row.classList.add("bounce");
-    row.addEventListener("animationend", function handler() {
-      row.classList.remove("bounce");
-      row.removeEventListener("animationend", handler);
-    });
-  }
 }
 
 setupRowScrolling();
