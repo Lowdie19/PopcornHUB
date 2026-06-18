@@ -303,7 +303,8 @@ button:hover {
 .modalBackdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.85);
+  background: #14141487;
+  backdrop-filter: blur(10px);
   z-index: 1;
 
   opacity: 0;
@@ -349,14 +350,14 @@ button:hover {
 
 /* CLOSE BUTTON */
 .closeBtn {
+  border-radius: 0px;
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
+  top: 12px;
+  right: 12px;
+  background: #111;
   color: rgba(255, 255, 255, 0.51);
   width: 40px;
   height: 40px;
-  border-radius: 50%;
   cursor: pointer;
 
   display: flex;
@@ -367,7 +368,7 @@ button:hover {
 }
 .closeBtn:hover {
   color: red;
-  background: none;
+  background: #111;
   text-shadow: 0 2px 8px rgba(0,0,0,0.9);
 }
 .closeBtn.flash-red {
@@ -768,9 +769,6 @@ button:hover {
     max-width: 140px;
     height: 210px;
   }
-  .readMoreBtn. {
-    
-  }
 }
 
 @media (orientation: portrait) {
@@ -796,6 +794,7 @@ button:hover {
   }
 
   .closeBtn {
+    background-color: transparent;
     width: 40px;
     height: 40px;
     font-size: 20px; /* makes the ✕ bigger */
@@ -804,7 +803,7 @@ button:hover {
   .seasonRow {
     padding: 15px;
   }
-    .episodeGrid {
+  .episodeGrid {
     margin: 10px;
   }
 }
@@ -834,12 +833,6 @@ button:hover {
     display: none;
   }
 
-  .closeBtn {
-    width: 30px;
-    height: 30px;
-    font-size: 20px;
-  }
-
   .category {
     transform: none !important;
     width: 100% !important;
@@ -848,7 +841,14 @@ button:hover {
   .seasonRow {
     padding: 15px;
   }
-}
+  .closeBtn {
+    font-size: 20px;
+    top: 0px;
+    right: 12px;
+    background: #111;
+    width: 40px;
+    height: 40px;
+  }
 </style>
 </head>
 
