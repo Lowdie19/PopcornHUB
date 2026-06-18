@@ -290,6 +290,13 @@ button:hover {
   inset: 0;
   background: rgba(0,0,0,0.85);
   z-index: 1;
+
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.detailModal.show .modalBackdrop {
+  opacity: 1;
 }
 
 /* MODAL BOX */
@@ -308,6 +315,16 @@ button:hover {
   border-radius: 14px;
   overflow: hidden;
   z-index: 2;
+
+  transform: scale(0.92);
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+/* when modal is active */
+.detailModal.show .videoModalContent {
+  transform: scale(1);
+  opacity: 1;
 }
 
 @keyframes modalPop {
@@ -334,7 +351,7 @@ button:hover {
   z-index: 9999;
 }
 .closeBtn:hover {
-  color: rgb(255, 255, 255);
+  color: red;
   background: none;
   text-shadow: 0 2px 8px rgba(0,0,0,0.9);
 }
@@ -792,7 +809,7 @@ button:hover {
 <!-- VIDEO MODAL -->
 <div id="detailModal" class="detailModal">
   <!-- dark background -->
-  <div class="modalBackdrop" onclick="closeModal()"></div>
+  <div class="modalBackdrop"></div>
 
   <!-- modal box -->
   <div class="videoModalContent">
@@ -1028,28 +1045,38 @@ function render(catId,rowId,data){
 function closeModal() {
   const closeBtn = document.querySelector(".closeBtn");
   closeBtn.classList.add("flash-red");
+
   setTimeout(() => {
     document.getElementById("detailModal").classList.remove("show");
     document.getElementById("videoContainer").innerHTML = "";
     currentItem = null;
     closeBtn.classList.remove("flash-red");
+
+    document.body.style.overflow = ""; // 🔥 RESTORE SCROLL
   }, 300);
 }
 
 function openModal(item){
   currentItem = item;
+
   document.getElementById("modalTitle").textContent = item.title;
+
   const container = document.getElementById("videoContainer");
-  container.innerHTML="";
+  container.innerHTML = "";
+
   const iframe = document.createElement("iframe");
   iframe.allowFullscreen = true;
   iframe.setAttribute("allow", "autoplay; encrypted-media");
-  iframe.src=item.videasyUrl;
+  iframe.src = item.videasyUrl;
+
   container.appendChild(iframe);
+
   document.getElementById("detailModal").classList.add("show");
+
+  document.body.style.overflow = "hidden"; // 🔥 LOCK SCROLL
+
   loadDetails(item);
 }
-
 async function loadDetails(item){
   const overviewEl = document.getElementById("modalOverview");
   const box = document.getElementById("episodeControls");
@@ -1608,6 +1635,15 @@ function setDescription(text) {
       overviewEl.after(btn);
     }
 }
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const modal = document.getElementById("detailModal");
+    if (modal.classList.contains("show")) {
+      closeModal();
+    }
+  }
+});
 
 </script>
 
