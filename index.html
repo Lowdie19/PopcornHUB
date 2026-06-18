@@ -453,7 +453,6 @@ button:hover {
 #episodeControls {
     display: none;
     margin-top: 20px;
-    padding-top: 15px;
     border-top: 1px solid #333;
 }
 
@@ -466,7 +465,6 @@ button:hover {
     display: flex;
     gap: 10px;
     overflow-x: auto;
-    padding: 40px 0px 10px 10px;
 
     background-color: #111;
 
@@ -572,7 +570,7 @@ button:hover {
   background: #222;
   outline: 2px solid #bbf523;
   outline-offset: 2px;
-  box-shadow: 0 0 15px rgba(187,245,35,0.5);
+  box-shadow: inset 0 0 15px rgba(187, 245, 35, 0.2);
 }
 
 .episodeItem.played {
@@ -631,13 +629,13 @@ button:hover {
 /* button */
 .readMoreBtn {
   display: block;
-  margin: 8px auto 0;
   background: none;
   border: none;
   color: #7b7b7b;
   cursor: pointer;
   font-size: 13px;
   transition: 0.2s;
+  padding: 10px;
 }
 
 .readMoreBtn:hover {
@@ -683,6 +681,7 @@ button:hover {
 
   /* TITLE + DESCRIPTION */
   #modalTitle {
+    margin-top: 20px;
     font-size: 16px;
     line-height: 1.2;
   }
@@ -697,7 +696,6 @@ button:hover {
     display: flex !important;
     flex-direction: column;
     gap: 8px;
-    margin-top: auto;
   }
 
   #episodeControls select {
@@ -770,6 +768,9 @@ button:hover {
     max-width: 140px;
     height: 210px;
   }
+  .readMoreBtn. {
+    
+  }
 }
 
 @media (orientation: portrait) {
@@ -794,14 +795,17 @@ button:hover {
     flex-shrink: 0;
   }
 
-  #episodeControls {
-    margin-top: auto;
-  }
   .closeBtn {
     width: 40px;
     height: 40px;
     font-size: 20px; /* makes the ✕ bigger */
     z-index: 9999 !important;
+  }
+  .seasonRow {
+    padding: 15px;
+  }
+    .episodeGrid {
+    margin: 10px;
   }
 }
 
@@ -810,6 +814,8 @@ button:hover {
     overscroll-behavior: contain;
     flex-direction: row;
     height: calc(100dvh - 20px);
+    max-height: 90dvh;
+    
   }
 
   .videoContainer {
@@ -818,18 +824,14 @@ button:hover {
   }
 
   .videoMeta {
-    margin: 10px;
     flex: 1;
     overflow-y: auto;
     min-height: 0; /* prevents flex overflow bug */
+    margin-right: 50px;
   }
 
   .videoMeta::-webkit-scrollbar {
     display: none;
-  }
-
-  #episodeControls {
-    margin-top: auto;
   }
 
   .closeBtn {
@@ -841,6 +843,10 @@ button:hover {
   .category {
     transform: none !important;
     width: 100% !important;
+  }
+  
+  .seasonRow {
+    padding: 15px;
   }
 }
 </style>
@@ -864,7 +870,7 @@ button:hover {
 
     <!-- INFO SECTION -->
     <div class="videoMeta">
-      <h2 id="modalTitle">Title</h2>
+      <h2 style="margin-top: 15px;" id="modalTitle">Title</h2>
       <p id="modalOverview" style="color:#aaa; line-height:1.4;"></p>
 
       <!-- ONLY FOR TV / ANIME -->
