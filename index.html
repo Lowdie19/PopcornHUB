@@ -104,9 +104,18 @@ button:hover {
   font-size: 14px;
 }
 
-/* CATEGORIES */
+/* CATEGORIES WRAPPER */
+#categoryGroup {
+  display: flex;
+  flex-direction: column; /* stack categories vertically */
+  align-items: flex-start; /* LEFT ALIGN */
+  padding: 10px;
+}
+
+/* EACH CATEGORY */
 .category {
-  padding: 25px 30px;
+  width: 100%;
+  padding: 15px;
 }
 .category h2 {
   margin-bottom: 15px;
@@ -623,7 +632,7 @@ button:hover {
 }
 
 /* =========================
-   MOBILE HORIZONTAL MODAL
+   MOBILE
 ========================= */
 @media (max-width: 768px) {
 
@@ -694,13 +703,6 @@ button:hover {
   .hero p {
     font-size: 0.85rem;
   }
-  
-  .category {
-    transform: scale(0.8);
-    transform-origin: top left;
-    width: 125vw;
-  }
-
 
   .episodeGrid {
     display: flex;
@@ -735,6 +737,24 @@ button:hover {
 
   .epMeta p {
     font-size: 10px;
+  }
+
+  .category {
+    padding: 15px 10px;
+  }
+
+  .category h2 {
+    font-size: 18px;
+  }
+
+  .row {
+    gap: 10px;
+  }
+
+  .movie {
+    min-width: 140px;
+    max-width: 140px;
+    height: 210px;
   }
 }
 
@@ -775,18 +795,21 @@ button:hover {
   .videoModalContent {
     overscroll-behavior: contain;
     flex-direction: row;
+    height: calc(100dvh - 20px);
   }
 
   .videoContainer {
-    flex: 1.5;
+    flex: 1.2;
     height: 100%;
   }
 
   .videoMeta {
-    margin: 20px 31px 20px 20px;
+    margin: 10px;
     flex: 1;
     overflow-y: auto;
+    min-height: 0; /* prevents flex overflow bug */
   }
+
   .videoMeta::-webkit-scrollbar {
     display: none;
   }
@@ -794,11 +817,17 @@ button:hover {
   #episodeControls {
     margin-top: auto;
   }
-  
+
   .closeBtn {
     width: 30px;
     height: 30px;
     font-size: 20px;
+  }
+
+  /* IMPORTANT FIX: prevent mobile scale/layout issues */
+  .category {
+    transform: none !important;
+    width: 100% !important;
   }
 }
 </style>
@@ -853,30 +882,32 @@ button:hover {
 </div>
 
 <!-- CATEGORIES -->
-<div class="category" id="movieCategory">
-  <h2 id="movieCategoryTitle"><i style="color: darkgray" class="fa-solid fa-film"></i> Movies</h2>
-  <div class="carousel">
-    <button class="arrow left" data-target="movieResults">‹</button>
-    <div id="movieResults" class="row"></div>
-    <button class="arrow right" data-target="movieResults">›</button>
+<div id="categoryGroup">
+  <div class="category" id="movieCategory">
+    <h2 id="movieCategoryTitle"><i style="color: darkgray" class="fa-solid fa-film"></i> Movies</h2>
+    <div class="carousel">
+      <button class="arrow left" data-target="movieResults">‹</button>
+      <div id="movieResults" class="row"></div>
+      <button class="arrow right" data-target="movieResults">›</button>
+    </div>
   </div>
-</div>
 
-<div class="category" id="tvCategory">
-  <h2><i style= "color: darkgray" class="fa-solid fa-clapperboard"></i> TV Shows</h2>
-  <div class="carousel">
-    <button class="arrow left" data-target="tvResults">‹</button>
-    <div id="tvResults" class="row"></div>
-    <button class="arrow right" data-target="tvResults">›</button>
+  <div class="category" id="tvCategory">
+    <h2><i style= "color: darkgray" class="fa-solid fa-clapperboard"></i> TV Shows</h2>
+    <div class="carousel">
+      <button class="arrow left" data-target="tvResults">‹</button>
+      <div id="tvResults" class="row"></div>
+      <button class="arrow right" data-target="tvResults">›</button>
+    </div>
   </div>
-</div>
 
-<div class="category" id="animeCategory">
-  <h2><i style= "color: darkgray" class="fa-solid fa-tv"></i> Anime</h2>
-  <div class="carousel">
-    <button class="arrow left" data-target="animeResults">‹</button>
-    <div id="animeResults" class="row"></div>
-    <button class="arrow right" data-target="animeResults">›</button>
+  <div class="category" id="animeCategory">
+    <h2><i style= "color: darkgray" class="fa-solid fa-tv"></i> Anime</h2>
+    <div class="carousel">
+      <button class="arrow left" data-target="animeResults">‹</button>
+      <div id="animeResults" class="row"></div>
+      <button class="arrow right" data-target="animeResults">›</button>
+    </div>
   </div>
 </div>
 
