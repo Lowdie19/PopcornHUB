@@ -477,7 +477,7 @@ button:hover {
     left: -5px;
     top: 0;
     bottom: 0;
-    width: 80px;
+    width: 40px;
 
     background: linear-gradient(
         to right,
@@ -487,8 +487,6 @@ button:hover {
 
     pointer-events: none;
     z-index: 101;
-    opacity: 0;
-    transition: opacity 0.25s ease;
 }
 
 /* Right Fade */
@@ -498,7 +496,7 @@ button:hover {
     right: -5px;
     top: 0;
     bottom: 0;
-    width: 80px;
+    width: 40px;
 
     background: linear-gradient(
         to left,
@@ -508,15 +506,7 @@ button:hover {
 
     pointer-events: none;
     z-index: 101;
-    opacity: 0;
-    transition: opacity 0.25s ease;
 }
-
-.seasonRowWrapper.showLeft::before,
-.seasonRowWrapper.showRight::after{
-    opacity: 1;
-}
-
 /* Season Pill Selector */
 .seasonRow {
     display: flex;
@@ -1379,47 +1369,8 @@ async function renderTVControls(tvId) {
         seasonRow.appendChild(pill);
     });
 
-function updateSeasonFade() {
-
-    const max =
-        seasonRow.scrollWidth - seasonRow.clientWidth;
-
-    // No overflow
-    if (max <= 5) {
-        seasonRowWrapper.classList.remove(
-            "showLeft",
-            "showRight"
-        );
-        return;
-    }
-
-    // Left fade
-    seasonRowWrapper.classList.toggle(
-        "showLeft",
-        seasonRow.scrollLeft > 5
-    );
-
-    // Right fade
-    seasonRowWrapper.classList.toggle(
-        "showRight",
-        seasonRow.scrollLeft < max - 5
-    );
-}
-
-seasonRow.addEventListener(
-    "scroll",
-    updateSeasonFade
-);
-
     box.appendChild(seasonRowWrapper);
     box.appendChild(grid);
-
-requestAnimationFrame(updateSeasonFade);
-
-window.addEventListener(
-    "resize",
-    updateSeasonFade
-);
 
     async function loadEpisodes(sNum) {
         grid.innerHTML = "Loading episodes...";
@@ -1538,6 +1489,8 @@ function setupRowScrolling() {
     // ======================
     row.addEventListener("mousedown", e => {
       row._isMouseDown = true;
+      row._dragged = false;
+
       row._startX = e.pageX;
       row._scrollStart = row.scrollLeft;
       row.style.cursor = "grabbing";
@@ -1551,7 +1504,9 @@ function setupRowScrolling() {
       e.preventDefault();
 
       const walk = e.pageX - row._startX;
-
+      if (Math.abs(walk) > 5) {
+        row._dragged = true;
+      }
       const raw = row._scrollStart - walk;
       const max = maxScroll();
 
@@ -1567,31 +1522,17 @@ function setupRowScrolling() {
       row._isMouseDown = false;
       row.style.cursor = "grab";
 
-      let velocity = row._velocity * 40;
-      const friction = 0.92;
+      if (!row._dragged) return;
 
-      const animate = () => {
-        const max = maxScroll();
+      row._isMouseDown = false;
+      row.style.cursor = "grab";
 
-        if (Math.abs(velocity) < 0.3) {
-          bounceIfNeeded(); // ONLY if at edge
-          return;
-        }
-
-        let next = row.scrollLeft - velocity;
-
-        if (next < 0 || next > max) {
-          velocity *= 0.6;
-        }
-
-        row.scrollLeft = clamp(next, 0, max);
-
-        velocity *= friction;
-
-        requestAnimationFrame(animate);
-      };
-
-      requestAnimationFrame(animate);
+      if (
+          row.scrollLeft <= 0 ||
+          row.scrollLeft >= maxScroll()
+      ) {
+          bounceIfNeeded();
+      }
     });
 
     // ======================
@@ -1599,6 +1540,8 @@ function setupRowScrolling() {
     // ======================
     row.addEventListener("touchstart", e => {
       row._isTouchDown = true;
+      row._dragged = false;
+
       row._startX = e.touches[0].pageX;
       row._scrollStart = row.scrollLeft;
     }, { passive: true });
@@ -1612,6 +1555,10 @@ function setupRowScrolling() {
       const x = e.touches[0].pageX;
       const walk = x - row._startX;
 
+      if (Math.abs(walk) > 5) {
+        row._dragged = true;
+      }
+
       const raw = row._scrollStart - walk;
       const max = maxScroll();
 
@@ -1622,33 +1569,18 @@ function setupRowScrolling() {
     // TOUCH END (NO BOUNCE HERE)
     // ======================
     row.addEventListener("touchend", () => {
+      if (!row._dragged) {
+        row._isTouchDown = false;
+        return;
+      }
       row._isTouchDown = false;
 
-      let velocity = row._velocity * 40;
-      const friction = 0.92;
-
-      const animate = () => {
-        const max = maxScroll();
-
-        if (Math.abs(velocity) < 0.3) {
-          bounceIfNeeded(); // ONLY edge bounce
-          return;
-        }
-
-        let next = row.scrollLeft - velocity;
-
-        if (next < 0 || next > max) {
-          velocity *= 0.6;
-        }
-
-        row.scrollLeft = clamp(next, 0, max);
-
-        velocity *= friction;
-
-        requestAnimationFrame(animate);
-      };
-
-      requestAnimationFrame(animate);
+      if (
+          row.scrollLeft <= 0 ||
+          row.scrollLeft >= maxScroll()
+      ) {
+          bounceIfNeeded();
+      }
     });
   });
 
