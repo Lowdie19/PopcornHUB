@@ -405,7 +405,7 @@ button:hover {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 80px;
+  height: 30px;
   background: linear-gradient(to bottom, transparent, #111);
   pointer-events: none;
 }
@@ -453,7 +453,14 @@ button:hover {
 #episodeControls {
     display: none;
     margin-top: 20px;
-    border-top: 1px solid #333;
+    border-top: 1px solid transparent;
+    background-image:
+        linear-gradient(#111, #111),
+        linear-gradient(to right,
+            transparent,
+            rgba(255,255,255,0.2),
+            transparent);
+    background-clip: padding-box, border-box;
 }
 
 /* Season Pill Selector */
@@ -467,8 +474,15 @@ button:hover {
     overflow-x: auto;
 
     background-color: #111;
-    box-shadow: 0px 15px 15px rgba(0, 0, 0, 0.79);
-      )
+    box-shadow: 0 10px 15px rgba(17, 17, 17, 0.5);
+    border-bottom: 1px solid transparent;
+    background-image:
+        linear-gradient(#111, #111),
+        linear-gradient(to right,
+            transparent,
+            rgba(255,255,255,0.2),
+            transparent);
+    background-clip: padding-box, border-box;
 }
 
 .seasonPill {
@@ -606,7 +620,7 @@ button:hover {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 60px;
+  height: 25px !important;
   background: linear-gradient(to bottom, transparent, #111);
   pointer-events: none;
   opacity: 0;
@@ -815,6 +829,9 @@ button:hover {
   .episodeGrid {
     margin: 10px;
   }
+  .description::after {
+    height: 18px;
+  }
 }
 
 @media (orientation: landscape) {
@@ -847,6 +864,7 @@ button:hover {
   .closeBtn {
     font-size: 20px; /* makes the ✕ bigger */
   }
+}
 </style>
 </head>
 
