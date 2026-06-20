@@ -86,7 +86,6 @@ button {
   border-radius: 30px;
   background: #506b07;
   color: white;
-  font-weight: 100;
   font-weight: bold;
   cursor: pointer;
   transition: 0.25s;
@@ -328,6 +327,7 @@ button:hover {
   flex-direction: column;
 
   background: #111;
+  box-shadow: -15px 15px 25px rgba(17, 17, 17, 0.5);
   border-radius: 14px;
   overflow: hidden;
   z-index: 2;
@@ -350,16 +350,13 @@ button:hover {
 
 /* CLOSE BUTTON */
 .closeBtn {
-  border-radius: 0px;
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: #111;
+  position: sticky;
+  background: none;
   color: rgba(255, 255, 255, 0.51);
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-
+  width: 30px;
+  height: 30px;
+  
+  padding: 30px 30px 10px 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -368,7 +365,7 @@ button:hover {
 }
 .closeBtn:hover {
   color: red;
-  background: #111;
+  background: none;
   text-shadow: 0 2px 8px rgba(0,0,0,0.9);
 }
 .closeBtn.flash-red {
@@ -429,7 +426,7 @@ button:hover {
 }
 
 .videoMeta::-webkit-scrollbar-thumb,
-.seasonRow::-webkit-scrollbar-thumb, {
+.seasonRow::-webkit-scrollbar-thumb {
   background-color: rgba(170, 170, 170, 0.5); /* 50% */
   border-radius: 10px;
   transition: background-color 0.2s ease;
@@ -794,11 +791,9 @@ button:hover {
   }
 
   .closeBtn {
-    background-color: transparent;
-    width: 40px;
-    height: 40px;
+    position: absolute;
+    right: 5px;
     font-size: 20px; /* makes the ✕ bigger */
-    z-index: 9999 !important;
   }
   .seasonRow {
     padding: 15px;
@@ -814,7 +809,6 @@ button:hover {
     flex-direction: row;
     height: calc(100dvh - 20px);
     max-height: 90dvh;
-    
   }
 
   .videoContainer {
@@ -826,7 +820,6 @@ button:hover {
     flex: 1;
     overflow-y: auto;
     min-height: 0; /* prevents flex overflow bug */
-    margin-right: 50px;
   }
 
   .videoMeta::-webkit-scrollbar {
@@ -842,12 +835,7 @@ button:hover {
     padding: 15px;
   }
   .closeBtn {
-    font-size: 20px;
-    top: 0px;
-    right: 12px;
-    background: #111;
-    width: 40px;
-    height: 40px;
+    font-size: 20px; /* makes the ✕ bigger */
   }
 </style>
 </head>
@@ -861,10 +849,6 @@ button:hover {
 
   <!-- modal box -->
   <div class="videoModalContent">
-
-    <!-- close button -->
-    <button class="closeBtn" onclick="closeModal()">✕</button>
-
     <!-- VIDEO AREA -->
     <div class="videoContainer" id="videoContainer"></div>
 
@@ -876,6 +860,8 @@ button:hover {
       <!-- ONLY FOR TV / ANIME -->
       <div id="episodeControls" class="episodeGridContainer"></div>
     </div>
+        <!-- close button -->
+    <button class="closeBtn" onclick="closeModal()">✕</button>
 
   </div>
 </div>
