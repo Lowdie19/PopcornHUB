@@ -477,7 +477,7 @@ button:hover {
     left: -5px;
     top: 0;
     bottom: 0;
-    width: 40px;
+    width: 80px;
 
     background: linear-gradient(
         to right,
@@ -487,6 +487,8 @@ button:hover {
 
     pointer-events: none;
     z-index: 101;
+    opacity: 0;
+    transition: opacity 0.25s ease;
 }
 
 /* Right Fade */
@@ -496,7 +498,7 @@ button:hover {
     right: -5px;
     top: 0;
     bottom: 0;
-    width: 40px;
+    width: 80px;
 
     background: linear-gradient(
         to left,
@@ -506,7 +508,15 @@ button:hover {
 
     pointer-events: none;
     z-index: 101;
+    opacity: 0;
+    transition: opacity 0.25s ease;
 }
+
+.seasonRowWrapper.showLeft::before,
+.seasonRowWrapper.showRight::after{
+    opacity: 1;
+}
+
 /* Season Pill Selector */
 .seasonRow {
     display: flex;
@@ -1369,8 +1379,47 @@ async function renderTVControls(tvId) {
         seasonRow.appendChild(pill);
     });
 
+function updateSeasonFade() {
+
+    const max =
+        seasonRow.scrollWidth - seasonRow.clientWidth;
+
+    // No overflow
+    if (max <= 5) {
+        seasonRowWrapper.classList.remove(
+            "showLeft",
+            "showRight"
+        );
+        return;
+    }
+
+    // Left fade
+    seasonRowWrapper.classList.toggle(
+        "showLeft",
+        seasonRow.scrollLeft > 5
+    );
+
+    // Right fade
+    seasonRowWrapper.classList.toggle(
+        "showRight",
+        seasonRow.scrollLeft < max - 5
+    );
+}
+
+seasonRow.addEventListener(
+    "scroll",
+    updateSeasonFade
+);
+
     box.appendChild(seasonRowWrapper);
     box.appendChild(grid);
+
+requestAnimationFrame(updateSeasonFade);
+
+window.addEventListener(
+    "resize",
+    updateSeasonFade
+);
 
     async function loadEpisodes(sNum) {
         grid.innerHTML = "Loading episodes...";
