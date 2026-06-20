@@ -463,12 +463,52 @@ button:hover {
     background-clip: padding-box, border-box;
 }
 
-/* Season Pill Selector */
-.seasonRow {
+
+.seasonRowWrapper {
     position: sticky;
     top: 0;
     z-index: 100;
+}
 
+/* Left Fade */
+.seasonRowWrapper::before {
+    content: "";
+    position: absolute;
+    left: -5px;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+
+    background: linear-gradient(
+        to right,
+        #111,
+        transparent
+    );
+
+    pointer-events: none;
+    z-index: 101;
+}
+
+/* Right Fade */
+.seasonRowWrapper::after {
+    content: "";
+    position: absolute;
+    right: -5px;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+
+    background: linear-gradient(
+        to left,
+        #111,
+        transparent
+    );
+
+    pointer-events: none;
+    z-index: 101;
+}
+/* Season Pill Selector */
+.seasonRow {
     display: flex;
     gap: 10px;
     overflow-x: auto;
@@ -1305,6 +1345,12 @@ async function renderTVControls(tvId) {
 
     const seasonRow = document.createElement("div");
     seasonRow.className = "seasonRow";
+  
+    const seasonRowWrapper = document.createElement("div");
+    seasonRowWrapper.className = "seasonRowWrapper";
+
+    seasonRowWrapper.appendChild(seasonRow);
+  
     const grid = document.createElement("div");
     grid.className = "episodeGrid";
 
@@ -1323,7 +1369,7 @@ async function renderTVControls(tvId) {
         seasonRow.appendChild(pill);
     });
 
-    box.appendChild(seasonRow);
+    box.appendChild(seasonRowWrapper);
     box.appendChild(grid);
 
     async function loadEpisodes(sNum) {
