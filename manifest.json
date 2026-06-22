@@ -1,0 +1,21 @@
+{
+  "name": "Popcorn HUB",
+  "short_name": "PopcornHUB",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#141414",
+  "theme_color": "#bbf523",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
