@@ -6,6 +6,9 @@
 <title>PopcornHUB</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#bbf523">
+
 <style>
 * { box-sizing: border-box; margin:0; padding:0; }
 body {
@@ -37,7 +40,7 @@ body {
 }
 
 .logo .hub {
-  background: #bbf523;
+  background: #bbf523 ;
   color: #111;
   padding: 2px 10px;
   border-radius: 6px;
@@ -1756,6 +1759,14 @@ document.addEventListener("keydown", (e) => {
     }
   }
 });
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js")
+      .then(() => console.log("PWA Service Worker Registered"))
+      .catch(err => console.log("SW failed:", err));
+  });
+}
 
 </script>
 
