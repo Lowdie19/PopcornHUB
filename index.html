@@ -563,7 +563,7 @@ button:hover {
     aspect-ratio: 16/9;
     object-fit: cover;
 }
-.epMeta { padding: 10px; }
+.epMeta { padding: 10px; text-align: left;}
 .epMeta div { font-size: 0.9rem; font-weight: bold; }
 .epMeta p { font-size: 0.75rem; color: #888; margin-top: 4px; }
 
@@ -795,7 +795,6 @@ button:hover {
 
   .epMeta {
     padding: 0;
-    text-align: left;
   }
 
   .epMeta div {
@@ -834,6 +833,13 @@ button:hover {
   .seasonRow::-webkit-scrollbar {
     display: none;
   }
+
+  .description {
+    flex-shrink: 0;
+  }
+  .description::after {
+    height: 18px;
+  }
 }
 
 @media (orientation: portrait) {
@@ -854,10 +860,6 @@ button:hover {
     min-height: 0;
   }
 
-  .description {
-    flex-shrink: 0;
-  }
-
   .closeBtn {
     position: absolute;
     right: 5px;
@@ -869,12 +871,10 @@ button:hover {
   .episodeGrid {
     margin: 10px;
   }
-  .description::after {
-    height: 18px;
-  }
 }
 
 @media (orientation: landscape) {
+  
   .videoModalContent {
     overscroll-behavior: contain;
     flex-direction: row;
@@ -898,11 +898,32 @@ button:hover {
     width: 100% !important;
   }
   
+  .closeBtn {
+    font-size: 20px; /* makes the ✕ bigger */
+  }
   .seasonRow {
     padding: 15px;
   }
-  .closeBtn {
-    font-size: 20px; /* makes the ✕ bigger */
+  .episodeGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .episodeItem {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+  }
+
+  .episodeItem img {
+    width: 90px;
+    height: 50px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
   }
 }
 </style>
