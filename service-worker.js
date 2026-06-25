@@ -1,4 +1,4 @@
-const CACHE_NAME = "PopcornHUB";
+const CACHE_NAME = "PopcornHUB-v1";
 
 const ASSETS = [
   "./",
@@ -6,7 +6,8 @@ const ASSETS = [
   "./styles.css",
   "./app.js",
   "./manifest.json",
-  "./icon.png"
+  "./icon.png",
+  "./favicon.ico"
 ];
 
 // Install
