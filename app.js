@@ -352,11 +352,19 @@ function setActiveEpisode(season, episode) {
 }
 
 function saveProgress(contentId, progress) {
-    localStorage.setItem("progress_" + contentId, progress);
+
+    console.log("SAVING:", contentId, progress);
+
+    localStorage.setItem(
+        "progress_" + contentId,
+        progress
+    );
 }
 
 function getProgress(contentId) {
-    return localStorage.getItem("progress_" + contentId);
+    const saved = localStorage.getItem("progress_" + contentId);
+
+    return saved ? JSON.parse(saved) : null;
 }
 
 let lastEpisodeKey = "";
@@ -386,6 +394,18 @@ window.addEventListener("message", (event) => {
     if (message.type !== "PLAYER_EVENT") return;
 
     const data = message.data;
+  
+    console.log("PLAYER DATA:", data);
+  
+      // Save watch progress
+    if (data.event === "timeupdate" && currentEpisodeKey) {
+
+        saveProgress(
+            currentEpisodeKey,
+            data.timestamp
+        );
+
+    }
 
     const season =
         data.season ??
@@ -410,6 +430,7 @@ window.addEventListener("message", (event) => {
     console.log("ACTIVE EPISODE:", key);
 
     setActiveEpisode(season, episode);
+
 
     if (currentItem?.type === "tv") {
         currentEpisodeKey =
