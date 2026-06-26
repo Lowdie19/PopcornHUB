@@ -351,13 +351,18 @@ function setActiveEpisode(season, episode) {
     );
 }
 
-function saveProgress(contentId, progress) {
+function saveProgress(contentId, watched) {
+
+    const progress = {
+        watched,
+        lastUpdated: Date.now()
+    };
 
     console.log("SAVING:", contentId, progress);
 
     localStorage.setItem(
         "progress_" + contentId,
-        progress
+        JSON.stringify(progress)
     );
 }
 
@@ -400,9 +405,14 @@ window.addEventListener("message", (event) => {
       // Save watch progress
     if (data.event === "timeupdate" && currentEpisodeKey) {
 
+        const watched =
+            data.timestamp ??
+            data.currentTime ??
+            0;
+
         saveProgress(
             currentEpisodeKey,
-            data.timestamp
+            watched
         );
 
     }
@@ -529,7 +539,10 @@ async function renderTVControls(tvId) {
             currentEpisodeKey = `${tvId}-${sNum}-${ep.episode_number}`;
             setActiveEpisode(sNum, ep.episode_number);
 
-            const savedProgress = getProgress(currentEpisodeKey) || 0;
+            const saved = getProgress(currentEpisodeKey);
+
+            const savedProgress =
+                saved?.watched ?? 0;
 
             updateVideo(
                 `https://player.videasy.net/tv/${tvId}/${sNum}/${ep.episode_number}`,
@@ -554,8 +567,10 @@ async function renderTVControls(tvId) {
             currentEpisodeKey =
               `${tvId}-${sNum}-${firstEp.episode_number}`;
 
+            const saved = getProgress(currentEpisodeKey);
+
             const savedProgress =
-              getProgress(currentEpisodeKey) || 0;
+                saved?.watched ?? 0;
 
             updateVideo(
               `https://player.videasy.net/tv/${tvId}/${sNum}/${firstEp.episode_number}`,
