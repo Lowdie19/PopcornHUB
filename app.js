@@ -559,30 +559,46 @@ async function renderTVControls(tvId) {
             grid.appendChild(card);
         });
 
-        // Auto-select first episode
-        if (firstCard) {
-            firstCard.classList.add("active");
+      // ======================
+      // AUTO SELECT LAST WATCHED
+      // ======================
 
-            const firstEp = sData.episodes[0];
+      let selectedEpisode = sData.episodes[0];
 
-            currentEpisodeKey =
-              `${tvId}-${sNum}-${firstEp.episode_number}`;
+      for (const ep of sData.episodes) {
 
-            const saved = getProgress(currentEpisodeKey);
+          const key = `${tvId}-${sNum}-${ep.episode_number}`;
 
-            const savedProgress =
-                saved?.watched ?? 0;
+          const saved = getProgress(key);
 
-            updateVideo(
-              `https://player.videasy.net/tv/${tvId}/${sNum}/${firstEp.episode_number}`,
-              {
-                autoplayNextEpisode: true,
-                overlay: true,
-                color: "#bbf523",
-                progress: savedProgress
-              }
-            );
-        }
+          if (saved?.watched > 0) {
+              selectedEpisode = ep;
+          }
+
+      }
+
+      currentEpisodeKey =
+      `${tvId}-${sNum}-${selectedEpisode.episode_number}`;
+
+      const saved = getProgress(currentEpisodeKey);
+
+      const savedProgress =
+      saved?.watched ?? 0;
+
+      setActiveEpisode(
+          sNum,
+          selectedEpisode.episode_number
+      );
+
+      updateVideo(
+          `https://player.videasy.net/tv/${tvId}/${sNum}/${selectedEpisode.episode_number}`,
+          {
+              autoplayNextEpisode: true,
+              overlay: true,
+              color: "#bbf523",
+              progress: savedProgress
+          }
+      );
     }
 
     // Automatically click first season pill
