@@ -539,10 +539,11 @@ async function renderTVControls(tvId) {
             currentEpisodeKey = `${tvId}-${sNum}-${ep.episode_number}`;
             setActiveEpisode(sNum, ep.episode_number);
 
-            const saved = getProgress(currentEpisodeKey);
+        const saved = getProgress(currentEpisodeKey);
 
-            const savedProgress =
-                saved?.watched ?? 0;
+        console.log("LOADED:", currentEpisodeKey, saved);
+
+        const savedProgress = saved?.watched ?? 0;
 
             updateVideo(
                 `https://player.videasy.net/tv/${tvId}/${sNum}/${ep.episode_number}`,
