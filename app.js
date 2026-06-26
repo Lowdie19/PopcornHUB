@@ -427,6 +427,20 @@ window.addEventListener("message", (event) => {
         data.episode_number ??
         data.e;
 
+    if (
+        currentItem?.type === "tv" &&
+        season != null &&
+        episode != null
+    ) {
+        localStorage.setItem(
+            `tv_${currentItem.id}_last`,
+            JSON.stringify({
+                season,
+                episode
+            })
+        );
+    }
+
     if (season == null || episode == null) {
         return;
     }
@@ -463,6 +477,11 @@ async function renderTVControls(tvId) {
 
     const data = await res.json();
     box.innerHTML = "";
+
+    const savedShow = JSON.parse(
+        localStorage.getItem(`tv_${tvId}_last`) || "null"
+    );
+
 
     const seasonRow = document.createElement("div");
     seasonRow.className = "seasonRow";
@@ -504,8 +523,6 @@ async function renderTVControls(tvId) {
         const sData = await res.json();
         grid.innerHTML = "";
 
-        let firstCard = null;
-
         sData.episodes.forEach(ep => {
             const card = document.createElement("div");
             card.className = "episodeItem";
@@ -532,11 +549,10 @@ async function renderTVControls(tvId) {
                 </div>
             `;
 
-            if (!firstCard) firstCard = card;
-
         card.onclick = () => {
 
             currentEpisodeKey = `${tvId}-${sNum}-${ep.episode_number}`;
+ 
             setActiveEpisode(sNum, ep.episode_number);
 
         const saved = getProgress(currentEpisodeKey);
@@ -563,19 +579,22 @@ async function renderTVControls(tvId) {
       // AUTO SELECT LAST WATCHED
       // ======================
 
-      let selectedEpisode = sData.episodes[0];
+    let selectedEpisode = sData.episodes[0];
 
-      for (const ep of sData.episodes) {
+    if (
+        savedShow &&
+        savedShow.season === sNum
+    ) {
 
-          const key = `${tvId}-${sNum}-${ep.episode_number}`;
+        const found = sData.episodes.find(
+            ep => ep.episode_number === savedShow.episode
+        );
 
-          const saved = getProgress(key);
+        if (found) {
+            selectedEpisode = found;
+        }
 
-          if (saved?.watched > 0) {
-              selectedEpisode = ep;
-          }
-
-      }
+    }
 
       currentEpisodeKey =
       `${tvId}-${sNum}-${selectedEpisode.episode_number}`;
@@ -602,7 +621,23 @@ async function renderTVControls(tvId) {
     }
 
     // Automatically click first season pill
-    if (seasonRow.firstChild) seasonRow.firstChild.click();
+    if (savedShow) {
+
+      const btn = [...seasonRow.children].find(b =>
+          b.textContent === `Season ${savedShow.season}`
+      );
+
+      if (btn) {
+          btn.click();
+      } else {
+          seasonRow.firstChild.click();
+      }
+
+  } else {
+
+      seasonRow.firstChild.click();
+
+  }
 }
 
 function scrollToCategory(id){ document.getElementById(id).scrollIntoView({ behavior:"smooth", block:"start" }); }
