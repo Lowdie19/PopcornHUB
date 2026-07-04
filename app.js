@@ -2,6 +2,7 @@ let autoNextLock = false;
 let currentEpisodeKey = null;
 let currentItem = null;
 let initialSeasonLoad = true;
+let manualEpisodeChange = false;
 const TMDB_API_KEY = "7124d4e6e0feb015f07fc9a57bc27227";
 
 const loading = document.getElementById("loading");
@@ -10,17 +11,13 @@ const loading = document.getElementById("loading");
 function showLoading(){ loading.style.display="flex"; }
 function hideLoading(){ loading.style.display="none"; }
 
-// ======================
 // Debounced search
-// ======================
 let timeout;
 const searchInput = document.getElementById("searchInput");
 searchInput.addEventListener("keydown", e => { if(e.key==="Enter") searchAll(); });
 searchInput.addEventListener("input", () => { clearTimeout(timeout); timeout = setTimeout(searchAll, 600); });
 
-// ======================
 // Category Titles Helper
-// ======================
 function setCategoryTitles(isHome){
   document.querySelector("#movieCategory h2").innerHTML =
     `<i style="color: darkgray" class="fa-solid fa-film"></i> ${isHome ? "Popular Movies" : "Movies"}`;
@@ -30,9 +27,7 @@ function setCategoryTitles(isHome){
     `<i style="color: darkgray" class="fa-solid fa-tv"></i> ${isHome ? "Popular Anime" : "Anime"}`;
 }
 
-// ======================
 // Load top content (Home)
-// ======================
 async function loadHome(){
   setCategoryTitles(true); // Home: Popular titles
   showLoading();
@@ -83,9 +78,7 @@ async function loadHome(){
   hideLoading();
 }
 
-// ======================
 // Search
-// ======================
 async function searchAll(){
   const query = searchInput.value.trim();
   if(!query){ 
@@ -117,7 +110,7 @@ async function searchAll(){
 
     const md = await m.json();
     const td = await t.json();
-const ad = await a.json();
+    const ad = await a.json();
 
     const movies = (md.results||[]).map(i=>({
       type:"movie", id:i.id, title:i.title,
@@ -188,7 +181,7 @@ function closeModal() {
     currentItem = null;
     closeBtn.classList.remove("flash-red");
 
-    document.body.style.overflow = ""; // 🔥 RESTORE SCROLL
+    document.body.style.overflow = "";
   }, 300);
 }
 
@@ -209,7 +202,7 @@ function openModal(item){
 
   document.getElementById("detailModal").classList.add("show");
 
-  document.body.style.overflow = "hidden"; // 🔥 LOCK SCROLL
+  document.body.style.overflow = "hidden";
 
   loadDetails(item);
 }
@@ -261,7 +254,7 @@ async function loadDetails(item){
     const json = await res.json();
     const media = json?.data?.Media;
 
-      const clean = media?.description
+    const clean = media?.description
         ? media.description
             .replace(/<br\s*\/?>/gi, "\n")
             .replace(/<\/?i>/g, "")
@@ -289,11 +282,9 @@ async function loadDetails(item){
     }
 
     const data = await res.json();
-
     setDescription(data.overview);
-
     renderTVControls(item.id);
-
+      
     } catch (e){
       console.error(e);
       setDescription("Failed to load description.");
@@ -304,14 +295,11 @@ async function loadDetails(item){
 // Update video
 function updateVideo(url, options = {}) {
   console.log("UPDATE VIDEO:", url);
-  
     autoNextLock = false;
-
     const container = document.getElementById("videoContainer");
     container.innerHTML = "";
-
     const params = new URLSearchParams();
-
+    
     // core features
     if (options.progress != null) params.set("progress", options.progress);
     if (options.autoplayNextEpisode) params.set("autoplayNextEpisode", "true");
@@ -319,20 +307,19 @@ function updateVideo(url, options = {}) {
     if (options.episodeSelector) params.set("episodeSelector", "true");
     if (options.overlay) params.set("overlay", "true");
     if (options.color) params.set("color", options.color);
-
+    
     const iframe = document.createElement("iframe");
     iframe.id = "videoFrame";
-
     iframe.allowFullscreen = true;
     iframe.setAttribute("allow", "autoplay; encrypted-media");
-
     iframe.src = url + (params.toString() ? "?" + params.toString() : "");
-
     container.appendChild(iframe);
 }
+setTimeout(() => {
+    manualEpisodeChange = false;
+}, 1500);
 
 function setActiveEpisode(season, episode) {
-
     document
         .querySelectorAll(".episodeItem")
         .forEach(el => el.classList.remove("active"));
@@ -343,13 +330,11 @@ function setActiveEpisode(season, episode) {
 
     if (target) {
         target.classList.add("active");
-
         target.scrollIntoView({
             behavior: "smooth",
             block: "nearest"
         });
     }
-
     console.log(
         "HIGHLIGHT:",
         `S${season}E${episode}`
@@ -357,18 +342,17 @@ function setActiveEpisode(season, episode) {
 }
 
 function playNextEpisode(season, episode) {
-
+    
     // Next episode sa current season
     let next = document.querySelector(
         `[data-season="${season}"][data-ep="${episode + 1}"]`
     );
-
     if (next) {
         console.log("NEXT EP:", season, episode + 1);
         next.click();
         return;
     }
-
+    
     // Next season
     const nextSeason = [...document.querySelectorAll(".seasonPill")]
         .find(btn => btn.textContent === `Season ${season + 1}`);
@@ -379,42 +363,31 @@ function playNextEpisode(season, episode) {
     }
 
     console.log("NEXT SEASON:", season + 1);
-
     nextSeason.click();
-
+    
     setTimeout(() => {
-
     const firstEpisode = document.querySelector(
         `.episodeItem[data-season="${season + 1}"]`
     );
-
+        
     console.log("FIRST EP:", firstEpisode);
-
     if (firstEpisode) {
         firstEpisode.click();
     }
-
     }, 500);
-
 }
 
 function saveProgress(contentId, watched, duration = 0) {
-
-    // Kapag halos tapos na ang episode,
-    // i-reset ang resume position.
     if (duration > 0 && watched >= duration * 0.98) {
-
         watched = 0;
-
     }
-
     const progress = {
         watched,
         lastUpdated: Date.now()
     };
-
+    
     console.log("SAVING:", contentId, progress);
-
+    
     localStorage.setItem(
         "progress_" + contentId,
         JSON.stringify(progress)
@@ -423,14 +396,12 @@ function saveProgress(contentId, watched, duration = 0) {
 
 function getProgress(contentId) {
     const saved = localStorage.getItem("progress_" + contentId);
-
     return saved ? JSON.parse(saved) : null;
 }
 
 let lastEpisodeKey = "";
 
 window.addEventListener("message", (event) => {
-
     if (
         event.origin !== "https://player.videasy.net" &&
         event.origin !== "https://player.videasy.to"
@@ -450,24 +421,19 @@ window.addEventListener("message", (event) => {
     }
 
     console.log("VIDEOASY MESSAGE:", message);
-
     if (message.type !== "PLAYER_EVENT") return;
-
     const data = message.data;
-  
     console.log("PLAYER DATA:", data);
-  
+    
       // Save watch progress
     if (data.event === "timeupdate" && currentEpisodeKey) {
-
     const watched =
         data.timestamp ??
         data.currentTime ??
         0;
-
     const eventKey =
         `${currentItem.id}-${data.season}-${data.episode}`;
-
+        
     saveProgress(
         eventKey,
         watched,
@@ -475,31 +441,27 @@ window.addEventListener("message", (event) => {
     );
 
         // Episode finished?
-        if (data.progress >= 99 && !autoNextLock) {
-
+        if (
+            data.progress >= 99 &&
+            !autoNextLock &&
+            !manualEpisodeChange
+        ) {
             autoNextLock = true;
-
             console.log("NEXT EPISODE");
-
             playNextEpisode(
                 Number(data.season),
                 Number(data.episode)
             );
-
         }
-
     }
-
     const season =
         data.season ??
         data.season_number ??
         data.s;
-
     const episode =
         data.episode ??
         data.episode_number ??
         data.e;
-
     if (
         currentItem?.type === "tv" &&
         season != null &&
@@ -513,21 +475,15 @@ window.addEventListener("message", (event) => {
             })
         );
     }
-
     if (season == null || episode == null) {
         return;
     }
-
+    
     const key = `S${season}E${episode}`;
-
     if (key === lastEpisodeKey) return;
-
     lastEpisodeKey = key;
-
     console.log("ACTIVE EPISODE:", key);
-
     setActiveEpisode(season, episode);
-
 
     if (currentItem?.type === "tv") {
         currentEpisodeKey =
@@ -543,7 +499,6 @@ async function renderTVControls(tvId) {
     const res = await fetch(
       `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}`
     );
-
     if (!res.ok) {
       throw new Error(`TMDB Error: ${res.status}`);
     }
@@ -554,19 +509,15 @@ async function renderTVControls(tvId) {
     const savedShow = JSON.parse(
         localStorage.getItem(`tv_${tvId}_last`) || "null"
     );
-
-
+    
     const seasonRow = document.createElement("div");
     seasonRow.className = "seasonRow";
-  
     const seasonRowWrapper = document.createElement("div");
     seasonRowWrapper.className = "seasonRowWrapper";
-
     seasonRowWrapper.appendChild(seasonRow);
-  
     const grid = document.createElement("div");
     grid.className = "episodeGrid";
-
+    
     data.seasons.forEach(season => {
         if (season.season_number === 0) return;
         const pill = document.createElement("button");
@@ -585,24 +536,22 @@ async function renderTVControls(tvId) {
 
     async function loadEpisodes(sNum) {
         grid.innerHTML = "Loading episodes...";
+        
         const res = await fetch(
           `https://api.themoviedb.org/3/tv/${tvId}/season/${sNum}?api_key=${TMDB_API_KEY}`
         );
-
         if (!res.ok) {
           throw new Error(`Season Load Error: ${res.status}`);
         }
-
+        
         const sData = await res.json();
         grid.innerHTML = "";
-
+        
         sData.episodes.forEach(ep => {
             const card = document.createElement("div");
             card.className = "episodeItem";
-
             card.dataset.ep = ep.episode_number;
             card.dataset.season = sNum;
-
             card.innerHTML = `
                 <img
                   loading="lazy"
@@ -621,28 +570,14 @@ async function renderTVControls(tvId) {
                     }</p>
                 </div>
             `;
-
+            
         card.onclick = () => {
-
+            manualEpisodeChange = true;
             currentEpisodeKey = `${tvId}-${sNum}-${ep.episode_number}`;
- 
             setActiveEpisode(sNum, ep.episode_number);
-
             const saved = getProgress(currentEpisodeKey);
-
             console.log("LOADED:", currentEpisodeKey, saved);
-
-            let savedProgress = saved?.watched ?? 0;
-
-            // Kapag halos tapos na ang episode,
-            // huwag nang i-resume sa dulo.
-            if (
-                saved &&
-                saved.duration &&
-                savedProgress >= saved.duration - 10
-            ) {
-                savedProgress = 0;
-            }
+            const savedProgress = saved?.watched ?? 0;
 
             updateVideo(
                 `https://player.videasy.net/tv/${tvId}/${sNum}/${ep.episode_number}`,
@@ -654,16 +589,12 @@ async function renderTVControls(tvId) {
                 }
             );
         };
-
             grid.appendChild(card);
         });
-
-      // ======================
-      // AUTO SELECT LAST WATCHED
-      // ======================
-
+        
+// AUTO SELECT LAST WATCHED
     let selectedEpisode = sData.episodes[0];
-
+        
     if (
         initialSeasonLoad &&
         savedShow &&
@@ -672,22 +603,20 @@ async function renderTVControls(tvId) {
         const found = sData.episodes.find(
             ep => ep.episode_number === savedShow.episode
         );
-
+        
         if (found) {
             selectedEpisode = found;
         }
     }
-
+        
     initialSeasonLoad = false;
-
+        
       currentEpisodeKey =
       `${tvId}-${sNum}-${selectedEpisode.episode_number}`;
-
+        
       const saved = getProgress(currentEpisodeKey);
-
       const savedProgress =
       saved?.watched ?? 0;
-
       setActiveEpisode(
           sNum,
           selectedEpisode.episode_number
@@ -703,24 +632,22 @@ async function renderTVControls(tvId) {
           }
       );
     }
-
+    
     // Automatically click first season pill
     if (savedShow) {
-
+        
       const btn = [...seasonRow.children].find(b =>
           b.textContent === `Season ${savedShow.season}`
       );
-
-      if (btn) {
-          btn.click();
+        
+          if (btn) {
+              btn.click();
+          } else {
+              seasonRow.firstChild.click();
+          }
       } else {
-          seasonRow.firstChild.click();
-      }
-
-  } else {
-
+          
       seasonRow.firstChild.click();
-
   }
 }
 
@@ -728,9 +655,7 @@ function scrollToCategory(id){ document.getElementById(id).scrollIntoView({ beha
 
 function goHome(){ searchInput.value=""; document.getElementById("stats").innerHTML=""; window.scrollTo({ top:0, behavior:"smooth" }); loadHome(); }
 
-// ================================
 // HORIZONTAL SCROLL + RUBBER + EDGE BOUNCE ONLY
-// ================================
 function setupRowScrolling() {
   const scrollAmount = 600;
   const rows = document.querySelectorAll(".row");
@@ -750,12 +675,9 @@ function setupRowScrolling() {
     row._velocity = 0;
     row._isMouseDown = false;
     row._isTouchDown = false;
-
     const maxScroll = () => row.scrollWidth - row.clientWidth;
 
-    // ======================
     // EDGE BOUNCE ONLY (SAFE)
-    // ======================
     const bounceIfNeeded = () => {
       const max = maxScroll();
       if (row.scrollLeft <= 0 || row.scrollLeft >= max) {
@@ -765,49 +687,37 @@ function setupRowScrolling() {
       }
     };
 
-    // ======================
     // MOUSE DOWN
-    // ======================
     row.addEventListener("mousedown", e => {
       row._isMouseDown = true;
       row._dragged = false;
-
       row._startX = e.pageX;
       row._scrollStart = row.scrollLeft;
       row.style.cursor = "grabbing";
     });
 
-    // ======================
     // MOUSE MOVE
-    // ======================
     row.addEventListener("mousemove", e => {
       if (!row._isMouseDown) return;
       e.preventDefault();
-
       const walk = e.pageX - row._startX;
       if (Math.abs(walk) > 5) {
         row._dragged = true;
       }
       const raw = row._scrollStart - walk;
       const max = maxScroll();
-
       row.scrollLeft = rubber(raw, 0, max, 0.35);
     });
 
-    // ======================
     // MOUSE UP (INERTIA ONLY, NO BOUNCE)
-    // ======================
     window.addEventListener("mouseup", () => {
       if (!row._isMouseDown) return;
-
       row._isMouseDown = false;
       row.style.cursor = "grab";
-
       if (!row._dragged) return;
-
       row._isMouseDown = false;
       row.style.cursor = "grab";
-
+        
       if (
           row.scrollLeft <= 0 ||
           row.scrollLeft >= maxScroll()
@@ -816,39 +726,28 @@ function setupRowScrolling() {
       }
     });
 
-    // ======================
     // TOUCH START
-    // ======================
     row.addEventListener("touchstart", e => {
       row._isTouchDown = true;
       row._dragged = false;
-
       row._startX = e.touches[0].pageX;
       row._scrollStart = row.scrollLeft;
     }, { passive: true });
 
-    // ======================
     // TOUCH MOVE
-    // ======================
     row.addEventListener("touchmove", e => {
       if (!row._isTouchDown) return;
-
       const x = e.touches[0].pageX;
       const walk = x - row._startX;
-
       if (Math.abs(walk) > 5) {
         row._dragged = true;
       }
-
       const raw = row._scrollStart - walk;
       const max = maxScroll();
-
       row.scrollLeft = rubber(raw, 0, max, 0.35);
     }, { passive: false });
 
-    // ======================
     // TOUCH END (NO BOUNCE HERE)
-    // ======================
     row.addEventListener("touchend", () => {
       if (!row._dragged) {
         row._isTouchDown = false;
@@ -865,14 +764,11 @@ function setupRowScrolling() {
     });
   });
 
-  // ======================
-  // ARROWS (UNCHANGED)
-  // ======================
+  // ARROWS
   document.querySelectorAll(".arrow").forEach(btn => {
     btn.addEventListener("click", () => {
       const target = document.getElementById(btn.dataset.target);
       const amount = btn.classList.contains("left") ? -scrollAmount : scrollAmount;
-
       const max = target.scrollWidth - target.clientWidth;
       const next = target.scrollLeft + amount;
 
@@ -892,7 +788,6 @@ function setupRowScrolling() {
 
 setupRowScrolling();
 loadHome();
-
 
 async function renderAnimeControls(animeId) {
   const box = document.getElementById("episodeControls");
@@ -951,7 +846,6 @@ async function renderAnimeControls(animeId) {
         }
       );
     };
-
     grid.appendChild(ep);
   }
 
@@ -966,12 +860,9 @@ async function renderAnimeControls(animeId) {
   updateVideo(`https://player.videasy.net/anime/${animeId}/1`);
 }
 
-
 function setDescription(text) {
   const overviewEl = document.getElementById("modalOverview");
-
   const isMovie = currentItem?.type === "movie";
-
   overviewEl.className = "description";
   overviewEl.classList.remove("hasFade");
   overviewEl.textContent = text || "No description available.";
@@ -988,7 +879,6 @@ function setDescription(text) {
 
   // ❌ TV / ANIME: apply Read More
   let expanded = false;
-
   const btn = document.createElement("button");
   btn.id = "readMoreBtn";
   btn.className = "readMoreBtn";
