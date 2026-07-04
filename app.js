@@ -1,6 +1,7 @@
-
+let autoNextLock = false;
 let currentEpisodeKey = null;
 let currentItem = null;
+let initialSeasonLoad = true;
 const TMDB_API_KEY = "7124d4e6e0feb015f07fc9a57bc27227";
 
 const loading = document.getElementById("loading");
@@ -302,6 +303,10 @@ async function loadDetails(item){
 
 // Update video
 function updateVideo(url, options = {}) {
+  console.log("UPDATE VIDEO:", url);
+  
+    autoNextLock = false;
+
     const container = document.getElementById("videoContainer");
     container.innerHTML = "";
 
@@ -351,7 +356,57 @@ function setActiveEpisode(season, episode) {
     );
 }
 
-function saveProgress(contentId, watched) {
+function playNextEpisode(season, episode) {
+
+    // Next episode sa current season
+    let next = document.querySelector(
+        `[data-season="${season}"][data-ep="${episode + 1}"]`
+    );
+
+    if (next) {
+        console.log("NEXT EP:", season, episode + 1);
+        next.click();
+        return;
+    }
+
+    // Next season
+    const nextSeason = [...document.querySelectorAll(".seasonPill")]
+        .find(btn => btn.textContent === `Season ${season + 1}`);
+
+    if (!nextSeason) {
+        console.log("SERIES FINISHED");
+        return;
+    }
+
+    console.log("NEXT SEASON:", season + 1);
+
+    nextSeason.click();
+
+    setTimeout(() => {
+
+    const firstEpisode = document.querySelector(
+        `.episodeItem[data-season="${season + 1}"]`
+    );
+
+    console.log("FIRST EP:", firstEpisode);
+
+    if (firstEpisode) {
+        firstEpisode.click();
+    }
+
+    }, 500);
+
+}
+
+function saveProgress(contentId, watched, duration = 0) {
+
+    // Kapag halos tapos na ang episode,
+    // i-reset ang resume position.
+    if (duration > 0 && watched >= duration * 0.98) {
+
+        watched = 0;
+
+    }
 
     const progress = {
         watched,
@@ -405,15 +460,33 @@ window.addEventListener("message", (event) => {
       // Save watch progress
     if (data.event === "timeupdate" && currentEpisodeKey) {
 
-        const watched =
-            data.timestamp ??
-            data.currentTime ??
-            0;
+    const watched =
+        data.timestamp ??
+        data.currentTime ??
+        0;
 
-        saveProgress(
-            currentEpisodeKey,
-            watched
-        );
+    const eventKey =
+        `${currentItem.id}-${data.season}-${data.episode}`;
+
+    saveProgress(
+        eventKey,
+        watched,
+        data.duration
+    );
+
+        // Episode finished?
+        if (data.progress >= 99 && !autoNextLock) {
+
+            autoNextLock = true;
+
+            console.log("NEXT EPISODE");
+
+            playNextEpisode(
+                Number(data.season),
+                Number(data.episode)
+            );
+
+        }
 
     }
 
@@ -555,11 +628,21 @@ async function renderTVControls(tvId) {
  
             setActiveEpisode(sNum, ep.episode_number);
 
-        const saved = getProgress(currentEpisodeKey);
+            const saved = getProgress(currentEpisodeKey);
 
-        console.log("LOADED:", currentEpisodeKey, saved);
+            console.log("LOADED:", currentEpisodeKey, saved);
 
-        const savedProgress = saved?.watched ?? 0;
+            let savedProgress = saved?.watched ?? 0;
+
+            // Kapag halos tapos na ang episode,
+            // huwag nang i-resume sa dulo.
+            if (
+                saved &&
+                saved.duration &&
+                savedProgress >= saved.duration - 10
+            ) {
+                savedProgress = 0;
+            }
 
             updateVideo(
                 `https://player.videasy.net/tv/${tvId}/${sNum}/${ep.episode_number}`,
@@ -582,10 +665,10 @@ async function renderTVControls(tvId) {
     let selectedEpisode = sData.episodes[0];
 
     if (
+        initialSeasonLoad &&
         savedShow &&
         savedShow.season === sNum
     ) {
-
         const found = sData.episodes.find(
             ep => ep.episode_number === savedShow.episode
         );
@@ -593,8 +676,9 @@ async function renderTVControls(tvId) {
         if (found) {
             selectedEpisode = found;
         }
-
     }
+
+    initialSeasonLoad = false;
 
       currentEpisodeKey =
       `${tvId}-${sNum}-${selectedEpisode.episode_number}`;
