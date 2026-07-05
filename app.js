@@ -3,6 +3,7 @@ let currentEpisodeKey = null;
 let currentItem = null;
 let initialSeasonLoad = true;
 let manualEpisodeChange = false;
+let lastAutoNextKey = "";
 const TMDB_API_KEY = "7124d4e6e0feb015f07fc9a57bc27227";
 
 const loading = document.getElementById("loading");
@@ -379,7 +380,8 @@ function playNextEpisode(season, episode) {
 
 function saveProgress(contentId, watched, duration = 0) {
     if (duration > 0 && watched >= duration * 0.98) {
-        watched = 0;
+        localStorage.removeItem("progress_" + contentId);
+        return;
     }
     const progress = {
         watched,
@@ -440,14 +442,16 @@ window.addEventListener("message", (event) => {
         data.duration
     );
 
-        // Episode finished?
+        const autoKey =
+            `${data.season}-${data.episode}`;
         if (
             data.progress >= 99 &&
-            !autoNextLock &&
-            !manualEpisodeChange
+            lastAutoNextKey !== autoKey
         ) {
-            autoNextLock = true;
-            console.log("NEXT EPISODE");
+            lastAutoNextKey = autoKey;
+
+            console.log("AUTO NEXT");
+
             playNextEpisode(
                 Number(data.season),
                 Number(data.episode)
@@ -572,6 +576,7 @@ async function renderTVControls(tvId) {
             `;
             
         card.onclick = () => {
+            lastAutoNextKey = "";
             manualEpisodeChange = true;
             currentEpisodeKey = `${tvId}-${sNum}-${ep.episode_number}`;
             setActiveEpisode(sNum, ep.episode_number);
