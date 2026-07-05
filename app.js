@@ -84,7 +84,8 @@ async function searchAll(){
   const query = searchInput.value.trim();
   if(!query){ 
     document.getElementById("stats").innerHTML = ""; 
-    loadHome(); 
+    loadHome();
+    loadContinueWatching();
     return; 
   }
 
@@ -658,7 +659,7 @@ async function renderTVControls(tvId) {
 
 function scrollToCategory(id){ document.getElementById(id).scrollIntoView({ behavior:"smooth", block:"start" }); }
 
-function goHome(){ searchInput.value=""; document.getElementById("stats").innerHTML=""; window.scrollTo({ top:0, behavior:"smooth" }); loadHome(); }
+function goHome(){ searchInput.value=""; document.getElementById("stats").innerHTML=""; window.scrollTo({ top:0, behavior:"smooth" }); loadHome(); loadContinueWatching(); }
 
 // HORIZONTAL SCROLL + RUBBER + EDGE BOUNCE ONLY
 function setupRowScrolling() {
@@ -793,6 +794,8 @@ function setupRowScrolling() {
 
 setupRowScrolling();
 loadHome();
+loadContinueWatching();
+
 
 async function renderAnimeControls(animeId) {
   const box = document.getElementById("episodeControls");
@@ -922,4 +925,120 @@ if ("serviceWorker" in navigator) {
       .then(() => console.log("PWA Service Worker Registered"))
       .catch(err => console.log("SW failed:", err));
   });
+}
+
+async function loadContinueWatching() {
+    const continueItems = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        // Progress lang ang kukunin
+        if (!key.startsWith("progress_")) continue;
+        const progress = JSON.parse(
+            localStorage.getItem(key)
+        );
+
+        if (!progress || progress.watched <= 0) continue;
+
+        continueItems.push({
+            key,
+            watched: progress.watched,
+            duration: progress.duration ?? 0,
+            lastUpdated: progress.lastUpdated
+        });
+    }
+    continueItems.sort((a, b) =>
+        b.lastUpdated - a.lastUpdated
+    );
+    const uniqueItems = [];
+    const seen = new Set();
+
+    for (const item of continueItems) {
+        // progress_37854-2-62
+        const id = item.key.replace("progress_", "").split("-")[0];
+        if (seen.has(id)) continue;
+        seen.add(id);
+        uniqueItems.push(item);
+    }
+
+    console.log("UNIQUE CONTINUE WATCHING:");
+    console.table(uniqueItems);
+    
+    const row = document.getElementById("continueResults");
+
+row.innerHTML = "";
+
+if (uniqueItems.length === 0) {
+    document.getElementById("continueCategory").style.display = "none";
+    return;
+}
+
+document.getElementById("continueCategory").style.display = "block";
+for (const item of uniqueItems) {
+    const [, id, season, episode] =
+        item.key.match(/^progress_(\d+)-(\d+)-(\d+)$/);
+
+    try {
+
+        const res = await fetch(
+            `https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_API_KEY}`
+        );
+
+        const show = await res.json();
+
+        const card = document.createElement("div");
+            card.className = "movie";
+
+            card.innerHTML = `
+                <img
+                    loading="lazy"
+                    src="${
+                        show.poster_path
+                            ? "https://image.tmdb.org/t/p/w500" + show.poster_path
+                            : "https://via.placeholder.com/300x450"
+                    }"
+                    alt="${show.name}">
+
+                <div class="movieInfo">
+                    <strong>${show.name}</strong>
+                    <div class="genre">
+                        Season ${season} • Episode ${episode}
+                    </div>
+                </div>
+            `;
+        
+        card.onclick = () => {
+
+            localStorage.setItem(
+                `tv_${id}_last`,
+                JSON.stringify({
+                    season: Number(season),
+                    episode: Number(episode)
+                })
+            );
+            
+            currentItem = {
+                id: Number(id),
+                type: "tv",
+                title: show.name,
+                poster: show.poster_path
+                    ? "https://image.tmdb.org/t/p/w500" + show.poster_path
+                    : "",
+                backdrop: show.backdrop_path
+                    ? "https://image.tmdb.org/t/p/original" + show.backdrop_path
+                    : "",
+                overview: show.overview
+            };
+
+            openModal(currentItem);
+
+        };
+            row.appendChild(card);
+
+    } catch (err) {
+
+        console.error(err);
+
+    }
+
+}
 }
