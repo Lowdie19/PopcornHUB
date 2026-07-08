@@ -187,26 +187,29 @@ function closeModal() {
   }, 300);
 }
 
-function openModal(item){
-  currentItem = item;
+function openModal(item) {
+    currentItem = item;
+    document.getElementById("modalTitle").textContent = item.title;
+    document.getElementById("detailModal").classList.add("show");
+    document.body.style.overflow = "hidden";
 
-  document.getElementById("modalTitle").textContent = item.title;
+    if (item.type === "movie") {
 
-  const container = document.getElementById("videoContainer");
-  container.innerHTML = "";
+        currentEpisodeKey = `${item.id}-1-1`;
+        const saved = getProgress(currentEpisodeKey);
+        const savedProgress = saved?.watched ?? 0;
 
-  const iframe = document.createElement("iframe");
-  iframe.allowFullscreen = true;
-  iframe.setAttribute("allow", "autoplay; encrypted-media");
-  iframe.src = item.videasyUrl;
+        updateVideo(
+            item.videasyUrl,
+            {
+                overlay: true,
+                color: "#bbf523",
+                progress: savedProgress
+            }
+        );
+    }
 
-  container.appendChild(iframe);
-
-  document.getElementById("detailModal").classList.add("show");
-
-  document.body.style.overflow = "hidden";
-
-  loadDetails(item);
+    loadDetails(item);
 }
 async function loadDetails(item){
   const box = document.getElementById("episodeControls");
@@ -386,6 +389,8 @@ function saveProgress(contentId, watched, duration = 0) {
     }
     const progress = {
         watched,
+        duration,
+        type: currentItem?.type || "tv",
         lastUpdated: Date.now()
     };
     
@@ -943,6 +948,7 @@ async function loadContinueWatching() {
             key,
             watched: progress.watched,
             duration: progress.duration ?? 0,
+            type: progress.type,
             lastUpdated: progress.lastUpdated
         });
     }
@@ -974,70 +980,108 @@ if (uniqueItems.length === 0) {
 
 document.getElementById("continueCategory").style.display = "block";
 for (const item of uniqueItems) {
-    const [, id, season, episode] =
-        item.key.match(/^progress_(\d+)-(\d+)-(\d+)$/);
+
+    const parts = item.key.replace("progress_", "").split("-");
+    console.log("ITEM TYPE:", item.type);
+
+    const id = parts[0];
+    const season = parts[1] || 1;
+    const episode = parts[2] || 1;
 
     try {
 
+        const endpoint = item.type === "movie" ? "movie" : "tv";
+        console.log("ENDPOINT:", endpoint);
+console.log("FETCHING:", `https://api.themoviedb.org/3/${endpoint}/${id}?api_key=${TMDB_API_KEY}`);
+
         const res = await fetch(
-            `https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_API_KEY}`
+            `https://api.themoviedb.org/3/${endpoint}/${id}?api_key=${TMDB_API_KEY}`
         );
 
         const show = await res.json();
 
+        const title =
+            item.type === "movie"
+                ? show.title
+                : show.name;
+
+        const subtitle =
+            item.type === "movie"
+                ? "Movie"
+                : `Season ${season} • Episode ${episode}`;
+
         const card = document.createElement("div");
-            card.className = "movie";
+        card.className = "movie";
 
-            card.innerHTML = `
-                <img
-                    loading="lazy"
-                    src="${
-                        show.poster_path
-                            ? "https://image.tmdb.org/t/p/w500" + show.poster_path
-                            : "https://via.placeholder.com/300x450"
-                    }"
-                    alt="${show.name}">
+        card.innerHTML = `
+            <img
+                loading="lazy"
+                src="${
+                    show.poster_path
+                        ? "https://image.tmdb.org/t/p/w500" + show.poster_path
+                        : "https://via.placeholder.com/300x450"
+                }"
+                alt="${title}">
 
-                <div class="movieInfo">
-                    <strong>${show.name}</strong>
-                    <div class="genre">
-                        Season ${season} • Episode ${episode}
-                    </div>
+            <div class="movieInfo">
+                <strong>${title}</strong>
+                <div class="genre">
+                    ${subtitle}
                 </div>
-            `;
-        
+            </div>
+        `;
+
         card.onclick = () => {
 
-            localStorage.setItem(
-                `tv_${id}_last`,
-                JSON.stringify({
-                    season: Number(season),
-                    episode: Number(episode)
-                })
-            );
-            
-            currentItem = {
-                id: Number(id),
-                type: "tv",
-                title: show.name,
-                poster: show.poster_path
-                    ? "https://image.tmdb.org/t/p/w500" + show.poster_path
-                    : "",
-                backdrop: show.backdrop_path
-                    ? "https://image.tmdb.org/t/p/original" + show.backdrop_path
-                    : "",
-                overview: show.overview
-            };
+            if (item.type === "movie") {
+
+                currentItem = {
+                    id: Number(id),
+                    type: "movie",
+                    title: show.title,
+                    poster: show.poster_path
+                        ? "https://image.tmdb.org/t/p/w500" + show.poster_path
+                        : "",
+                    backdrop: show.backdrop_path
+                        ? "https://image.tmdb.org/t/p/original" + show.backdrop_path
+                        : "",
+                    overview: show.overview,
+                    videasyUrl: `https://player.videasy.net/movie/${id}`
+                };
+
+            } else {
+
+                localStorage.setItem(
+                    `tv_${id}_last`,
+                    JSON.stringify({
+                        season: Number(season),
+                        episode: Number(episode)
+                    })
+                );
+
+                currentItem = {
+                    id: Number(id),
+                    type: "tv",
+                    title: show.name,
+                    poster: show.poster_path
+                        ? "https://image.tmdb.org/t/p/w500" + show.poster_path
+                        : "",
+                    backdrop: show.backdrop_path
+                        ? "https://image.tmdb.org/t/p/original" + show.backdrop_path
+                        : "",
+                    overview: show.overview
+                };
+
+            }
 
             openModal(currentItem);
 
         };
-            row.appendChild(card);
+
+        row.appendChild(card);
 
     } catch (err) {
-
         console.error(err);
-
     }
 
 }
