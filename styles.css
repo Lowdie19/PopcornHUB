@@ -690,231 +690,267 @@ button:hover {
   color: #aaa;
 }
 
+
 /* =========================
-   MOBILE
+   REMOVE BUTTON
 ========================= */
-@media (max-width: 768px) {
-
-  .videoModalContent {
-    width: calc(100vw - 20px);
-    height: calc(100vh - 20px);
-    margin: 10px auto;
-  }
-
-  /* VIDEO SIDE */
-  .videoContainer {
-    flex: 1.3;
-    height: 100%;
-    position: relative;
-  }
-
-  .videoContainer iframe {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    inset: 0;
-  }
-
-  /* RIGHT PANEL */
-  .videoMeta {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-    overflow-y: auto;
-    background: #111;
-    gap: 10px;
-  }
-
-  /* TITLE + DESCRIPTION */
-  #modalTitle {
-    margin-top: 20px;
-    font-size: 16px;
-    line-height: 1.2;
-  }
-
-  #modalOverview {
-    font-size: 13px;
-    color: #aaa;
-  }
-
-  /* EPISODE CONTROLS FIX */
-  #episodeControls {
-    display: flex !important;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  #episodeControls select {
-    width: 100%;
-    font-size: 14px;
-  }
-
-  .hero {
-    padding: 20px 15px 5px;
-  }
-
-  .logo {
-    font-size: 2rem;
-    gap: 6px;
-  }
-
-  .hero p {
-    font-size: 0.85rem;
-  }
-
-  .episodeGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .episodeItem {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-    padding: 6px;
-  }
-
-  .episodeItem img {
-    width: 90px;
-    height: 50px;
-    border-radius: 4px;
-    object-fit: cover;
-    flex-shrink: 0;
-  }
-
-  .epMeta {
-    padding: 0;
-  }
-
-  .epMeta div {
-    font-size: 12px;
-  }
-
-  .epMeta p {
-    font-size: 10px;
-  }
-
-  .category {
-    padding: 15px 10px;
-  }
-
-  .category h2 {
-    font-size: 18px;
-  }
-
-  .row {
-    gap: 10px;
-  }
-
-  .movie {
-    min-width: 140px;
-    max-width: 140px;
-    height: 210px;
-  }
-
-  .videoMeta,
-  .seasonRow {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  .videoMeta::-webkit-scrollbar,
-  .seasonRow::-webkit-scrollbar {
-    display: none;
-  }
-
-  .description {
-    flex-shrink: 0;
-  }
-  .description::after {
-    height: 18px;
-  }
+.continueCard{
+    position:relative;
 }
 
-@media (orientation: portrait) {
-  .videoModalContent {
-    height: auto;
-    max-height: 90dvh;
-    flex-direction: column;
-  }
-
-  .videoContainer {
-    flex: none;
-    height: 40vh;
-  }
-
-  .videoMeta {
-    flex: 1;
-    overflow-y: auto;
-    min-height: 0;
-  }
-
-  .closeBtn {
-    position: absolute;
-    right: 5px;
-    font-size: 20px; /* makes the ✕ bigger */
-  }
-  .seasonRow {
-    padding: 15px;
-  }
-  .episodeGrid {
-    margin: 10px;
-  }
+.continueCard.showMenu .removeBtn{
+    opacity:1;
+    pointer-events:auto;
 }
 
-@media (orientation: landscape) {
-  
-  .videoModalContent {
-    overscroll-behavior: contain;
-    flex-direction: row;
-    height: calc(100dvh - 20px);
-    max-height: 90dvh;
-  }
-
-  .videoContainer {
-    flex: 1.2;
-    height: 100%;
-  }
-
-  .videoMeta {
-    flex: 1;
-    overflow-y: auto;
-    min-height: 0; /* prevents flex overflow bug */
-  }
-
-  .category {
-    transform: none !important;
-    width: 100% !important;
-  }
-  
-  .closeBtn {
-    font-size: 20px; /* makes the ✕ bigger */
-  }
-  .seasonRow {
-    padding: 15px;
-  }
-  .episodeGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .episodeItem {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-    padding: 6px;
-  }
-
-  .episodeItem img {
-    width: 90px;
-    height: 50px;
-    border-radius: 4px;
-    object-fit: cover;
-    flex-shrink: 0;
-  }
+.continueCard.showMenu img{
+    filter:brightness(.35);
+    transform:scale(.95);
 }
+
+.continueCard .movieInfo{
+    z-index:5;
+}
+
+.removeBtn{
+
+    position:absolute;
+
+    top:50%;
+    left:50%;
+
+    transform:translate(-50%,-50%);
+
+    opacity:0;
+    pointer-events:none;
+
+    z-index:20;
+
+    min-width:120px;
+    padding:10px 18px;
+
+    border:1px solid #555;
+    border-radius:10px;
+
+    background:#2b2b2b;
+    color:#ddd;
+
+    font-size:14px;
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:
+        background .2s,
+        color .2s,
+        border-color .2s,
+        transform .2s,
+        opacity .2s;
+}
+
+.removeBtn:hover{
+    background:#bbf523;
+    color:#111;
+    border-color:#bbf523;
+
+    transform:translate(-50%,-50%) scale(1.05);
+}
+
+.removeBtn:active{
+    transform:translate(-50%,-50%) scale(.97);
+}
+
+      /* =========================
+        MOBILE
+      ========================= */
+      @media (max-width: 768px) {
+        .videoModalContent {
+          width: calc(100vw - 20px);
+          height: calc(100vh - 20px);
+          margin: 10px auto;
+        }
+        /* VIDEO SIDE */
+        .videoContainer {
+          flex: 1.3;
+          height: 100%;
+          position: relative;
+        }
+        .videoContainer iframe {
+          width: 100%;
+          height: 100%;
+          position: absolute;
+          inset: 0;
+        }
+        /* RIGHT PANEL */
+        .videoMeta {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          padding: 10px;
+          overflow-y: auto;
+          background: #111;
+          gap: 10px;
+        }
+        /* TITLE + DESCRIPTION */
+        #modalTitle {
+          margin-top: 20px;
+          font-size: 16px;
+          line-height: 1.2;
+        }
+        #modalOverview {
+          font-size: 13px;
+          color: #aaa;
+        }
+        /* EPISODE CONTROLS FIX */
+        #episodeControls {
+          display: flex !important;
+          flex-direction: column;
+          gap: 8px;
+        }
+        #episodeControls select {
+          width: 100%;
+          font-size: 14px;
+        }
+        .hero {
+          padding: 20px 15px 5px;
+        }
+        .logo {
+          font-size: 2rem;
+          gap: 6px;
+        }
+        .hero p {
+          font-size: 0.85rem;
+        }
+        .episodeGrid {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .episodeItem {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 10px;
+          padding: 6px;
+        }
+        .episodeItem img {
+          width: 90px;
+          height: 50px;
+          border-radius: 4px;
+          object-fit: cover;
+          flex-shrink: 0;
+        }
+        .epMeta {
+          padding: 0;
+        }
+        .epMeta div {
+          font-size: 12px;
+        }
+        .epMeta p {
+          font-size: 10px;
+        }
+        .category {
+          padding: 15px 10px;
+        }
+        .category h2 {
+          font-size: 18px;
+        }
+        .row {
+          gap: 10px;
+        }
+        .movie {
+          min-width: 140px;
+          max-width: 140px;
+          height: 210px;
+        }
+        .videoMeta,
+        .seasonRow {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .videoMeta::-webkit-scrollbar,
+        .seasonRow::-webkit-scrollbar {
+          display: none;
+        }
+        .description {
+          flex-shrink: 0;
+        }
+        .description::after {
+          height: 18px;
+        }
+      }
+
+      @media (orientation: portrait) {
+        .videoModalContent {
+          height: auto;
+          max-height: 90dvh;
+          flex-direction: column;
+        }
+        .videoContainer {
+          flex: none;
+          height: 40vh;
+        }
+        .videoMeta {
+          flex: 1;
+          overflow-y: auto;
+          min-height: 0;
+        }
+        .closeBtn {
+          position: absolute;
+          right: 5px;
+          font-size: 20px; /* makes the ✕ bigger */
+        }
+        .seasonRow {
+          padding: 15px;
+        }
+        .episodeGrid {
+          margin: 10px;
+        }
+      }
+
+      @media (orientation: landscape) {
+        .videoModalContent {
+          overscroll-behavior: contain;
+          flex-direction: row;
+          height: calc(100dvh - 20px);
+          max-height: 90dvh;
+        }
+        .videoContainer {
+          flex: 1.2;
+          height: 100%;
+        }
+        .videoMeta {
+          flex: 1;
+          overflow-y: auto;
+          min-height: 0; /* prevents flex overflow bug */
+        }
+        .category {
+          transform: none !important;
+          width: 100% !important;
+        }
+        .closeBtn {
+          font-size: 20px; /* makes the ✕ bigger */
+        }
+        .seasonRow {
+          padding: 15px;
+        }
+        .episodeGrid {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .episodeItem {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 10px;
+          padding: 6px;
+        }
+        .episodeItem img {
+          width: 90px;
+          height: 50px;
+          border-radius: 4px;
+          object-fit: cover;
+          flex-shrink: 0;
+        }
+      }
