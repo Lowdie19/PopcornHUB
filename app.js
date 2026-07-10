@@ -81,12 +81,14 @@ async function loadHome(){
 
 // Search
 async function searchAll(){
-  const query = searchInput.value.trim();
-  if(!query){ 
-    document.getElementById("stats").innerHTML = ""; 
-    loadHome();
-    loadContinueWatching();
-    return; 
+    moveContinueWatching(false);
+    
+    const query = searchInput.value.trim();
+      if(!query){ 
+        document.getElementById("stats").innerHTML = ""; 
+        loadHome();
+        loadContinueWatching();
+        return; 
   }
 
   setCategoryTitles(false); // Search results: remove "Popular"
@@ -664,7 +666,7 @@ async function renderTVControls(tvId) {
 
 function scrollToCategory(id){ document.getElementById(id).scrollIntoView({ behavior:"smooth", block:"start" }); }
 
-function goHome(){ searchInput.value=""; document.getElementById("stats").innerHTML=""; window.scrollTo({ top:0, behavior:"smooth" }); loadHome(); loadContinueWatching(); }
+function goHome(){ searchInput.value=""; document.getElementById("stats").innerHTML=""; window.scrollTo({ top:0, behavior:"smooth" }); loadHome(); loadContinueWatching(); moveContinueWatching(true);}
 
 // HORIZONTAL SCROLL + RUBBER + EDGE BOUNCE ONLY
 function setupRowScrolling() {
@@ -1150,3 +1152,22 @@ document.addEventListener("click", (e) => {
         .forEach(c => c.classList.remove("showMenu"));
 
 });
+
+
+function moveContinueWatching(homeMode = true) {
+
+    const continueSection =
+        document.getElementById("continueCategory");
+
+    const categories =
+        document.getElementById("categoryGroup");
+
+    if (homeMode) {
+        categories.parentNode.insertBefore(
+            continueSection,
+            categories
+        );
+    } else {
+        categories.after(continueSection);
+    }
+}
