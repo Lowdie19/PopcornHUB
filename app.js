@@ -992,7 +992,7 @@ for (const item of uniqueItems) {
 
         const endpoint = item.type === "movie" ? "movie" : "tv";
         console.log("ENDPOINT:", endpoint);
-console.log("FETCHING:", `https://api.themoviedb.org/3/${endpoint}/${id}?api_key=${TMDB_API_KEY}`);
+        console.log("FETCHING:", `https://api.themoviedb.org/3/${endpoint}/${id}?api_key=${TMDB_API_KEY}`);
 
         const res = await fetch(
             `https://api.themoviedb.org/3/${endpoint}/${id}?api_key=${TMDB_API_KEY}`
@@ -1011,7 +1011,7 @@ console.log("FETCHING:", `https://api.themoviedb.org/3/${endpoint}/${id}?api_key
                 : `Season ${season} • Episode ${episode}`;
 
         const card = document.createElement("div");
-        card.className = "movie";
+        card.className = "movie continueCard";
 
         card.innerHTML = `
             <img
@@ -1031,10 +1031,67 @@ console.log("FETCHING:", `https://api.themoviedb.org/3/${endpoint}/${id}?api_key
             </div>
         `;
 
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "removeBtn";
+        removeBtn.textContent = "Remove";
+
+        card.appendChild(removeBtn);
+
+        removeBtn.onclick = (e) => {
+            e.stopPropagation();
+
+            localStorage.removeItem(item.key);
+
+            card.remove();
+
+            if (!row.children.length) {
+                document.getElementById("continueCategory").style.display = "none";
+            }
+        };
+        
+        
+        
+        let holdTimer;
+
+        // Desktop (Right Click)
+        card.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+
+            document
+                .querySelectorAll(".continueCard.showMenu")
+                .forEach(c => c.classList.remove("showMenu"));
+
+            card.classList.add("showMenu");
+        });
+
+        // Mobile (Long Press)
+        card.addEventListener("touchstart", () => {
+
+            holdTimer = setTimeout(() => {
+
+                document
+                    .querySelectorAll(".continueCard.showMenu")
+                    .forEach(c => c.classList.remove("showMenu"));
+
+                card.classList.add("showMenu");
+
+            }, 600);
+
+        }, { passive: true });
+
+        card.addEventListener("touchend", () => {
+            clearTimeout(holdTimer);
+        });
+
+        card.addEventListener("touchcancel", () => {
+            clearTimeout(holdTimer);
+        });
+
         card.onclick = () => {
+            if (card.classList.contains("showMenu"))
+                return;
 
             if (item.type === "movie") {
-
                 currentItem = {
                     id: Number(id),
                     type: "movie",
@@ -1071,11 +1128,8 @@ console.log("FETCHING:", `https://api.themoviedb.org/3/${endpoint}/${id}?api_key
                         : "",
                     overview: show.overview
                 };
-
             }
-
             openModal(currentItem);
-
         };
 
         row.appendChild(card);
@@ -1086,3 +1140,13 @@ console.log("FETCHING:", `https://api.themoviedb.org/3/${endpoint}/${id}?api_key
 
 }
 }
+
+document.addEventListener("click", (e) => {
+
+    if (e.target.closest(".cwOverlay")) return;
+
+    document
+        .querySelectorAll(".continueCard.showMenu")
+        .forEach(c => c.classList.remove("showMenu"));
+
+});
