@@ -184,8 +184,8 @@ function closeModal() {
     document.getElementById("videoContainer").innerHTML = "";
     currentItem = null;
     closeBtn.classList.remove("flash-red");
-
     document.body.style.overflow = "";
+    loadContinueWatching();
   }, 300);
 }
 
