@@ -84,12 +84,15 @@ async function searchAll(){
     moveContinueWatching(false);
     
     const query = searchInput.value.trim();
-      if(!query){ 
-        document.getElementById("stats").innerHTML = ""; 
+    if(!query){
+        document.getElementById("stats").innerHTML = "";
+        document.getElementById("stats").style.display = "block";
+        document.getElementById("emptySearch").style.display = "none";
+
         loadHome();
         loadContinueWatching();
-        return; 
-  }
+        return;
+    }
 
   setCategoryTitles(false); // Search results: remove "Popular"
 
@@ -142,6 +145,17 @@ async function searchAll(){
     render("movieCategory","movieResults",movies);
     render("tvCategory","tvResults",tv);
     render("animeCategory","animeResults",anime);
+      
+    const noResults =
+        movies.length === 0 &&
+        tv.length === 0 &&
+        anime.length === 0;
+
+    document.getElementById("emptySearch").style.display =
+        noResults ? "flex" : "none";
+
+    document.getElementById("stats").style.display =
+        noResults ? "none" : "block";
 
   }catch(e){ console.error(e); }
   hideLoading();
