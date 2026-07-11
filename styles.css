@@ -431,7 +431,6 @@ button:hover {
   background-color: rgba(170, 170, 170, 1); /* 100% */
 }
 
-
 .videoMeta h2 {
   margin-bottom: 5px;
   font-size: 20px;
@@ -455,7 +454,6 @@ button:hover {
     background-clip: padding-box, border-box;
 }
 
-
 .seasonRowWrapper {
     position: sticky;
     top: 0;
@@ -470,13 +468,11 @@ button:hover {
     top: 0;
     bottom: 0;
     width: 40px;
-
     background: linear-gradient(
         to right,
         #111,
         transparent
     );
-
     pointer-events: none;
     z-index: 101;
 }
@@ -504,7 +500,6 @@ button:hover {
     display: flex;
     gap: 10px;
     overflow-x: auto;
-
     background-color: #111;
     box-shadow: 0 10px 15px rgba(17, 17, 17, 0.5);
     border-bottom: 1px solid transparent;
@@ -516,7 +511,6 @@ button:hover {
             transparent);
     background-clip: padding-box, border-box;
 }
-
 .seasonPill {
     padding: 8px 16px;
     border-radius: 4px;
@@ -624,7 +618,6 @@ button:hover {
   filter: brightness(0.5);
 }
 
-
 .statLink{
   cursor:pointer;
   transition:0.2s;
@@ -633,7 +626,6 @@ button:hover {
 .statLink:hover{
   color:#bbf523;
 }
-
 
 .description {
   color: #aaa;
@@ -668,7 +660,6 @@ button:hover {
 .description.expanded {
   max-height: 500px;
 }
-
 .description.expanded::after {
   opacity: 0;
 }
@@ -684,7 +675,6 @@ button:hover {
   transition: 0.2s;
   padding: 10px;
 }
-
 .readMoreBtn:hover {
   background: none;
   color: #aaa;
@@ -697,49 +687,34 @@ button:hover {
 .continueCard{
     position:relative;
 }
-
 .continueCard.showMenu .removeBtn{
     opacity:1;
     pointer-events:auto;
 }
-
 .continueCard.showMenu img{
     filter:brightness(.35);
     transform:scale(.95);
 }
-
 .continueCard .movieInfo{
     z-index:5;
 }
-
 .removeBtn{
-
     position:absolute;
-
     top:50%;
     left:50%;
-
     transform:translate(-50%,-50%);
-
     opacity:0;
     pointer-events:none;
-
     z-index:20;
-
     min-width:120px;
     padding:10px 18px;
-
     border:1px solid #555;
     border-radius:10px;
-
     background:#2b2b2b;
     color:#ddd;
-
     font-size:14px;
     font-weight:600;
-
     cursor:pointer;
-
     transition:
         background .2s,
         color .2s,
@@ -747,7 +722,6 @@ button:hover {
         transform .2s,
         opacity .2s;
 }
-
 .removeBtn:hover{
     background:#bbf523;
     color:#111;
@@ -755,10 +729,34 @@ button:hover {
 
     transform:translate(-50%,-50%) scale(1.05);
 }
-
 .removeBtn:active{
     transform:translate(-50%,-50%) scale(.97);
 }
+
+
+.emptySearch{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:70px 20px;
+    color:#888;
+}
+.emptySearch i{
+    font-size:56px;
+    margin-bottom:20px;
+    color:#555;
+}
+.emptySearch h2{
+    margin:0;
+    color:#ddd;
+}
+.emptySearch p{
+    margin-top:10px;
+    color:#888;
+}
+
 
       /* =========================
         MOBILE
