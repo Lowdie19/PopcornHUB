@@ -200,6 +200,20 @@ function closeModal() {
     closeBtn.classList.remove("flash-red");
     document.body.style.overflow = "";
     loadContinueWatching();
+        const noResults =
+            document.getElementById("emptySearch").style.display === "flex";
+        if (
+            noResults &&
+            searchInput.value.trim()
+        ) {
+            searchInput.value = "";
+            document.getElementById("emptySearch").style.display = "none";
+            document.getElementById("stats").innerHTML = "";
+            document.getElementById("stats").style.display = "block";
+            moveContinueWatching(true);
+            loadHome();
+            return;
+        }
   }, 300);
 }
 
