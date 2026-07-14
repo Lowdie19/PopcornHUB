@@ -413,8 +413,10 @@ function playNextEpisode(season, episode) {
 }
 
 function saveProgress(contentId, watched, duration = 0) {
-    if (duration > 0 && watched >= duration * 0.98) {
+    if (duration > 0 && watched >= duration * 0.97) {
+        console.log("AUTO REMOVE:", contentId);
         localStorage.removeItem("progress_" + contentId);
+        loadContinueWatching();
         return;
     }
     const progress = {
@@ -424,7 +426,7 @@ function saveProgress(contentId, watched, duration = 0) {
         lastUpdated: Date.now()
     };
     
-    console.log("SAVING:", contentId, progress);
+    //console.log("SAVING:", contentId, progress);
     
     localStorage.setItem(
         "progress_" + contentId,
@@ -438,6 +440,7 @@ function getProgress(contentId) {
 }
 
 let lastEpisodeKey = "";
+let lastProgressSave = {};
 
 window.addEventListener("message", (event) => {
     if (
@@ -458,10 +461,10 @@ window.addEventListener("message", (event) => {
         return;
     }
 
-    console.log("VIDEOASY MESSAGE:", message);
+    //console.log("VIDEOASY MESSAGE:", message);
     if (message.type !== "PLAYER_EVENT") return;
     const data = message.data;
-    console.log("PLAYER DATA:", data);
+    //console.log("PLAYER DATA:", data);
     
       // Save watch progress
     if (data.event === "timeupdate" && currentEpisodeKey) {
@@ -472,11 +475,20 @@ window.addEventListener("message", (event) => {
     const eventKey =
         `${currentItem.id}-${data.season}-${data.episode}`;
         
-    saveProgress(
-        eventKey,
-        watched,
-        data.duration
-    );
+    const lastSaved = lastProgressSave[eventKey] ?? 0;
+
+    if (
+        watched - lastSaved >= 5 ||
+        watched >= data.duration * 0.95
+    ) {
+        lastProgressSave[eventKey] = watched;
+
+        saveProgress(
+            eventKey,
+            watched,
+            data.duration
+        );
+    }
 
         const autoKey =
             `${data.season}-${data.episode}`;
@@ -486,7 +498,7 @@ window.addEventListener("message", (event) => {
         ) {
             lastAutoNextKey = autoKey;
 
-            console.log("AUTO NEXT");
+            //console.log("AUTO NEXT");
 
             playNextEpisode(
                 Number(data.season),
@@ -522,7 +534,7 @@ window.addEventListener("message", (event) => {
     const key = `S${season}E${episode}`;
     if (key === lastEpisodeKey) return;
     lastEpisodeKey = key;
-    console.log("ACTIVE EPISODE:", key);
+    //console.log("ACTIVE EPISODE:", key);
     setActiveEpisode(season, episode);
 
     if (currentItem?.type === "tv") {
@@ -996,8 +1008,8 @@ async function loadContinueWatching() {
         uniqueItems.push(item);
     }
 
-    console.log("UNIQUE CONTINUE WATCHING:");
-    console.table(uniqueItems);
+    //console.log("UNIQUE CONTINUE WATCHING:");
+    //console.table(uniqueItems);
     
     const row = document.getElementById("continueResults");
 
@@ -1012,7 +1024,7 @@ document.getElementById("continueCategory").style.display = "block";
 for (const item of uniqueItems) {
 
     const parts = item.key.replace("progress_", "").split("-");
-    console.log("ITEM TYPE:", item.type);
+    //console.log("ITEM TYPE:", item.type);
 
     const id = parts[0];
     const season = parts[1] || 1;
@@ -1021,8 +1033,8 @@ for (const item of uniqueItems) {
     try {
 
         const endpoint = item.type === "movie" ? "movie" : "tv";
-        console.log("ENDPOINT:", endpoint);
-        console.log("FETCHING:", `https://api.themoviedb.org/3/${endpoint}/${id}?api_key=${TMDB_API_KEY}`);
+        //console.log("ENDPOINT:", endpoint);
+        //console.log("FETCHING:", `https://api.themoviedb.org/3/${endpoint}/${id}?api_key=${TMDB_API_KEY}`);
 
         const res = await fetch(
             `https://api.themoviedb.org/3/${endpoint}/${id}?api_key=${TMDB_API_KEY}`
