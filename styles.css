@@ -703,6 +703,13 @@ button:hover {
 .continueCard .movieInfo{
     z-index:5;
 }
+.continueCard.removing {
+    opacity: 0;
+    transform: scale(.9);
+    transition:
+        opacity .25s ease,
+        transform .25s ease;
+}
 .removeBtn{
     position:absolute;
     top:50%;
