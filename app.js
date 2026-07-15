@@ -413,8 +413,8 @@ function playNextEpisode(season, episode) {
 }
 
 function saveProgress(contentId, watched, duration = 0) {
-    if (duration > 0 && watched >= duration * 0.97) {
-        console.log("AUTO REMOVE:", contentId);
+    if (duration > 0 && watched >= duration * 0.95) {
+        //console.log("AUTO REMOVE:", contentId);
         localStorage.removeItem("progress_" + contentId);
         loadContinueWatching();
         return;
