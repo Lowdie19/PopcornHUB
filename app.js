@@ -13,10 +13,25 @@ function showLoading(){ loading.style.display="flex"; }
 function hideLoading(){ loading.style.display="none"; }
 
 // Debounced search
-let timeout;
+let searchDebounce;
 const searchInput = document.getElementById("searchInput");
-searchInput.addEventListener("keydown", e => { if(e.key==="Enter") searchAll(); });
-searchInput.addEventListener("input", () => { clearTimeout(timeout); timeout = setTimeout(searchAll, 600); });
+
+searchInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") {
+        return;
+    }
+    clearTimeout(searchDebounce);
+    searchAll();
+});
+
+searchInput.addEventListener("input", () => {
+
+    clearTimeout(searchDebounce);
+
+    searchDebounce = setTimeout(() => {
+        searchAll();
+    }, 300);
+});
 
 // Category Titles Helper
 function setCategoryTitles(isHome){
@@ -1096,15 +1111,23 @@ for (const item of uniqueItems) {
         card.appendChild(removeBtn);
 
         removeBtn.onclick = (e) => {
+
             e.stopPropagation();
 
             localStorage.removeItem(item.key);
 
-            card.remove();
+            card.classList.add("removing");
 
-            if (!row.children.length) {
-                document.getElementById("continueCategory").style.display = "none";
-            }
+            setTimeout(() => {
+
+                card.remove();
+
+                if (!row.children.length) {
+                    document.getElementById("continueCategory").style.display = "none";
+                }
+
+            }, 250);
+
         };
         
         
