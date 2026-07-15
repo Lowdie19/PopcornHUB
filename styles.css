@@ -103,6 +103,15 @@ button:hover {
   padding: 10px;
 }
 
+/* Continue Watching Position */
+#continueCategory.homeFirst {
+    order: -1;
+}
+
+#continueCategory.searchLast {
+    order: 999;
+}
+
 /* EACH CATEGORY */
 .category {
   width: 100%;
@@ -186,7 +195,7 @@ button:hover {
 .genre {
   font-size: 13px;
   color: #ccc;
-  margin-top: 5px;
+  margin-top: 8px;
 }
 
 /* LOADING */
