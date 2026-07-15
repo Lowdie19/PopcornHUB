@@ -393,6 +393,26 @@ function setActiveEpisode(season, episode) {
     );
 }
 
+
+function centerSeasonPill(pill) {
+
+    if (!pill) {
+        return;
+    }
+    const row = pill.parentElement;
+
+    // Kung kasya lahat ng season, huwag nang gumalaw
+    if (row.scrollWidth <= row.clientWidth) {
+        return;
+    }
+    pill.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest"
+    });
+}
+
+
 function playNextEpisode(season, episode) {
     
     // Next episode sa current season
@@ -593,21 +613,19 @@ async function renderTVControls(tvId) {
         pill.className = "seasonPill";
         pill.textContent = `Season ${season.season_number}`;
         pill.onclick = () => {
+
             document
                 .querySelectorAll(".seasonPill")
-                .forEach(p => p.classList.remove("active"));
+                .forEach((p) => {
+                    p.classList.remove("active");
+                });
 
             pill.classList.add("active");
 
-            if (seasonRow.scrollWidth > seasonRow.clientWidth) {
+            centerSeasonPill(pill);
 
-                pill.scrollIntoView({
-                    behavior: "smooth",
-                    inline: "center",
-                    block: "nearest"
-                });
-            }
             loadEpisodes(season.season_number);
+
         };
         seasonRow.appendChild(pill);
     });
