@@ -105,11 +105,13 @@ async function searchAll(){
         document.getElementById("emptySearch").style.display = "none";
 
         loadHome();
+        moveContinueWatching(true);
         loadContinueWatching();
         return;
     }
-
-  setCategoryTitles(false); // Search results: remove "Popular"
+    
+    moveContinueWatching(false);
+    setCategoryTitles(false); // Search results: remove "Popular"
 
   showLoading();
   try{
@@ -1238,15 +1240,15 @@ function moveContinueWatching(homeMode = true) {
     const continueSection =
         document.getElementById("continueCategory");
 
-    const categories =
-        document.getElementById("categoryGroup");
-
     if (homeMode) {
-        categories.parentNode.insertBefore(
-            continueSection,
-            categories
-        );
+
+        continueSection.classList.add("homeFirst");
+        continueSection.classList.remove("searchLast");
+
     } else {
-        categories.after(continueSection);
+
+        continueSection.classList.remove("homeFirst");
+        continueSection.classList.add("searchLast");
+
     }
 }
