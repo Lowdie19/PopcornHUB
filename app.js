@@ -289,8 +289,8 @@ async function loadDetails(item){
     const json = await res.json();
     const media = json?.data?.Media;
 
-    const clean = media?.description
-        ? media.description
+    const clean = media?.description ? 
+          media.description
             .replace(/<br\s*\/?>/gi, "\n")
             .replace(/<\/?i>/g, "")
             .replace(/<\/?b>/g, "")
@@ -454,8 +454,8 @@ window.addEventListener("message", (event) => {
 
     try {
         message =
-            typeof event.data === "string"
-                ? JSON.parse(event.data)
+            typeof event.data === "string" ?
+                JSON.parse(event.data)
                 : event.data;
     } catch {
         return;
@@ -608,16 +608,16 @@ async function renderTVControls(tvId) {
                 <img
                   loading="lazy"
                   src="${
-                    ep.still_path
-                      ? 'https://image.tmdb.org/t/p/w500' + ep.still_path
+                    ep.still_path ?
+                        'https://image.tmdb.org/t/p/w500' + ep.still_path
                       : 'https://via.placeholder.com/500x281'
                   }"
                   alt="${ep.name}">
                 <div class="epMeta">
                     <div>${ep.episode_number}. ${ep.name}</div>
                     <p>${
-                      ep.overview
-                        ? ep.overview.substring(0, 60) + '...'
+                      ep.overview ?
+                        ep.overview.substring(0, 60) + '...'
                         : 'No description'
                     }</p>
                 </div>
@@ -871,8 +871,8 @@ async function renderAnimeControls(animeId) {
 
   let episodeCount =
     media?.episodes ||
-    (media?.nextAiringEpisode?.episode
-      ? media.nextAiringEpisode.episode - 1
+    (media?.nextAiringEpisode?.episode ?
+     media.nextAiringEpisode.episode - 1
       : 12);
 
   box.innerHTML = "";
@@ -1043,14 +1043,22 @@ for (const item of uniqueItems) {
         const show = await res.json();
 
         const title =
-            item.type === "movie"
-                ? show.title
+            item.type === "movie" ?
+              show.title
                 : show.name;
 
         const subtitle =
-            item.type === "movie"
-                ? "Movie"
+            item.type === "movie" ?
+              "Movie"
                 : `Season ${season} • Episode ${episode}`;
+        
+        const percent =
+            item.duration > 0 ?
+                Math.min(
+                      100,
+                      (item.watched / item.duration) * 100
+                  )
+                : 0;
 
         const card = document.createElement("div");
         card.className = "movie continueCard";
@@ -1059,16 +1067,24 @@ for (const item of uniqueItems) {
             <img
                 loading="lazy"
                 src="${
-                    show.poster_path
-                        ? "https://image.tmdb.org/t/p/w500" + show.poster_path
+                    show.poster_path ? 
+                        "https://image.tmdb.org/t/p/w500" + show.poster_path
                         : "https://via.placeholder.com/300x450"
                 }"
                 alt="${title}">
 
             <div class="movieInfo">
                 <strong>${title}</strong>
+
                 <div class="genre">
                     ${subtitle}
+                </div>
+            </div>
+
+            <div class="progressBar">
+                <div
+                    class="progressFill"
+                    style="width:${percent}%">
                 </div>
             </div>
         `;
@@ -1138,11 +1154,11 @@ for (const item of uniqueItems) {
                     id: Number(id),
                     type: "movie",
                     title: show.title,
-                    poster: show.poster_path
-                        ? "https://image.tmdb.org/t/p/w500" + show.poster_path
+                    poster: show.poster_path ?
+                        "https://image.tmdb.org/t/p/w500" + show.poster_path
                         : "",
-                    backdrop: show.backdrop_path
-                        ? "https://image.tmdb.org/t/p/original" + show.backdrop_path
+                    backdrop: show.backdrop_path ?
+                        "https://image.tmdb.org/t/p/original" + show.backdrop_path
                         : "",
                     overview: show.overview,
                     videasyUrl: `https://player.videasy.net/movie/${id}`
@@ -1162,11 +1178,11 @@ for (const item of uniqueItems) {
                     id: Number(id),
                     type: "tv",
                     title: show.name,
-                    poster: show.poster_path
-                        ? "https://image.tmdb.org/t/p/w500" + show.poster_path
+                    poster: show.poster_path ?
+                        "https://image.tmdb.org/t/p/w500" + show.poster_path
                         : "",
-                    backdrop: show.backdrop_path
-                        ? "https://image.tmdb.org/t/p/original" + show.backdrop_path
+                    backdrop: show.backdrop_path ?
+                        "https://image.tmdb.org/t/p/original" + show.backdrop_path
                         : "",
                     overview: show.overview
                 };
