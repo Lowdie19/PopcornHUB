@@ -995,6 +995,12 @@ button:hover {
           max-width: 140px;
           height: 210px;
         }
+        .movie,
+        .skeletonCard {
+            min-width: 140px;
+            max-width: 140px;
+            height: 210px;
+        }
         .videoMeta,
         .seasonRow {
           scrollbar-width: none;
@@ -1066,7 +1072,7 @@ button:hover {
           width: 100% !important;
         }
         .closeBtn {
-          font-size: 20px; /* makes the ✕ bigger */
+          font-size: 23px; /* makes the ✕ bigger */
         }
         .seasonRow {
           padding: 15px;
