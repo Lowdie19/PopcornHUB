@@ -45,8 +45,24 @@ function setCategoryTitles(isHome){
 
 // Load top content (Home)
 async function loadHome(){
+    const movieRow = document.getElementById("movieResults");
+    const tvRow = document.getElementById("tvResults");
+    const animeRow = document.getElementById("animeResults");
+
+    if (!movieRow.children.length) {
+        showSkeleton("movieResults");
+    }
+
+    if (!tvRow.children.length) {
+        showSkeleton("tvResults");
+    }
+
+    if (!animeRow.children.length) {
+        showSkeleton("animeResults");
+    }
+    
   setCategoryTitles(true); // Home: Popular titles
-  showLoading();
+  //showLoading();
   try{
     const [m,t,a] = await Promise.all([
       fetch(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`),
@@ -91,11 +107,15 @@ async function loadHome(){
     render("animeCategory","animeResults",anime);
 
   }catch(e){ console.error(e); }
-  hideLoading();
+  //hideLoading();
 }
 
 // Search
 async function searchAll(){
+    showSkeleton("movieResults");
+    showSkeleton("tvResults");
+    showSkeleton("animeResults");
+    
     moveContinueWatching(false);
     
     const query = searchInput.value.trim();
@@ -110,10 +130,9 @@ async function searchAll(){
         return;
     }
     
-    moveContinueWatching(false);
     setCategoryTitles(false); // Search results: remove "Popular"
 
-  showLoading();
+  //showLoading();
   try{
     const [m,t,a] = await Promise.all([
       fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`),
@@ -175,34 +194,83 @@ async function searchAll(){
         noResults ? "none" : "block";
 
   }catch(e){ console.error(e); }
-  hideLoading();
+ // hideLoading();
 }
 
+// Skeleton Loading
+function showSkeleton(rowId, count = 10) {
+    const row = document.getElementById(rowId);
+
+    row.innerHTML = "";
+
+    for (let i = 0; i < count; i++) {
+        const skeleton = document.createElement("div");
+        skeleton.className = "skeletonCard";
+        skeleton.style.setProperty(
+            "--delay",
+            (i * 0.25) + "s"
+        );
+        skeleton.innerHTML = `
+            <div class="skeletonPoster"></div>
+
+            <div class="skeletonInfo">
+                <div class="skeletonLine skeletonTitle"></div>
+                <div class="skeletonLine skeletonSub"></div>
+            </div>
+        `;
+        
+        const title = skeleton.querySelector(".skeletonTitle");
+        const sub = skeleton.querySelector(".skeletonSub");
+
+        title.style.width = (55 + Math.random() * 30) + "%";
+        sub.style.width = (35 + Math.random() * 30) + "%";
+        
+        row.appendChild(skeleton);
+    }
+}
+
+
 // Render
-function render(catId,rowId,data){
-  const cat = document.getElementById(catId);
-  const row = document.getElementById(rowId);
-  row.innerHTML = "";
-  if(!data.length){ cat.style.display="none"; return; }
-  cat.style.display="block";
+function render(catId, rowId, data) {
 
-  data.forEach(item=>{
-    const div = document.createElement("div");
-    div.className = "movie";
-    div.innerHTML = `
-      <img
-        loading="lazy"
-        src="${item.poster || 'https://via.placeholder.com/300x450?text=No+Image'}"
-        alt="${item.title}">
+    const cat = document.getElementById(catId);
+    const row = document.getElementById(rowId);
 
-      <div class="movieInfo">
-        <strong>${item.title}</strong>
-        <div class="genre">${item.type.toUpperCase()}</div>
-      </div>
-    `;
-    div.onclick = ()=>openModal(item);
-    row.appendChild(div);
-  });
+    if (!data.length) {
+        row.innerHTML = "";
+        cat.style.display = "none";
+        return;
+    }
+
+    cat.style.display = "block";
+
+    const skeletons = row.querySelectorAll(".skeletonCard");
+
+    skeletons.forEach(card => {
+        card.classList.add("fadeOut");
+    });
+    setTimeout(() => {
+        row.innerHTML = "";
+        data.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "movie";
+            div.innerHTML = `
+                <img
+                    loading="lazy"
+                    src="${item.poster || "https://via.placeholder.com/300x450?text=No+Image"}"
+                    alt="${item.title}">
+
+                <div class="movieInfo">
+                    <strong>${item.title}</strong>
+                    <div class="genre">${item.type.toUpperCase()}</div>
+                </div>
+            `;
+            div.onclick = () => {
+                openModal(item);
+            };
+            row.appendChild(div);
+        });
+    }, 200);
 }
 
 // Modals
