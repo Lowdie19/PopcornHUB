@@ -399,6 +399,10 @@ button {
   scale: 0.90;
   color: var(--accentB);
 }
+#mobileCloseBtn {
+    display: none;
+}
+
 
 /* VIDEO RESPONSIVE CONTAINER */
 .videoContainer {
@@ -1067,16 +1071,25 @@ button {
           overflow-y: auto;
           min-height: 0;
         }
-        .closeBtn {
-          position: absolute;
-          right: 5px;
-          font-size: 20px; /* makes the ✕ bigger */
-        }
         .seasonRow {
           padding: 15px;
         }
         .episodeGrid {
           margin: 10px;
+        }
+        /* Floating Close Button */
+        #mobileCloseBtn {
+          display: block;
+
+          position: fixed;
+
+          right: 20px;
+          bottom: 20px;
+
+          z-index: 9999;
+        }
+        .closeBtn {
+          display: none;
         }
       }
 
