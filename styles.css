@@ -2,8 +2,25 @@
 * { box-sizing: border-box; margin:0; padding:0; }
 body {
   font-family: Arial, sans-serif;
-  background: #141414;
-  color: #fff;
+  background: var(--bg);
+  color: var(--text);
+}
+
+:root {
+    --bg: #141414;
+    --surface: #222;
+    --surface-light: #333;
+
+    --text: #fff;
+    --text-muted: #aaa;
+
+    --accentA: #bbf523;
+    --accentA-dark: #5d7a11;
+
+    --accentB: #f52323;
+    --accentB-dark: #7a1111;
+
+    --border: #222;
 }
 
 /* HERO */
@@ -29,8 +46,8 @@ body {
 }
 
 .logo .hub {
-  background: #bbf523 ;
-  color: #111;
+  background: var(--accentA);
+  color: black;
   padding: 2px 10px;
   border-radius: 6px;
   font-size: 0.8em;
@@ -39,7 +56,7 @@ body {
 
 .hero p {
   margin-top: 10px;
-  color: #aaa;
+  color: var(--text-muted);
   font-size: 1rem;
 }
 
@@ -48,10 +65,10 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #14141487;
+  background: var(--bg);
   backdrop-filter: blur(10px);
   padding: 20px;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid var(--surface);
 
   display: flex;
   justify-content: center;
@@ -66,31 +83,17 @@ body {
   max-width: 600px;     /* won't grow too big */
   padding: 12px 20px;
   border-radius: 30px;
-  border: 1px solid #333;
+  border: 1px solid var(--surface-light);
   outline: none;
-  background: #222;
+  background: var(--surface);
   color: #fff;
   font-size: 16px;
-}
-button {
-  padding: 12px 25px;
-  border: none;
-  border-radius: 30px;
-  background: #506b07;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.25s;
-}
-button:hover {
-  color: black;
-  background: #bbf523;
 }
 
 /* STATS */
 #stats {
   text-align: center;
-  color: #aaa;
+  color: var(--text-muted);
   padding: 15px;
   font-size: 14px;
 }
@@ -120,7 +123,7 @@ button:hover {
 .category h2 {
   margin-bottom: 15px;
   font-size: 22px;
-  border-left: 5px solid #bbf523;
+  border-left: 5px solid var(--accentA);
   padding-left: 10px;
 }
 
@@ -194,7 +197,7 @@ button:hover {
 }
 .genre {
   font-size: 13px;
-  color: #ccc;
+  color: var(--text-muted);
   margin-top: 8px;
 }
 
@@ -212,14 +215,14 @@ button:hover {
 #bar {
   width: 300px;
   height: 6px;
-  background: #333;
+  background: var(--surface-light);
   border-radius: 6px;
   overflow: hidden;
   margin-top: 15px;
 }
 #barFill {
   height: 100%;
-  background: #bbf523;
+  background: var(--accentA);
   animation: load 1.5s infinite;
 }
 @keyframes load {
@@ -232,51 +235,6 @@ button:hover {
   position: relative;
 }
 
-.arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 50px;
-  height: 100%;
-  border: none;
-  border-radius: 0;
-  color: #ffffff;
-  font-size: 58px;
-  cursor: pointer;
-  z-index: 10;
-  background-color: transparent;
-
-  opacity: 0.6;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  /* add font shadow */
-  text-shadow: 0 2px 8px rgba(0,0,0,0.9);
-}
-
-.arrow:hover {
-  background-color: transparent;
-  color: white;
-  opacity: 1;
-  transform: translateY(-50%) scale(1.1);
-}
-
-.arrow.left {
-  background: linear-gradient(to left, transparent, #141414ee);
-  position: absolute;
-  left: -20px;
-  z-index: 10;
-}
-
-.arrow.right {
-  background: linear-gradient(to right, transparent, #141414ee);
-  position: absolute;
-  right: -20px;
-  z-index: 10;
-}
 
 @keyframes bounce {
   0%   { transform: translateX(0); }
@@ -309,7 +267,6 @@ button:hover {
 .modalBackdrop {
   position: absolute;
   inset: 0;
-  background: #14141487;
   backdrop-filter: blur(10px);
   z-index: 1;
 
@@ -333,9 +290,9 @@ button:hover {
   display: flex;
   flex-direction: column;
 
-  background: #111;
-  box-shadow: -15px 15px 25px rgba(17, 17, 17, 0.5);
-  border: 1px solid rgba(34, 34, 34, 0.25);
+  background: var(--bg);
+  box-shadow: -15px 15px 25px black;
+  border: 1px solid var(--bg);
   border-radius: 14px;
   overflow: hidden;
   z-index: 2;
@@ -356,6 +313,96 @@ button:hover {
   to { transform: scale(1); opacity: 1; }
 }
 
+/* GENERAL BUTTON */
+button {
+    border: none;
+    cursor: pointer;
+    transition: .25s ease;
+    font-family: inherit;
+}
+
+/* SEARCH BUTTON */
+.searchBtn {
+    padding: 12px 25px;
+    background: var(--accentA-dark);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: transform .2s ease,
+                background .2s ease;
+}
+
+.searchBtn:hover {
+    font-weight: 700;
+    color: black;
+    background: var(--accentA);
+}
+
+.searchBtn:active {
+    transform: scale(.90);
+}
+
+/* ARROW BUTTON */
+.arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 100%;
+    border-radius: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.37);
+    font-size: 30px;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 2px 8px var(--bg);
+    transition: color .2s ease;
+    overflow: hidden;
+}
+.arrow i {
+    transition: transform .2s ease;
+}
+
+.arrow:hover i {
+    color: white;
+    transform: scale(1.25);
+}
+.arrow:active i {
+    transform: scale(1.0);
+}
+
+.arrow.left {
+    left: -20px;
+}
+.arrow.right {
+    right: -20px;
+}
+.arrow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+}
+.arrow.left::before {
+    background: linear-gradient(
+        to left,
+        transparent,
+        var(--bg)
+    );
+}
+.arrow.right::before {
+    background: linear-gradient(
+        to right,
+        transparent,
+        var(--bg)
+    );
+}
+
 /* CLOSE BUTTON */
 .closeBtn {
   position: sticky;
@@ -373,13 +420,14 @@ button:hover {
   z-index: 9999;
 }
 .closeBtn:hover {
-  color: red;
+  color: var(--accentB);
   background: none;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+  text-shadow: 0 2px 8px black;
 }
 .closeBtn.flash-red {
-  color: red;
-  text-shadow: 0 2px 8px rgba(255, 0, 0, 0.5);
+  scale: 0.90;
+  color: var(--accentB);
+  text-shadow: 0 2px 8px var(--accentB-dark);
 }
 
 /* VIDEO RESPONSIVE CONTAINER */
@@ -402,7 +450,6 @@ button:hover {
 .videoMeta {
   flex: 1;
   overflow-y: auto;
-  
   padding: 0 12px 12px 12px !important;
   margin: 0 10px 10px 10px;
 }
@@ -413,7 +460,7 @@ button:hover {
   left: 0;
   right: 0;
   height: 30px;
-  background: linear-gradient(to bottom, transparent, #111);
+  background: linear-gradient(to bottom, transparent, var(--bg));
   pointer-events: none;
 }
 
@@ -436,14 +483,14 @@ button:hover {
 
 .videoMeta::-webkit-scrollbar-thumb,
 .seasonRow::-webkit-scrollbar-thumb {
-  background-color: rgba(170, 170, 170, 0.5); /* 50% */
+  background-color: var(--surface);
   border-radius: 10px;
   transition: background-color 0.2s ease;
 }
 
 .videoMeta::-webkit-scrollbar-thumb:hover,
 .seasonRow::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(170, 170, 170, 1); /* 100% */
+  background-color: var(--surface-light)
 }
 
 .videoMeta h2 {
@@ -453,7 +500,7 @@ button:hover {
 
 .videoMeta p {
   margin: 3px 0;
-  color: #aaa;
+  color: var(--text-muted);
 }
 
 #episodeControls {
@@ -461,10 +508,10 @@ button:hover {
     margin-top: 20px;
     border-top: 1px solid transparent;
     background-image:
-        linear-gradient(#111, #111),
+        linear-gradient(var(--bg),var(--bg)),
         linear-gradient(to right,
             transparent,
-            rgba(255,255,255,0.2),
+            var(--surface-light),
             transparent);
     background-clip: padding-box, border-box;
 }
@@ -485,7 +532,7 @@ button:hover {
     width: 40px;
     background: linear-gradient(
         to right,
-        #111,
+        var(--bg),
         transparent
     );
     pointer-events: none;
@@ -503,7 +550,7 @@ button:hover {
 
     background: linear-gradient(
         to left,
-        #111,
+        var(--bg),
         transparent
     );
 
@@ -515,11 +562,11 @@ button:hover {
     display: flex;
     gap: 10px;
     overflow-x: auto;
-    background-color: #111;
-    box-shadow: 0 10px 15px rgba(17, 17, 17, 0.5);
+    background-color: var(--surface);
+    box-shadow: 0 10px 15px var(--bg);
     border-bottom: 1px solid transparent;
     background-image:
-        linear-gradient(#111, #111),
+        linear-gradient(var(--bg), var(--bg)),
         linear-gradient(to right,
             transparent,
             rgba(255,255,255,0.2),
@@ -529,18 +576,18 @@ button:hover {
 .seasonPill {
     padding: 8px 16px;
     border-radius: 4px;
-    background: #222;
-    color: #fff;
+    background: var(--surface);
+    color: var(--text);
     cursor: pointer;
     font-weight: bold;
-    border: 1px solid #444;
+    border: 1px solid var(--surface-light);
     white-space: nowrap;
     transition: 0.3s;
 }
 .seasonPill.active {
-    background: #bbf523;
-    color: #000;
-    border-color: #bbf523;
+    background: var(--accentA);
+    color: black;
+    border-color: var(--accentA);
 }
 
 /* Episode Grid */
@@ -552,13 +599,13 @@ button:hover {
 }
 
 .episodeItem {
-    background: #181818;
+    background: var(--bg);
     border-radius: 4px;
     overflow: hidden;
     cursor: pointer;
     transition: 0.3s;
 }
-.episodeItem:hover { background: #2f2f2f; }
+.episodeItem:hover { background: var(--bg); }
 .episodeItem img {
     width: 100%;
     aspect-ratio: 16/9;
@@ -566,14 +613,14 @@ button:hover {
 }
 .epMeta { padding: 10px; text-align: left;}
 .epMeta div { font-size: 0.9rem; font-weight: bold; }
-.epMeta p { font-size: 0.75rem; color: #888; margin-top: 4px; }
+.epMeta p { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
 
 #episodeControls select,
 .episodeSelect {
   padding: 8px;
   border-radius: 8px;
-  background: #d3d3d3;  /* green like your buttons */
-  color: #fff;
+  background: var(--accentA);  /* green like your buttons */
+  color: var(--text);
   text-align: center;
   border: none;
   outline: none;
@@ -583,12 +630,12 @@ button:hover {
 
 #episodeControls select:hover,
 .episodeSelect:hover {
-  background: #bbf523;  /* hover bright green */
-  color: #111;
+  background: var(--accentA);  /* hover bright green */
+  color: black;
 }
 .episodeSelect option:checked {
-  background: #bbf523;
-  color: #111;
+  background: var(--accentA);
+  color: black;
 }
 
 .episodeSearch {
@@ -597,7 +644,7 @@ button:hover {
   border: none;
   outline: none;
   font-size: 14px;
-  background: #222;
+  background: var(--surface);
   color: #fff;
   width: 100%;
 }
@@ -606,8 +653,8 @@ button:hover {
   padding: 8px;
   text-align: center;
   border-radius: 6px;
-  background: #000000;
-  color: #fff;
+  background: black;
+  color: var(--text);
   font-weight: bold;
   cursor: pointer;
   font-size: 0.85rem;
@@ -615,17 +662,17 @@ button:hover {
 }
 
 .episodeItem:hover {
-  background: #222;
+  background: var(--bg);
   color: white;
-  outline: 2px solid #bbf523;
+  outline: 2px solid var(--accentA);
   outline-offset: 2px;
 }
 
 .episodeItem.active {
-  background: #222;
-  outline: 2px solid #bbf523;
+  background: var(--surface);
+  outline: 2px solid var(--accentA);
   outline-offset: 2px;
-  box-shadow: inset 0 0 15px rgba(187, 245, 35, 0.2);
+  box-shadow: inset 0 0 15px var(--surface-light);
 }
 
 .episodeItem.played {
@@ -638,11 +685,11 @@ button:hover {
 }
 
 .statLink:hover{
-  color:#bbf523;
+  color:var(--accentA);
 }
 
 .description {
-  color: #aaa;
+  color: var(--text-muted);
   line-height: 1.5;
   font-size: 14px;
   overflow: hidden;
@@ -659,7 +706,7 @@ button:hover {
   left: 0;
   right: 0;
   height: 25px !important;
-  background: linear-gradient(to bottom, transparent, #111);
+  background: linear-gradient(to bottom, transparent, var(--bg));
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.25s ease;
@@ -683,7 +730,7 @@ button:hover {
   display: block;
   background: none;
   border: none;
-  color: #7b7b7b;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 13px;
   transition: 0.2s;
@@ -691,7 +738,7 @@ button:hover {
 }
 .readMoreBtn:hover {
   background: none;
-  color: #aaa;
+  color: var(--text);
 }
 
 
@@ -719,6 +766,20 @@ button:hover {
         opacity .25s ease,
         transform .25s ease;
 }
+
+.seasonPill {
+    padding: 8px 16px;
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-weight: bold;
+    border: 1px solid var(--surface-light);
+    white-space: nowrap;
+    transition: 0.3s;
+}
+
+
 .removeBtn{
     position:absolute;
     top:50%;
@@ -729,10 +790,10 @@ button:hover {
     z-index:20;
     min-width:120px;
     padding:10px 18px;
-    border:1px solid #555;
+    border: 1px solid var(--surface-light);
     border-radius:10px;
-    background:#2b2b2b;
-    color:#ddd;
+    background:var(--surface);
+    color:var(--text);
     font-size:14px;
     font-weight:600;
     cursor:pointer;
@@ -744,14 +805,12 @@ button:hover {
         opacity .2s;
 }
 .removeBtn:hover{
-    background:#bbf523;
-    color:#111;
-    border-color:#bbf523;
-
-    transform:translate(-50%,-50%) scale(1.05);
+    background:var(--accentA);
+    color:black;
+    border-color:var(--accentA);
 }
 .removeBtn:active{
-    transform:translate(-50%,-50%) scale(.97);
+    transform:translate(-50%,-50%) scale(.90);
 }
 
 /* =========================
@@ -772,7 +831,7 @@ button:hover {
 
 .progressFill{
     height:100%;
-    background:#bbf523;
+    background:var(--accentA);
 
     transition:.25s;
 }
@@ -796,7 +855,7 @@ button:hover {
 
 .continueCard .progressFill{
     height:100%;
-    background:#bbf523;
+    background:var(--accentA);
 }
 
 
@@ -808,20 +867,20 @@ button:hover {
     justify-content:center;
     text-align:center;
     padding:70px 20px;
-    color:#888;
+    color:var(--surface-light);
 }
 .emptySearch i{
     font-size:56px;
     margin-bottom:20px;
-    color:#555;
+    color:var(--surface-light);
 }
 .emptySearch h2{
     margin:0;
-    color:#ddd;
+    color:var(--text);
 }
 .emptySearch p{
     margin-top:10px;
-    color:#888;
+    color:var(--text-muted);
 }
 
 
@@ -836,7 +895,7 @@ button:hover {
     flex-direction: column;
     border-radius: 8px;
     overflow: hidden;
-    background: #1b1b1b;
+    background: var(--surface);
     flex-shrink: 0;
 }
 
@@ -847,7 +906,7 @@ button:hover {
 
 .skeletonPoster {
     flex: 1;
-    background: #2a2a2a;
+    background: var(--border);
     position: relative;
     overflow: hidden;
 }
@@ -857,7 +916,7 @@ button:hover {
 .skeletonLine {
     height: 10px;
     border-radius: 999px;
-    background: #2a2a2a;
+    background: var(--bg);
     position: relative;
     overflow: hidden;
 }
@@ -876,7 +935,7 @@ button:hover {
     background: linear-gradient(
         90deg,
         transparent,
-        rgba(255,255,255,.08),
+        var(--surface-light),
         transparent
     );
     transform: translateX(-100%);
@@ -920,7 +979,7 @@ button:hover {
           flex-direction: column;
           padding: 10px;
           overflow-y: auto;
-          background: #111;
+          background: var(--bg);
           gap: 10px;
         }
         /* TITLE + DESCRIPTION */
@@ -931,7 +990,7 @@ button:hover {
         }
         #modalOverview {
           font-size: 13px;
-          color: #aaa;
+          color: var(--text-muted);
         }
         /* EPISODE CONTROLS FIX */
         #episodeControls {
