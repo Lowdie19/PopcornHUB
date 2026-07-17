@@ -201,36 +201,6 @@ body {
   margin-top: 8px;
 }
 
-/* LOADING 
-#loading {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  z-index: 999;
-}
-#bar {
-  width: 300px;
-  height: 6px;
-  background: var(--surface-light);
-  border-radius: 6px;
-  overflow: hidden;
-  margin-top: 15px;
-}
-#barFill {
-  height: 100%;
-  background: var(--accentA);
-  animation: load 1.5s infinite;
-}
-@keyframes load {
-  0% { width: 0%; }
-  50% { width: 70%; }
-  100% { width: 100%; }
-}
-*/
 
 .carousel {
   position: relative;
