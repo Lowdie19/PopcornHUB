@@ -6,12 +6,6 @@ let manualEpisodeChange = false;
 let lastAutoNextKey = "";
 const TMDB_API_KEY = "7124d4e6e0feb015f07fc9a57bc27227";
 
-const loading = document.getElementById("loading");
-
-/* Loading / Copy Modal
-function showLoading(){ loading.style.display="flex"; }
-function hideLoading(){ loading.style.display="none"; }*/
-
 // Debounced search
 let searchDebounce;
 const searchInput = document.getElementById("searchInput");
@@ -48,6 +42,7 @@ async function loadHome(){
     const movieRow = document.getElementById("movieResults");
     const tvRow = document.getElementById("tvResults");
     const animeRow = document.getElementById("animeResults");
+    document.getElementById("emptySearch").style.display = "none";
 
     if (!movieRow.children.length) {
         showSkeleton("movieResults");
@@ -62,7 +57,6 @@ async function loadHome(){
     }
     
   setCategoryTitles(true); // Home: Popular titles
-  //showLoading();
   try{
     const [m,t,a] = await Promise.all([
       fetch(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`),
@@ -107,7 +101,6 @@ async function loadHome(){
     render("animeCategory","animeResults",anime);
 
   }catch(e){ console.error(e); }
-  //hideLoading();
 }
 
 // Search
@@ -132,7 +125,6 @@ async function searchAll(){
     
     setCategoryTitles(false); // Search results: remove "Popular"
 
-  //showLoading();
   try{
     const [m,t,a] = await Promise.all([
       fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`),
@@ -194,7 +186,6 @@ async function searchAll(){
         noResults ? "none" : "block";
 
   }catch(e){ console.error(e); }
- // hideLoading();
 }
 
 // Skeleton Loading
