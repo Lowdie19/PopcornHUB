@@ -267,6 +267,7 @@ body {
 .modalBackdrop {
   position: absolute;
   inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(10px);
   z-index: 1;
 
@@ -407,7 +408,7 @@ button {
 .closeBtn {
   position: sticky;
   background: none;
-  color: rgba(255, 255, 255, 0.51);
+  color: var(--text-muted);
   width: 30px;
   height: 30px;
   
@@ -422,12 +423,10 @@ button {
 .closeBtn:hover {
   color: var(--accentB);
   background: none;
-  text-shadow: 0 2px 8px black;
 }
 .closeBtn.flash-red {
   scale: 0.90;
   color: var(--accentB);
-  text-shadow: 0 2px 8px var(--accentB-dark);
 }
 
 /* VIDEO RESPONSIVE CONTAINER */
