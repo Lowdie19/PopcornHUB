@@ -8,9 +8,9 @@ const TMDB_API_KEY = "7124d4e6e0feb015f07fc9a57bc27227";
 
 const loading = document.getElementById("loading");
 
-// Loading / Copy Modal
+/* Loading / Copy Modal
 function showLoading(){ loading.style.display="flex"; }
-function hideLoading(){ loading.style.display="none"; }
+function hideLoading(){ loading.style.display="none"; }*/
 
 // Debounced search
 let searchDebounce;
