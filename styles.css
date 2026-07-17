@@ -201,7 +201,7 @@ body {
   margin-top: 8px;
 }
 
-/* LOADING */
+/* LOADING 
 #loading {
   position: fixed;
   inset: 0;
@@ -230,6 +230,7 @@ body {
   50% { width: 70%; }
   100% { width: 100%; }
 }
+*/
 
 .carousel {
   position: relative;
