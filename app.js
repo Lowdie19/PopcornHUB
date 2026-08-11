@@ -636,6 +636,8 @@ window.addEventListener("message", (event) => {
 });
 
 async function renderTVControls(tvId) {
+    initialSeasonLoad = true;
+
     const box = document.getElementById("episodeControls");
     box.style.display = "block";
     box.innerHTML = "Loading...";
