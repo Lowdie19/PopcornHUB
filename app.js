@@ -32,7 +32,7 @@ function setCategoryTitles(isHome){
   document.querySelector("#movieCategory h2").innerHTML =
     `<i style="color: darkgray" class="fa-solid fa-film"></i> ${isHome ? "Popular Movies" : "Movies"}`;
   document.querySelector("#tvCategory h2").innerHTML =
-    `<i style="color: darkgray" class="fa-solid fa-clapperboard"></i> ${isHome ? "Popular TV Shows" : "TV Shows"}`;
+    `<i style="color: darkgray" class="fa-solid fa-clapperboard"></i> ${isHome ? "Popular TV Series" : "TV Series"}`;
   document.querySelector("#animeCategory h2").innerHTML =
     `<i style="color: darkgray" class="fa-solid fa-tv"></i> ${isHome ? "Popular Anime" : "Anime"}`;
 }
@@ -58,25 +58,16 @@ async function loadHome(){
     
   setCategoryTitles(true); // Home: Popular titles
   try{
-    const [m,t,a] = await Promise.all([
+    const [m, t] = await Promise.all([
       fetch(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`),
-      fetch(`https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`),
-      fetch("https://graphql.anilist.co",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          query:`query { Page(perPage:10){ media(type:ANIME, sort:POPULARITY_DESC){ id title{romaji} coverImage{large} } } }`
-        })
-      })
+      fetch(`https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`)
     ]);
 
     if (!m.ok) throw new Error(`Movies API ${m.status}`);
     if (!t.ok) throw new Error(`TV API ${t.status}`);
-    if (!a.ok) throw new Error(`AniList API ${a.status}`);
 
     const md = await m.json();
     const td = await t.json();
-    const ad = await a.json();
 
     const movies = (md.results||[]).map(i=>({
       type:"movie", id:i.id, title:i.title,
@@ -84,21 +75,44 @@ async function loadHome(){
       videasyUrl:`https://player.videasy.net/movie/${i.id}`
     }));
 
-    const tv = (td.results||[]).map(i=>({
-      type:"tv", id:i.id, title:i.name,
-      poster:i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}` : "",
-      videasyUrl:`https://player.videasy.net/tv/${i.id}/1/1`
-    }));
+const tvResults = td.results || [];
 
-    const anime = (ad?.data?.Page?.media||[]).map(i=>({
-      type:"anime", id:i.id, title:i.title.romaji,
-      poster:i.coverImage.large,
-      videasyUrl:`https://player.videasy.net/anime/${i.id}`
-    }));
+const animeItems = tvResults.filter(i =>
+  i.original_language === "ja" &&
+  (i.genre_ids || []).includes(16)
+);
+
+const normalTVItems = tvResults.filter(i =>
+  !(
+    i.original_language === "ja" &&
+    (i.genre_ids || []).includes(16)
+  )
+);
+
+const tv = normalTVItems.map(i => ({
+  type: "tv",
+  id: i.id,
+  title: i.name,
+  poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+    : "",
+  videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
+}));
+
+const anime = animeItems.map(i => ({
+  type: "tv",
+  id: i.id,
+  title: i.name,
+  poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+    : "",
+  videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
+}));
 
     render("movieCategory","movieResults",movies);
     render("tvCategory","tvResults",tv);
     render("animeCategory","animeResults",anime);
+      
+    document.getElementById("animeCategory").style.display =
+    anime.length ? "block" : "none";
 
   }catch(e){ console.error(e); }
 }
@@ -126,53 +140,67 @@ async function searchAll(){
     setCategoryTitles(false); // Search results: remove "Popular"
 
   try{
-    const [m,t,a] = await Promise.all([
+    const [m, t] = await Promise.all([
       fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`),
-      fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`),
-      fetch("https://graphql.anilist.co",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          query:`query ($search:String){ Page(perPage:10){ media(search:$search,type:ANIME){ id title{romaji} coverImage{large} } } }`,
-          variables:{search:query}
-        })
-      })
+      fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`)
     ]);
 
     if (!m.ok) throw new Error(`Movies API ${m.status}`);
     if (!t.ok) throw new Error(`TV API ${t.status}`);
-    if (!a.ok) throw new Error(`AniList API ${a.status}`);
 
     const md = await m.json();
     const td = await t.json();
-    const ad = await a.json();
 
     const movies = (md.results||[]).map(i=>({
       type:"movie", id:i.id, title:i.title,
       poster:i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}` : "",
       videasyUrl:`https://player.videasy.net/movie/${i.id}`
     }));
-    const tv = (td.results||[]).map(i=>({
-      type:"tv", id:i.id, title:i.name,
-      poster:i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}` : "",
-      videasyUrl:`https://player.videasy.net/tv/${i.id}/1/1`
+    const tvResults = td.results || [];
+
+    const animeItems = tvResults.filter(i =>
+      i.original_language === "ja" &&
+      (i.genre_ids || []).includes(16)
+    );
+
+    const normalTVItems = tvResults.filter(i =>
+      !(
+        i.original_language === "ja" &&
+        (i.genre_ids || []).includes(16)
+      )
+    );
+
+    const tv = normalTVItems.map(i => ({
+      type: "tv",
+      id: i.id,
+      title: i.name,
+      poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+        : "",
+      videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
     }));
-    const anime = (ad?.data?.Page?.media||[]).map(i=>({
-      type:"anime", id:i.id, title:i.title.romaji,
-      poster:i.coverImage.large,
-      videasyUrl:`https://player.videasy.net/anime/${i.id}`
+
+    const anime = animeItems.map(i => ({
+      type: "tv",
+      id: i.id,
+      title: i.name,
+      poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+        : "",
+      videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
     }));
 
     document.getElementById("stats").innerHTML =
       `<span class="statLink" onclick="scrollToCategory('movieCategory')"><i class="fa-solid fa-film"></i> ${movies.length} Movies</span>
        &nbsp;|&nbsp;
-       <span class="statLink" onclick="scrollToCategory('tvCategory')"><i class="fa-solid fa-clapperboard"></i> ${tv.length} TV Shows</span>
+       <span class="statLink" onclick="scrollToCategory('tvCategory')"><i class="fa-solid fa-clapperboard"></i> ${tv.length} TV Series</span>
        &nbsp;|&nbsp;
        <span class="statLink" onclick="scrollToCategory('animeCategory')"><i class="fa-solid fa-tv"></i> ${anime.length} Anime</span>`;
 
     render("movieCategory","movieResults",movies);
     render("tvCategory","tvResults",tv);
     render("animeCategory","animeResults",anime);
+
+    document.getElementById("animeCategory").style.display =
+      anime.length ? "block" : "none";
       
     const noResults =
         movies.length === 0 &&
@@ -223,7 +251,6 @@ function showSkeleton(rowId, count = 10) {
 
 // Render
 function render(catId, rowId, data) {
-
     const cat = document.getElementById(catId);
     const row = document.getElementById(rowId);
 
@@ -240,11 +267,14 @@ function render(catId, rowId, data) {
     skeletons.forEach(card => {
         card.classList.add("fadeOut");
     });
+
     setTimeout(() => {
         row.innerHTML = "";
+
         data.forEach(item => {
             const div = document.createElement("div");
             div.className = "movie";
+
             div.innerHTML = `
                 <img
                     loading="lazy"
@@ -253,12 +283,19 @@ function render(catId, rowId, data) {
 
                 <div class="movieInfo">
                     <strong>${item.title}</strong>
-                    <div class="genre">${item.type.toUpperCase()}</div>
+
+                    <div class="genre">${
+                        catId === "animeCategory" ? "Anime"
+                            : item.type === "movie" ? "Movie"
+                            : "TV Series"
+                    }</div>
                 </div>
             `;
+
             div.onclick = () => {
                 openModal(item);
             };
+
             row.appendChild(div);
         });
     }, 200);
@@ -340,48 +377,7 @@ async function loadDetails(item){
       return;
     }
 
-    // ================= ANIME =================
-    if(item.type === "anime"){
-      box.style.display = "block";
-
-      const res = await fetch("https://graphql.anilist.co", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: `
-            query ($id: Int) {
-              Media(id: $id, type: ANIME) {
-                description(asHtml: false)
-              }
-            }
-          `,
-          variables: { id: item.id }
-        })
-      });
-
-      if (!res.ok) {
-          throw new Error(`Anime Details Error ${res.status}`);
-        }
-    const json = await res.json();
-    const media = json?.data?.Media;
-
-    const clean = media?.description ? 
-          media.description
-            .replace(/<br\s*\/?>/gi, "\n")
-            .replace(/<\/?i>/g, "")
-            .replace(/<\/?b>/g, "")
-            .replace(/<\/?em>/g, "")
-            .replace(/<[^>]*>/g, "")
-            .replace(/\n\s*\n/g, "\n\n")
-        : "No description available.";
-
-      setDescription(clean);
-
-      renderAnimeControls(item.id);
-      return;
-    }
-
-    // ================= TV =================
+    // ================= TV Series/Anime =================
     box.style.display = "block";
 
     const res = await fetch(
@@ -948,78 +944,6 @@ function setupRowScrolling() {
 setupRowScrolling();
 loadHome();
 loadContinueWatching();
-
-
-async function renderAnimeControls(animeId) {
-  const box = document.getElementById("episodeControls");
-  box.innerHTML = "Loading episodes...";
-
-  const res = await fetch("https://graphql.anilist.co", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      query: `
-        query ($id: Int) {
-          Media(id: $id, type: ANIME) {
-            episodes
-            nextAiringEpisode {
-              episode
-            }
-          }
-        }
-      `,
-      variables: { id: animeId }
-    })
-  });
-
-  const data = await res.json();
-  const media = data?.data?.Media;
-
-  let episodeCount =
-    media?.episodes ||
-    (media?.nextAiringEpisode?.episode ?
-     media.nextAiringEpisode.episode - 1
-      : 12);
-
-  box.innerHTML = "";
-
-  const grid = document.createElement("div");
-  grid.className = "episodeGrid";
-
-  for (let i = 1; i <= episodeCount; i++) {
-    const ep = document.createElement("div");
-    ep.className = "episodeItem";
-
-    ep.dataset.season = 1;
-    ep.dataset.ep = i;
-
-    ep.textContent = "Episode " + i;
-
-    ep.onclick = () => {
-      setActiveEpisode(1, i);
-
-      updateVideo(
-        `https://player.videasy.net/anime/${animeId}/${i}`,
-        {
-          autoplayNextEpisode: true,
-          overlay: true,
-          color: "#bbf523"
-        }
-      );
-    };
-    grid.appendChild(ep);
-  }
-
-  box.appendChild(grid);
-
-  // highlight first episode
-  setTimeout(() => {
-    setActiveEpisode(1, 1);
-  }, 0);
-
-  // autoplay episode 1
-  updateVideo(`https://player.videasy.net/anime/${animeId}/1`);
-}
 
 function setDescription(text) {
   const overviewEl = document.getElementById("modalOverview");
