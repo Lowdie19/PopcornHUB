@@ -399,29 +399,265 @@ async function loadDetails(item){
     }
 }
 
+
+function convertToVidlink(url) {
+    try {
+        const parsed = new URL(url);
+        const parts = parsed.pathname.split("/").filter(Boolean);
+
+        // Movie
+        if (parts[0] === "movie" && parts[1]) {
+            return `https://vidlink.pro/movie/${parts[1]}`;
+        }
+
+        // TV / Anime using TV-style TMDB IDs
+        if (
+            parts[0] === "tv" &&
+            parts[1] &&
+            parts[2] &&
+            parts[3]
+        ) {
+            return `https://vidlink.pro/tv/${parts[1]}/${parts[2]}/${parts[3]}`;
+        }
+
+        return null;
+
+    } catch (e) {
+        console.error("Vidlink conversion error:", e);
+        return null;
+    }
+}
+
 // Update video
 function updateVideo(url, options = {}) {
-  console.log("UPDATE VIDEO:", url);
+    console.log("UPDATE VIDEO:", url);
     autoNextLock = false;
     const container = document.getElementById("videoContainer");
     container.innerHTML = "";
     const params = new URLSearchParams();
-    
-    // core features
-    if (options.progress != null) params.set("progress", options.progress);
-    if (options.autoplayNextEpisode) params.set("autoplayNextEpisode", "true");
-    if (options.nextEpisode) params.set("nextEpisode", "true");
-    if (options.episodeSelector) params.set("episodeSelector", "true");
-    if (options.overlay) params.set("overlay", "true");
-    if (options.color) params.set("color", options.color);
-    
+
+    // Core features
+    if (options.progress != null) {
+        params.set("progress", options.progress);
+    }
+    if (options.autoplayNextEpisode) {
+        params.set("autoplayNextEpisode", "true");
+    }
+    if (options.nextEpisode) {
+        params.set("nextEpisode", "true");
+    }
+    if (options.episodeSelector) {
+        params.set("episodeSelector", "true");
+    }
+    if (options.overlay) {
+        params.set("overlay", "true");
+    }
+    if (options.color) {
+        params.set("color", options.color);
+    }
+
     const iframe = document.createElement("iframe");
     iframe.id = "videoFrame";
     iframe.allowFullscreen = true;
-    iframe.setAttribute("allow", "autoplay; encrypted-media");
-    iframe.src = url + (params.toString() ? "?" + params.toString() : "");
+    
+    iframe.setAttribute(
+        "allow",
+        "autoplay; encrypted-media"
+    );
+
+    iframe.src =
+        url +
+        (params.toString() ? "?" + params.toString() : "");
     container.appendChild(iframe);
+    addPlayerSwitchButton(url, options);
 }
+
+function addPlayerSwitchButton(currentUrl, currentOptions = {}) {
+
+    const container =
+        document.getElementById("videoContainer");
+
+    const oldButton =
+        document.getElementById("playerSwitchBtn");
+
+    if (oldButton) {
+        oldButton.remove();
+    }
+
+
+    // ==========================================
+    // DETERMINE CURRENT PLAYER
+    // ==========================================
+
+    const isVidlink =
+        currentUrl.includes("vidlink.pro");
+
+
+    const button =
+        document.createElement("button");
+
+    button.id =
+        "playerSwitchBtn";
+
+    button.className =
+        "playerSwitchBtn";
+
+
+    // ==========================================
+    // BUTTON TEXT
+    // ==========================================
+
+    if (isVidlink) {
+
+        button.innerHTML =
+            '<i class="fa-solid fa-arrow-left"></i> Try Videasy';
+
+    } else {
+
+        button.innerHTML =
+            '<i class="fa-solid fa-bolt"></i> Try Vidlink';
+
+    }
+
+
+    // ==========================================
+    // SWITCH
+    // ==========================================
+
+    button.onclick = () => {
+
+        let targetUrl;
+
+
+        // ======================================
+        // GET CURRENT SAVED PROGRESS
+        // ======================================
+
+        const saved =
+            currentEpisodeKey
+                ? getProgress(currentEpisodeKey)
+                : null;
+
+        const watched =
+            saved?.watched ?? 0;
+
+
+        console.log(
+            "SWITCH PLAYER:",
+            isVidlink
+                ? "Vidlink → Videasy"
+                : "Videasy → Vidlink"
+        );
+
+        console.log(
+            "CURRENT PROGRESS:",
+            watched
+        );
+
+
+        // ======================================
+        // VIDEASY → VIDLINK
+        // ======================================
+
+        if (!isVidlink) {
+
+            targetUrl =
+                convertToVidlink(currentUrl);
+
+            if (!targetUrl) {
+
+                console.warn(
+                    "No Vidlink URL available."
+                );
+
+                return;
+            }
+
+
+            // ======================================
+            // VIDLINK THEME
+            // ======================================
+
+            const vidlinkParams = new URLSearchParams({
+                primaryColor: "bbf523",
+                secondaryColor: "bbf523",
+                iconColor: "#e5e7eb"
+            });
+
+            targetUrl +=
+                (targetUrl.includes("?") ? "&" : "?") +
+                vidlinkParams.toString();
+
+
+            // ======================================
+            // RESUME AT SAVED POSITION
+            // ======================================
+
+            if (watched > 0) {
+
+                targetUrl +=
+                    `&startAt=${Math.floor(watched)}`;
+
+                console.log(
+                    "Vidlink startAt:",
+                    Math.floor(watched)
+                );
+            }
+        }
+
+
+        // ======================================
+        // VIDLINK → VIDEASY
+        // ======================================
+
+        else {
+
+            targetUrl =
+                currentUrl.replace(
+                    "https://vidlink.pro",
+                    "https://player.videasy.net"
+                );
+
+
+            console.log(
+                "Switching back to Videasy"
+            );
+
+
+            // IMPORTANT:
+            // Pass saved progress to Videasy
+
+            if (watched > 0) {
+
+                currentOptions = {
+                    ...currentOptions,
+                    progress: watched
+                };
+
+                console.log(
+                    "Videasy progress:",
+                    watched
+                );
+            }
+        }
+
+
+        // ======================================
+        // LOAD NEW PLAYER
+        // ======================================
+
+        updateVideo(
+            targetUrl,
+            {
+                ...currentOptions
+            }
+        );
+    };
+
+
+    container.appendChild(button);
+}
+
 setTimeout(() => {
     manualEpisodeChange = false;
 }, 1500);
@@ -503,6 +739,124 @@ function playNextEpisode(season, episode) {
     }
     }, 500);
 }
+
+window.addEventListener("message", (event) => {
+
+    console.log(
+        "MESSAGE FROM:",
+        event.origin,
+        event.data
+    );
+
+    if (event.origin !== "https://vidlink.pro") {
+        return;
+    }
+
+    const message = event.data;
+
+    if (!message) {
+        return;
+    }
+
+    console.log(
+        "VIDLINK MESSAGE:",
+        message
+    );
+
+    if (message.type === "PLAYER_EVENT") {
+
+        const data = message.data;
+
+        if (!data) {
+            return;
+        }
+
+        const {
+            event: eventType,
+            currentTime,
+            duration,
+            mediaType,
+            season,
+            episode
+        } = data;
+
+
+        console.log(
+            "VIDLINK PLAYER EVENT:",
+            eventType,
+            currentTime,
+            duration,
+            mediaType,
+            season,
+            episode
+        );
+
+
+        // ======================================
+        // NO CURRENT ITEM
+        // ======================================
+
+        if (!currentItem) {
+            console.warn(
+                "VidLink event received but no currentItem."
+            );
+            return;
+        }
+
+
+        // ======================================
+        // MOVIE
+        // ======================================
+
+        if (mediaType === "movie") {
+
+            const contentId =
+                `${currentItem.id}-1-1`;
+
+            saveProgress(
+                contentId,
+                currentTime,
+                duration || 0
+            );
+
+            return;
+        }
+
+
+        // ======================================
+        // TV
+        // ======================================
+
+        if (mediaType === "tv") {
+
+            const s =
+                Number(season) || 1;
+
+            const e =
+                Number(episode) || 1;
+
+            const contentId =
+                `${currentItem.id}-${s}-${e}`;
+
+
+            // Remember last watched episode
+            localStorage.setItem(
+                `tv_${currentItem.id}_last`,
+                JSON.stringify({
+                    season: s,
+                    episode: e
+                })
+            );
+
+
+            saveProgress(
+                contentId,
+                currentTime,
+                duration || 0
+            );
+        }
+    }
+});
 
 function saveProgress(contentId, watched, duration = 0) {
     if (duration > 0 && watched >= duration * 0.95) {
