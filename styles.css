@@ -923,7 +923,43 @@ button {
     }
 }
 
+/* =========================
+   Switching player
+========================= */
+.playerSwitchBtn {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 20;
 
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    backdrop-filter: blur(6px);
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.playerSwitchBtn:hover {
+    background: rgba(187, 245, 35, 0.95);
+    color: #111;
+    transform: translateY(-1px);
+}
+
+.playerSwitchBtn i {
+    margin-right: 5px;
+}
 
       /* =========================
         MOBILE
