@@ -936,8 +936,8 @@ button {
     border: none;
     border-radius: 6px;
 
-    background: rgba(0, 0, 0, 0.75);
-    color: #fff;
+    background: var(--bg);
+    color: var(--text);
 
     font-size: 13px;
     font-weight: 600;
@@ -952,13 +952,27 @@ button {
 }
 
 .playerSwitchBtn:hover {
-    background: rgba(187, 245, 35, 0.95);
-    color: #111;
+    background: var(--accentA);
+    color: var(--bg);
     transform: translateY(-1px);
 }
 
 .playerSwitchBtn i {
     margin-right: 5px;
+}
+
+.playerSwitchBtn {
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s ease;
+}
+
+.playerSwitchBtn.playerSwitchHidden {
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
 }
 
       /* =========================
