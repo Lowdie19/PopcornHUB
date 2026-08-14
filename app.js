@@ -508,15 +508,11 @@ function addPlayerSwitchButton(currentUrl, currentOptions = {}) {
     // ==========================================
 
     if (isVidlink) {
-
         button.innerHTML =
-            '<i class="fa-solid fa-arrow-left"></i> Try Videasy';
-
+            '<i class="fa-solid fa-bolt"></i> Switch Player';
     } else {
-
         button.innerHTML =
-            '<i class="fa-solid fa-bolt"></i> Try Vidlink';
-
+            '<i class="fa-solid fa-bolt"></i> Switch Player';
     }
 
 
@@ -534,8 +530,7 @@ function addPlayerSwitchButton(currentUrl, currentOptions = {}) {
         // ======================================
 
         const saved =
-            currentEpisodeKey
-                ? getProgress(currentEpisodeKey)
+            currentEpisodeKey ? getProgress(currentEpisodeKey)
                 : null;
 
         const watched =
@@ -544,8 +539,7 @@ function addPlayerSwitchButton(currentUrl, currentOptions = {}) {
 
         console.log(
             "SWITCH PLAYER:",
-            isVidlink
-                ? "Vidlink → Videasy"
+            isVidlink ? "Vidlink → Videasy"
                 : "Videasy → Vidlink"
         );
 
@@ -656,6 +650,45 @@ function addPlayerSwitchButton(currentUrl, currentOptions = {}) {
 
 
     container.appendChild(button);
+
+    // ================================
+    // PLAYER SWITCH AUTO-HIDE
+    // ================================
+    button.classList.add("playerSwitchHidden");
+
+    let hideTimer = null;
+
+    function showPlayerSwitch() {
+        button.classList.remove("playerSwitchHidden");
+
+        clearTimeout(hideTimer);
+
+        hideTimer = setTimeout(() => {
+            button.classList.add("playerSwitchHidden");
+        }, 2500);
+    }
+
+    function hidePlayerSwitch() {
+        clearTimeout(hideTimer);
+        button.classList.add("playerSwitchHidden");
+    }
+
+    // PC: mouse enters player
+    container.addEventListener("mouseenter", showPlayerSwitch);
+
+    // PC: mouse moves inside player
+    container.addEventListener("mousemove", showPlayerSwitch);
+
+    // PC: click inside player
+    container.addEventListener("click", showPlayerSwitch);
+
+    // Mobile: tap
+    container.addEventListener("touchstart", showPlayerSwitch, {
+        passive: true
+    });
+
+    // Mouse leaves player
+    container.addEventListener("mouseleave", hidePlayerSwitch);
 }
 
 setTimeout(() => {
