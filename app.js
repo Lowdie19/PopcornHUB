@@ -4,6 +4,25 @@ let currentItem = null;
 let initialSeasonLoad = true;
 let manualEpisodeChange = false;
 let lastAutoNextKey = "";
+
+// Movie Pagination
+let moviePage = 1;
+let movieTotalPages = 1;
+let allMovieData = [];
+let movieVisibleCount = 10;
+
+// TV / Anime Pagination
+let tvPage = 1;
+let tvTotalPages = 1;
+let allTVData = [];
+let tvVisibleCount = 10;
+
+let animePage = 1;
+let animeTotalPages = 1;
+let allAnimeData = [];
+let animeVisibleCount = 10;
+
+let loadingMoreMovies = false;
 const TMDB_API_KEY = "7124d4e6e0feb015f07fc9a57bc27227";
 
 // Debounced search
@@ -38,84 +57,503 @@ function setCategoryTitles(isHome){
 }
 
 // Load top content (Home)
-async function loadHome(){
+async function loadHome() {
     const movieRow = document.getElementById("movieResults");
     const tvRow = document.getElementById("tvResults");
     const animeRow = document.getElementById("animeResults");
     document.getElementById("emptySearch").style.display = "none";
 
-    if (!movieRow.children.length) {
-        showSkeleton("movieResults");
+    if (!movieRow.children.length) showSkeleton("movieResults");
+    if (!tvRow.children.length) showSkeleton("tvResults");
+    if (!animeRow.children.length) showSkeleton("animeResults");
+
+    setCategoryTitles(true);
+
+    try {
+        const [m, t] = await Promise.all([
+            fetch(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`),
+            fetch(`https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`)
+        ]);
+
+        if (!m.ok) throw new Error(`Movies API ${m.status}`);
+        if (!t.ok) throw new Error(`TV API ${t.status}`);
+
+        const md = await m.json();
+        const td = await t.json();
+
+        // Movies
+        moviePage = md.page || 1;
+        movieTotalPages = md.total_pages || 1;
+
+        console.log(
+            "TMDB MOVIES:",
+            "page", moviePage,
+            "/",
+            movieTotalPages
+        );
+
+        allMovieData = (md.results || []).map(i => ({
+            type: "movie",
+            id: i.id,
+            title: i.title,
+            poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+                : "",
+            videasyUrl: `https://player.videasy.net/movie/${i.id}`
+        }));
+
+        movieVisibleCount = 10;
+
+        // TV + Anime
+        tvPage = td.page || 1;
+        tvTotalPages = td.total_pages || 1;
+
+        animePage = td.page || 1;
+        animeTotalPages = td.total_pages || 1;
+
+        const tvResults = td.results || [];
+
+        const animeItems = tvResults.filter(i =>
+            i.original_language === "ja" &&
+            (i.genre_ids || []).includes(16)
+        );
+
+        const normalTVItems = tvResults.filter(i =>
+            !(
+                i.original_language === "ja" &&
+                (i.genre_ids || []).includes(16)
+            )
+        );
+
+        allTVData = normalTVItems.map(i => ({
+            type: "tv",
+            id: i.id,
+            title: i.name,
+            poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+                : "",
+            videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
+        }));
+
+        allAnimeData = animeItems.map(i => ({
+            type: "tv",
+            id: i.id,
+            title: i.name,
+            poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+                : "",
+            videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
+        }));
+
+        tvVisibleCount = 10;
+        animeVisibleCount = 10;
+
+        console.log(
+            "TMDB TV:",
+            "page", tvPage,
+            "/",
+            tvTotalPages
+        );
+
+        console.log(
+            "TV LOADED:",
+            allTVData.length,
+            "| ANIME:",
+            allAnimeData.length
+        );
+
+        // Render
+        render(
+            "movieCategory",
+            "movieResults",
+            allMovieData.slice(0, movieVisibleCount)
+        );
+
+        render(
+            "tvCategory",
+            "tvResults",
+            allTVData.slice(0, tvVisibleCount)
+        );
+
+        render(
+            "animeCategory",
+            "animeResults",
+            allAnimeData.slice(0, animeVisibleCount)
+        );
+
+        document.getElementById("animeCategory").style.display =
+            allAnimeData.length ? "block" : "none";
+
+    } catch (e) {
+        console.error(e);
     }
-
-    if (!tvRow.children.length) {
-        showSkeleton("tvResults");
-    }
-
-    if (!animeRow.children.length) {
-        showSkeleton("animeResults");
-    }
-    
-  setCategoryTitles(true); // Home: Popular titles
-  try{
-    const [m, t] = await Promise.all([
-      fetch(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`),
-      fetch(`https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`)
-    ]);
-
-    if (!m.ok) throw new Error(`Movies API ${m.status}`);
-    if (!t.ok) throw new Error(`TV API ${t.status}`);
-
-    const md = await m.json();
-    const td = await t.json();
-
-    const movies = (md.results||[]).map(i=>({
-      type:"movie", id:i.id, title:i.title,
-      poster:i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}` : "",
-      videasyUrl:`https://player.videasy.net/movie/${i.id}`
-    }));
-
-const tvResults = td.results || [];
-
-const animeItems = tvResults.filter(i =>
-  i.original_language === "ja" &&
-  (i.genre_ids || []).includes(16)
-);
-
-const normalTVItems = tvResults.filter(i =>
-  !(
-    i.original_language === "ja" &&
-    (i.genre_ids || []).includes(16)
-  )
-);
-
-const tv = normalTVItems.map(i => ({
-  type: "tv",
-  id: i.id,
-  title: i.name,
-  poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-    : "",
-  videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
-}));
-
-const anime = animeItems.map(i => ({
-  type: "tv",
-  id: i.id,
-  title: i.name,
-  poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-    : "",
-  videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
-}));
-
-    render("movieCategory","movieResults",movies);
-    render("tvCategory","tvResults",tv);
-    render("animeCategory","animeResults",anime);
-      
-    document.getElementById("animeCategory").style.display =
-    anime.length ? "block" : "none";
-
-  }catch(e){ console.error(e); }
 }
+
+async function loadMoreMovies() {
+
+    // =====================================
+    // STILL HAVE HIDDEN LOADED MOVIES
+    // =====================================
+    if (movieVisibleCount < allMovieData.length) {
+
+        movieVisibleCount = Math.min(
+            movieVisibleCount + 10,
+            allMovieData.length
+        );
+
+        render(
+            "movieCategory",
+            "movieResults",
+            allMovieData.slice(0, movieVisibleCount)
+        );
+
+        console.log(
+            "MOVIES VISIBLE:",
+            movieVisibleCount,
+            "/",
+            allMovieData.length
+        );
+
+        return;
+    }
+
+    // =====================================
+    // LOADED MOVIES ARE ALL VISIBLE
+    // GET NEXT TMDB PAGE
+    // =====================================
+    console.log(
+        "LOADED MOVIES EXHAUSTED — GETTING NEXT PAGE"
+    );
+
+    const loaded = await loadMoreMoviePage();
+
+    if (!loaded) {
+        console.log("NO MORE MOVIES AVAILABLE");
+        return;
+    }
+
+    // =====================================
+    // REVEAL 10 FROM NEWLY LOADED DATA
+    // =====================================
+    movieVisibleCount = Math.min(
+        movieVisibleCount + 10,
+        allMovieData.length
+    );
+
+    render(
+        "movieCategory",
+        "movieResults",
+        allMovieData.slice(0, movieVisibleCount)
+    );
+
+    console.log(
+        "MOVIES VISIBLE:",
+        movieVisibleCount,
+        "/",
+        allMovieData.length
+    );
+}
+
+// Load More TV
+async function loadMoreTV() {
+    if (tvVisibleCount < allTVData.length) {
+        tvVisibleCount = Math.min(
+            tvVisibleCount + 10,
+            allTVData.length
+        );
+
+        render(
+            "tvCategory",
+            "tvResults",
+            allTVData.slice(0, tvVisibleCount)
+        );
+
+        console.log(
+            "TV VISIBLE:",
+            tvVisibleCount,
+            "/",
+            allTVData.length
+        );
+
+        return;
+    }
+
+    if (tvPage >= tvTotalPages) {
+        console.log("NO MORE TV AVAILABLE");
+        return;
+    }
+
+    console.log(
+        "LOADED TV EXHAUSTED — GETTING NEXT PAGE"
+    );
+
+    const loaded = await loadMoreTVPage();
+
+    if (!loaded) {
+        console.log("NO MORE TV AVAILABLE");
+        return;
+    }
+
+    tvVisibleCount = Math.min(
+        tvVisibleCount + 10,
+        allTVData.length
+    );
+
+    render(
+        "tvCategory",
+        "tvResults",
+        allTVData.slice(0, tvVisibleCount)
+    );
+
+    console.log(
+        "TV VISIBLE:",
+        tvVisibleCount,
+        "/",
+        allTVData.length
+    );
+}
+// Load TV Page
+async function loadMoreTVPage() {
+    if (tvPage >= tvTotalPages) return false;
+
+    const nextPage = tvPage + 1;
+
+    console.log(
+        "LOADING TMDB TV PAGE:",
+        nextPage,
+        "/",
+        tvTotalPages
+    );
+
+    const response = await fetch(
+        `https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${nextPage}`
+    );
+
+    if (!response.ok) {
+        console.error("TV API ERROR:", response.status);
+        return false;
+    }
+
+    const data = await response.json();
+
+    tvPage = data.page || nextPage;
+    tvTotalPages = data.total_pages || tvTotalPages;
+
+    const results = data.results || [];
+
+    const newTV = results
+        .filter(i =>
+            !(
+                i.original_language === "ja" &&
+                (i.genre_ids || []).includes(16)
+            )
+        )
+        .map(i => ({
+            type: "tv",
+            id: i.id,
+            title: i.name,
+            poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+                : "",
+            videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
+        }));
+
+    allTVData.push(...newTV);
+
+    console.log(
+        "TV LOADED:",
+        newTV.length,
+        "| TOTAL:",
+        allTVData.length
+    );
+
+    return true;
+}
+
+// Load More Anime
+async function loadMoreAnime() {
+    if (animeVisibleCount < allAnimeData.length) {
+        animeVisibleCount = Math.min(
+            animeVisibleCount + 10,
+            allAnimeData.length
+        );
+
+        render(
+            "animeCategory",
+            "animeResults",
+            allAnimeData.slice(0, animeVisibleCount)
+        );
+
+        console.log(
+            "ANIME VISIBLE:",
+            animeVisibleCount,
+            "/",
+            allAnimeData.length
+        );
+
+        return;
+    }
+
+    if (animePage >= animeTotalPages) {
+        console.log("NO MORE ANIME AVAILABLE");
+        return;
+    }
+
+    console.log(
+        "LOADED ANIME EXHAUSTED — GETTING NEXT PAGE"
+    );
+
+    const loaded = await loadMoreAnimePage();
+
+    if (!loaded) {
+        console.log("NO MORE ANIME AVAILABLE");
+        return;
+    }
+
+    animeVisibleCount = Math.min(
+        animeVisibleCount + 10,
+        allAnimeData.length
+    );
+
+    render(
+        "animeCategory",
+        "animeResults",
+        allAnimeData.slice(0, animeVisibleCount)
+    );
+
+    console.log(
+        "ANIME VISIBLE:",
+        animeVisibleCount,
+        "/",
+        allAnimeData.length
+    );
+}
+
+// Load Anime Page
+async function loadMoreAnimePage() {
+    if (animePage >= animeTotalPages) return false;
+
+    const nextPage = animePage + 1;
+
+    console.log(
+        "LOADING TMDB ANIME PAGE:",
+        nextPage,
+        "/",
+        animeTotalPages
+    );
+
+    const response = await fetch(
+        `https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${nextPage}`
+    );
+
+    if (!response.ok) {
+        console.error("ANIME API ERROR:", response.status);
+        return false;
+    }
+
+    const data = await response.json();
+
+    animePage = data.page || nextPage;
+    animeTotalPages = data.total_pages || animeTotalPages;
+
+    const results = data.results || [];
+
+    const newAnime = results
+        .filter(i =>
+            i.original_language === "ja" &&
+            (i.genre_ids || []).includes(16)
+        )
+        .map(i => ({
+            type: "tv",
+            id: i.id,
+            title: i.name,
+            poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+                : "",
+            videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
+        }));
+
+    allAnimeData.push(...newAnime);
+
+    console.log(
+        "ANIME LOADED:",
+        newAnime.length,
+        "| TOTAL:",
+        allAnimeData.length
+    );
+
+    return true;
+}
+
+async function loadMoreMoviePage() {
+
+    if (loadingMoreMovies) return false;
+
+    if (moviePage >= movieTotalPages) {
+        console.log("NO MORE TMDB MOVIE PAGES");
+        return false;
+    }
+
+    loadingMoreMovies = true;
+
+    const nextPage = moviePage + 1;
+
+    console.log(
+        "LOADING TMDB MOVIE PAGE:",
+        nextPage,
+        "/",
+        movieTotalPages
+    );
+
+    try {
+
+        const response = await fetch(
+            `https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${nextPage}`
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `Movies API ${response.status}`
+            );
+        }
+
+        const data = await response.json();
+
+        const newMovies = (data.results || []).map(i => ({
+            type: "movie",
+            id: i.id,
+            title: i.title,
+            poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+                : "",
+            videasyUrl:
+                `https://player.videasy.net/movie/${i.id}`
+        }));
+
+        allMovieData.push(...newMovies);
+
+        moviePage = data.page || nextPage;
+        movieTotalPages = data.total_pages || movieTotalPages;
+
+        console.log(
+            "MOVIES LOADED:",
+            newMovies.length,
+            "| TOTAL:",
+            allMovieData.length
+        );
+
+        return newMovies.length > 0;
+
+    } catch (error) {
+
+        console.error(
+            "Failed to load more movies:",
+            error
+        );
+
+        return false;
+
+    } finally {
+
+        loadingMoreMovies = false;
+
+    }
+}
+
 
 // Search
 async function searchAll(){
@@ -263,41 +701,38 @@ function render(catId, rowId, data) {
     cat.style.display = "block";
 
     const skeletons = row.querySelectorAll(".skeletonCard");
-
-    skeletons.forEach(card => {
-        card.classList.add("fadeOut");
-    });
+    skeletons.forEach(card => card.classList.add("fadeOut"));
 
     setTimeout(() => {
-        row.innerHTML = "";
+        const existingCards = row.querySelectorAll(".movie").length;
 
-        data.forEach(item => {
+        if (!existingCards) {
+            row.innerHTML = "";
+        }
+
+        data.slice(existingCards).forEach(item => {
             const div = document.createElement("div");
             div.className = "movie";
 
+            const genre = catId === "animeCategory" ? "Anime" :
+                item.type === "movie" ? "Movie" : "TV Series";
+
             div.innerHTML = `
-                <img
-                    loading="lazy"
+                <img loading="lazy"
                     src="${item.poster || "https://via.placeholder.com/300x450?text=No+Image"}"
                     alt="${item.title}">
 
                 <div class="movieInfo">
                     <strong>${item.title}</strong>
-
-                    <div class="genre">${
-                        catId === "animeCategory" ? "Anime"
-                            : item.type === "movie" ? "Movie"
-                            : "TV Series"
-                    }</div>
+                    <div class="genre">${genre}</div>
                 </div>
             `;
 
-            div.onclick = () => {
-                openModal(item);
-            };
-
+            div.onclick = () => { openModal(item); };
             row.appendChild(div);
         });
+        // Update Right Arrow
+        updateRightArrow(rowId);
     }, 200);
 }
 
@@ -1308,26 +1743,193 @@ function setupRowScrolling() {
     });
   });
 
-  // ARROWS
-  document.querySelectorAll(".arrow").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const target = document.getElementById(btn.dataset.target);
-      const amount = btn.classList.contains("left") ? -scrollAmount : scrollAmount;
-      const max = target.scrollWidth - target.clientWidth;
-      const next = target.scrollLeft + amount;
+// ARROWS
+document.querySelectorAll(".arrow").forEach(btn => {
+    btn.addEventListener("click", async () => {
+        const target = document.getElementById(btn.dataset.target);
+        const amount = btn.classList.contains("left") ? -scrollAmount : scrollAmount;
+        const max = target.scrollWidth - target.clientWidth;
+        const next = target.scrollLeft + amount;
 
-      if (next < 0 || next > max) {
-        target.scrollLeft = clamp(next, 0, max);
+        if (btn.classList.contains("right") && target.scrollLeft >= max - 5) {
 
-        target.classList.remove("bounce");
-        void target.offsetWidth;
-        target.classList.add("bounce");
-        return;
-      }
+            // See More
+            if (btn.classList.contains("seeMoreMode")) {
+                btn.classList.remove("seeMoreMode");
+                btn.innerHTML = `
+                    <i class="fa-solid fa-chevron-right"></i>
+                `;
 
-      target.scrollBy({ left: amount, behavior: "smooth" });
+                if (btn.id === "movieRightArrow") {
+                    await loadMoreMovies();
+                } else if (btn.id === "tvRightArrow") {
+                    await loadMoreTV();
+                } else if (btn.id === "animeRightArrow") {
+                    await loadMoreAnime();
+                }
+
+                // Wait for render to finish
+                setTimeout(() => {
+                    const newMax = target.scrollWidth - target.clientWidth;
+
+                    target.scrollTo({
+                        left: Math.min(
+                            target.scrollLeft + scrollAmount,
+                            newMax
+                        ),
+                        behavior: "smooth"
+                    });
+
+                    // Re-check after the carousel moves
+                    setTimeout(() => {
+                        updateRightArrow(btn.dataset.target);
+                    }, 400);
+                }, 350);
+
+                return;
+            }
+
+            // Reached end
+            console.log("REACHED END:", btn.dataset.target);
+
+            if (
+                btn.id === "movieRightArrow" ||
+                btn.id === "tvRightArrow" ||
+                btn.id === "animeRightArrow"
+            ) {
+                btn.innerHTML = `
+                    <span>See More</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                `;
+                btn.classList.add("seeMoreMode");
+            }
+
+            return;
+        }
+
+        // Normal boundary
+        if (next < 0 || next > max) {
+            target.scrollLeft = clamp(next, 0, max);
+            target.classList.remove("bounce");
+            void target.offsetWidth;
+            target.classList.add("bounce");
+            return;
+        }
+
+        target.scrollBy({
+            left: amount,
+            behavior: "smooth"
+        });
     });
-  });
+});
+
+// Update Right Arrows
+function updateRightArrow(rowId) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+
+    const config = {
+        movieResults: {
+            button: "movieRightArrow",
+            visible: movieVisibleCount,
+            loaded: allMovieData.length,
+            page: moviePage,
+            totalPages: movieTotalPages
+        },
+        tvResults: {
+            button: "tvRightArrow",
+            visible: tvVisibleCount,
+            loaded: allTVData.length,
+            page: tvPage,
+            totalPages: tvTotalPages
+        },
+        animeResults: {
+            button: "animeRightArrow",
+            visible: animeVisibleCount,
+            loaded: allAnimeData.length,
+            page: animePage,
+            totalPages: animeTotalPages
+        }
+    };
+
+    const state = config[rowId];
+    if (!state) return;
+
+    const btn = document.getElementById(state.button);
+    if (!btn) return;
+
+    const max = row.scrollWidth - row.clientWidth;
+
+    if (row.scrollLeft < max - 5) {
+        btn.innerHTML = `
+            <i class="fa-solid fa-chevron-right"></i>
+        `;
+        btn.classList.remove("seeMoreMode");
+        return;
+    }
+
+    const hasMore =
+        state.visible < state.loaded ||
+        state.page < state.totalPages;
+
+    if (hasMore) {
+        btn.innerHTML = `
+            <span>See More</span>
+            <i class="fa-solid fa-chevron-right"></i>
+        `;
+        btn.classList.add("seeMoreMode");
+        return;
+    }
+
+    btn.innerHTML = `
+        <i class="fa-solid fa-chevron-right"></i>
+    `;
+    btn.classList.remove("seeMoreMode");
+}
+
+
+document
+    .getElementById("movieResults")
+    ?.addEventListener("scroll", () => {
+        updateMovieRightArrow();
+    });
+
+
+const movieRow = document.getElementById("movieResults");
+const movieRightArrow = document.getElementById("movieRightArrow");
+
+if (movieRow && movieRightArrow) {
+
+    movieRow.addEventListener("scroll", () => {
+
+        const max =
+            movieRow.scrollWidth - movieRow.clientWidth;
+
+        const atEnd =
+            movieRow.scrollLeft >= max - 5;
+
+        if (atEnd) {
+
+            movieRightArrow.innerHTML = `
+                <span>See More</span>
+                <i class="fa-solid fa-chevron-right"></i>
+            `;
+
+            movieRightArrow.classList.add("seeMoreMode");
+
+        } else {
+
+            movieRightArrow.innerHTML = `
+                <i class="fa-solid fa-chevron-right"></i>
+            `;
+
+            movieRightArrow.classList.remove("seeMoreMode");
+
+        }
+
+    });
+
+}
 }
 
 setupRowScrolling();
@@ -1653,4 +2255,61 @@ function moveContinueWatching(homeMode = true) {
         continueSection.classList.add("searchLast");
 
     }
+}
+
+function appendMovieCards() {
+
+    const row =
+        document.getElementById("movieResults");
+
+    const data =
+        movieData.slice(
+            movieVisibleCount - 10,
+            movieVisibleCount
+        );
+
+    data.forEach(item => {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "movie";
+
+        div.innerHTML = `
+            <img
+                loading="lazy"
+                src="${
+                    item.poster ||
+                    "https://via.placeholder.com/300x450?text=No+Image"
+                }"
+                alt="${item.title}">
+
+            <div class="movieInfo">
+
+                <strong>${item.title}</strong>
+
+                <div class="genre">
+                    ${
+                        item.type === "movie" ? "Movie"
+                            : "TV Series"
+                    }
+                </div>
+
+            </div>
+        `;
+
+        div.onclick = () => {
+            openModal(item);
+        };
+
+        row.appendChild(div);
+
+    });
+
+    console.log(
+        "MOVIES VISIBLE:",
+        Math.min(movieVisibleCount, movieData.length),
+        "/",
+        movieData.length
+    );
 }
