@@ -94,15 +94,18 @@
   <div class="category" id="movieCategory">
     <h2 id="movieCategoryTitle"><i style="color: darkgray" class="fa-solid fa-film"></i> Movies</h2>
     <div class="carousel">
-      <button class="arrow left" data-target="movieResults">
+        <button class="arrow left" data-target="movieResults">
           <i class="fa-solid fa-chevron-left"></i>
-      </button>
+        </button>
+
+        <div id="movieResults" class="row"></div>
       
-      <div id="movieResults" class="row"></div>
-      
-      <button class="arrow right" data-target="movieResults">
-          <i class="fa-solid fa-chevron-right"></i>
-      </button>
+        <button
+            id="movieRightArrow"
+            class="arrow right"
+            data-target="movieResults">
+            <i class="fa-solid fa-chevron-right"></i>
+        </button>
     </div>
   </div>
 
@@ -115,8 +118,11 @@
 
       <div id="tvResults" class="row"></div>
 
-      <button class="arrow right" data-target="tvResults">
-          <i class="fa-solid fa-chevron-right"></i>
+      <button
+            id="tvRightArrow"
+            class="arrow right"
+            data-target="tvResults">
+            <i class="fa-solid fa-chevron-right"></i>
       </button>
     </div>
   </div>
@@ -130,8 +136,11 @@
 
       <div id="animeResults" class="row"></div>
 
-      <button class="arrow right" data-target="animeResults">
-          <i class="fa-solid fa-chevron-right"></i>
+      <button
+            id="animeRightArrow"
+            class="arrow right"
+            data-target="animeResults">
+            <i class="fa-solid fa-chevron-right"></i>
       </button>
     </div>
   </div>
