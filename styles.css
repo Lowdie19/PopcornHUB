@@ -975,6 +975,22 @@ button {
     pointer-events: none;
 }
 
+/* Arrow See More */
+.arrow.seeMoreMode {
+    width: 110px;
+    right: -20px;
+    color: white;
+    font-size: 14px;
+    gap: 5px;
+}
+
+.arrow.seeMoreMode:hover {
+    color: #bbf523;
+}
+
+.arrow.seeMoreMode span {
+    white-space: nowrap;
+}
       /* =========================
         MOBILE
       ========================= */
