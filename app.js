@@ -1668,224 +1668,264 @@ function scrollToCategory(id){ document.getElementById(id).scrollIntoView({ beha
 
 function goHome(){ searchInput.value=""; document.getElementById("stats").innerHTML=""; window.scrollTo({ top:0, behavior:"smooth" }); loadHome(); loadContinueWatching(); moveContinueWatching(true);}
 
-// HORIZONTAL SCROLL + RUBBER + EDGE BOUNCE ONLY
+// CAROUSEL SYSTEM
 function setupRowScrolling() {
-  const scrollAmount = 600;
-  const rows = document.querySelectorAll(".row");
+    const scrollAmount = 600;
+    const preloadRatio = 0.75;
+    const rows = document.querySelectorAll(".row");
 
-  function rubber(value, min, max, strength = 0.25) {
-    if (value < min) return min + (value - min) * strength;
-    if (value > max) return max + (value - max) * strength;
-    return value;
-  }
-
-  function clamp(v, min, max) {
-    return Math.max(min, Math.min(max, v));
-  }
-
-  rows.forEach(row => {
-
-    row._velocity = 0;
-    row._isMouseDown = false;
-    row._isTouchDown = false;
-    const maxScroll = () => row.scrollWidth - row.clientWidth;
-
-    // EDGE BOUNCE ONLY (SAFE)
-    const bounceIfNeeded = () => {
-      const max = maxScroll();
-      if (row.scrollLeft <= 0 || row.scrollLeft >= max) {
-        row.classList.remove("bounce");
-        void row.offsetWidth;
-        row.classList.add("bounce");
-      }
+    // Carousel Loaders
+    const carouselLoaders = {
+        movieResults: loadMoreMovies,
+        tvResults: loadMoreTV,
+        animeResults: loadMoreAnime
     };
 
-    // MOUSE DOWN
-    row.addEventListener("mousedown", e => {
-      row._isMouseDown = true;
-      row._dragged = false;
-      row._startX = e.pageX;
-      row._scrollStart = row.scrollLeft;
-      row.style.cursor = "grabbing";
-    });
+    function rubber(value, min, max, strength = 0.35) {
+        if (value < min) return min + (value - min) * strength;
+        if (value > max) return max + (value - max) * strength;
+        return value;
+    }
 
-    // MOUSE MOVE
-    row.addEventListener("mousemove", e => {
-      if (!row._isMouseDown) return;
-      e.preventDefault();
-      const walk = e.pageX - row._startX;
-      if (Math.abs(walk) > 5) {
-        row._dragged = true;
-      }
-      const raw = row._scrollStart - walk;
-      const max = maxScroll();
-      row.scrollLeft = rubber(raw, 0, max, 0.35);
-    });
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
 
-    // MOUSE UP (INERTIA ONLY, NO BOUNCE)
-    window.addEventListener("mouseup", () => {
-      if (!row._isMouseDown) return;
-      row._isMouseDown = false;
-      row.style.cursor = "grab";
-      if (!row._dragged) return;
-      row._isMouseDown = false;
-      row.style.cursor = "grab";
-        
-      if (
-          row.scrollLeft <= 0 ||
-          row.scrollLeft >= maxScroll()
-      ) {
-          bounceIfNeeded();
-      }
-    });
+    function getMaxScroll(row) {
+        return Math.max(0, row.scrollWidth - row.clientWidth);
+    }
 
-    // TOUCH START
-    row.addEventListener("touchstart", e => {
-      row._isTouchDown = true;
-      row._dragged = false;
-      row._startX = e.touches[0].pageX;
-      row._scrollStart = row.scrollLeft;
-    }, { passive: true });
+    // Arrow State
+    function updateArrowState(row) {
+        if (!row) return;
 
-    // TOUCH MOVE
-    row.addEventListener("touchmove", e => {
-      if (!row._isTouchDown) return;
-      const x = e.touches[0].pageX;
-      const walk = x - row._startX;
-      if (Math.abs(walk) > 5) {
-        row._dragged = true;
-      }
-      const raw = row._scrollStart - walk;
-      const max = maxScroll();
-      row.scrollLeft = rubber(raw, 0, max, 0.35);
-    }, { passive: false });
+        const leftBtn = document.querySelector(
+            `.arrow.left[data-target="${row.id}"]`
+        );
 
-    // TOUCH END (NO BOUNCE HERE)
-    row.addEventListener("touchend", () => {
-      if (!row._dragged) {
+        const rightBtn = document.querySelector(
+            `.arrow.right[data-target="${row.id}"]`
+        );
+
+        if (!leftBtn || !rightBtn) return;
+
+        const max = getMaxScroll(row);
+        const atStart = row.scrollLeft <= 5;
+        const atEnd = row.scrollLeft >= max - 5;
+
+        leftBtn.style.display = atStart ? "none" : "";
+        rightBtn.style.display = atEnd ? "none" : "";
+
+        leftBtn.innerHTML = `<i class="fa-solid fa-chevron-left"></i>`;
+        rightBtn.innerHTML = `<i class="fa-solid fa-chevron-right"></i>`;
+
+        leftBtn.classList.remove("startMode", "seeMoreMode");
+        rightBtn.classList.remove("startMode", "seeMoreMode");
+    }
+
+    // Auto Preload
+    async function preloadIfNeeded(row) {
+        if (!row || row.dataset.loading === "true") return;
+
+        const loader = carouselLoaders[row.id];
+        if (!loader) return;
+
+        const max = getMaxScroll(row);
+
+        if (max <= 0) return;
+
+        const progress = row.scrollLeft / max;
+
+        if (progress < preloadRatio) return;
+
+        row.dataset.loading = "true";
+
+        try {
+            await loader();
+        } catch (error) {
+            console.error(
+                `CAROUSEL LOAD ERROR: ${row.id}`,
+                error
+            );
+        } finally {
+            row.dataset.loading = "false";
+            updateArrowState(row);
+        }
+    }
+
+    // Edge Bounce
+    function bounceIfNeeded(row) {
+        const max = getMaxScroll(row);
+
+        if (row.scrollLeft <= 0 || row.scrollLeft >= max) {
+            row.classList.remove("bounce");
+            void row.offsetWidth;
+            row.classList.add("bounce");
+        }
+    }
+
+    // Setup Rows
+    rows.forEach(row => {
+        row._isMouseDown = false;
         row._isTouchDown = false;
-        return;
-      }
-      row._isTouchDown = false;
+        row._dragged = false;
 
-      if (
-          row.scrollLeft <= 0 ||
-          row.scrollLeft >= maxScroll()
-      ) {
-          bounceIfNeeded();
-      }
+        // MOUSE DOWN
+        row.addEventListener("mousedown", e => {
+            row._isMouseDown = true;
+            row._dragged = false;
+            row._startX = e.pageX;
+            row._scrollStart = row.scrollLeft;
+            row.style.cursor = "grabbing";
+        });
+
+        // MOUSE MOVE
+        row.addEventListener("mousemove", e => {
+            if (!row._isMouseDown) return;
+
+            e.preventDefault();
+
+            const walk = e.pageX - row._startX;
+
+            if (Math.abs(walk) > 5) {
+                row._dragged = true;
+            }
+
+            const raw = row._scrollStart - walk;
+            const max = getMaxScroll(row);
+
+            row.scrollLeft = rubber(raw, 0, max);
+        });
+
+        // MOUSE UP
+        window.addEventListener("mouseup", () => {
+            if (!row._isMouseDown) return;
+
+            row._isMouseDown = false;
+            row.style.cursor = "grab";
+
+            if (!row._dragged) return;
+
+            if (
+                row.scrollLeft <= 0 ||
+                row.scrollLeft >= getMaxScroll(row)
+            ) {
+                bounceIfNeeded(row);
+            }
+        });
+
+        // TOUCH START
+        row.addEventListener("touchstart", e => {
+            row._isTouchDown = true;
+            row._dragged = false;
+            row._startX = e.touches[0].pageX;
+            row._scrollStart = row.scrollLeft;
+        }, { passive: true });
+
+        // TOUCH MOVE
+        row.addEventListener("touchmove", e => {
+            if (!row._isTouchDown) return;
+
+            const x = e.touches[0].pageX;
+            const walk = x - row._startX;
+
+            if (Math.abs(walk) > 5) {
+                row._dragged = true;
+            }
+
+            const raw = row._scrollStart - walk;
+            const max = getMaxScroll(row);
+
+            row.scrollLeft = rubber(raw, 0, max);
+        }, { passive: false });
+
+        // TOUCH END
+        row.addEventListener("touchend", () => {
+            if (!row._dragged) {
+                row._isTouchDown = false;
+                return;
+            }
+
+            row._isTouchDown = false;
+
+            if (
+                row.scrollLeft <= 0 ||
+                row.scrollLeft >= getMaxScroll(row)
+            ) {
+                bounceIfNeeded(row);
+            }
+        });
+
+        // SCROLL
+        row.addEventListener("scroll", () => {
+            updateArrowState(row);
+            preloadIfNeeded(row);
+        });
+
+        updateArrowState(row);
     });
-  });
 
-// ARROWS
-document.querySelectorAll(".arrow").forEach(btn => {
-    btn.addEventListener("click", async () => {
-        const target = document.getElementById(btn.dataset.target);
-        if (!target) return;
+    // ARROWS
+    document.querySelectorAll(".arrow").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const target = document.getElementById(btn.dataset.target);
 
-        const amount = btn.classList.contains("left") ? -scrollAmount
-            : scrollAmount;
+            if (!target) return;
 
-        const max = target.scrollWidth - target.clientWidth;
+            const max = getMaxScroll(target);
 
-        // LEFT
-        if (btn.classList.contains("left")) {
-            if (target.scrollLeft <= 5) {
-                target.dataset.hitStart = "true";
+            // LEFT
+            if (btn.classList.contains("left")) {
+                if (target.scrollLeft <= 5) {
+                    target.scrollTo({
+                        left: 0,
+                        behavior: "smooth"
+                    });
 
-                btn.innerHTML = `<span>↶</span>`;
-                btn.classList.add("startMode");
+                    return;
+                }
 
-                target.scrollTo({
-                    left: 0,
+                target.scrollBy({
+                    left: -scrollAmount,
                     behavior: "smooth"
                 });
 
                 return;
             }
 
+            // RIGHT
+            if (target.scrollLeft >= max - 5) {
+                await preloadIfNeeded(target);
+
+                setTimeout(() => {
+                    const newMax = getMaxScroll(target);
+
+                    target.scrollTo({
+                        left: Math.min(
+                            target.scrollLeft + scrollAmount,
+                            newMax
+                        ),
+                        behavior: "smooth"
+                    });
+
+                    updateArrowState(target);
+                }, 100);
+
+                return;
+            }
+
+            // NORMAL RIGHT SCROLL
             target.scrollBy({
-                left: -scrollAmount,
+                left: scrollAmount,
                 behavior: "smooth"
             });
 
-            return;
-        }
-
-        // RIGHT → AUTO LOAD AT END
-        if (
-            btn.classList.contains("right") &&
-            target.scrollLeft >= max - 5
-        ) {
-            if (btn.id === "movieRightArrow") {
-                await loadMoreMovies();
-            } else if (btn.id === "tvRightArrow") {
-                await loadMoreTV();
-            } else if (btn.id === "animeRightArrow") {
-                await loadMoreAnime();
-            }
-
             setTimeout(() => {
-                const newMax = target.scrollWidth - target.clientWidth;
-
-                target.scrollTo({
-                    left: Math.min(
-                        target.scrollLeft + scrollAmount,
-                        newMax
-                    ),
-                    behavior: "smooth"
-                });
-
                 updateArrowState(target);
-            }, 350);
-
-            return;
-        }
-
-        // NORMAL BOUNDARY
-        const next = target.scrollLeft + amount;
-
-        if (next < 0 || next > max) {
-            target.scrollLeft = clamp(next, 0, max);
-            target.classList.remove("bounce");
-            void target.offsetWidth;
-            target.classList.add("bounce");
-            return;
-        }
-
-        target.scrollBy({
-            left: amount,
-            behavior: "smooth"
+                preloadIfNeeded(target);
+            }, 100);
         });
-
-        setTimeout(() => {
-            updateArrowState(target);
-        }, 250);
     });
-});
-
-
-// ROW SCROLL STATE
-document.querySelectorAll(".row").forEach(row => {
-    row.addEventListener("scroll", () => {
-        const leftBtn = document.querySelector(
-            `.arrow.left[data-target="${row.id}"]`
-        );
-
-        if (!leftBtn) return;
-
-        if (row.scrollLeft <= 5) {
-            if (row.dataset.hitStart === "true") {
-                leftBtn.innerHTML = `<span>↶</span>`;
-                leftBtn.classList.add("startMode");
-            }
-        } else {
-            leftBtn.innerHTML = `<i class="fa-solid fa-chevron-left"></i>`;
-            leftBtn.classList.remove("startMode");
-            row.dataset.hitStart = "false";
-        }
-    });
-});
 }
 
 setupRowScrolling();
