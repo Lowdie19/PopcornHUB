@@ -141,7 +141,16 @@ async function loadHome() {
                 : "",
             videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
         }));
-
+        
+        // Preload Anime until 10 cards
+        while (
+            allAnimeData.length < 10 &&
+            animePage < animeTotalPages
+        ) {
+            const loaded = await loadMoreAnimePage();
+            if (!loaded) break;
+        }
+        
         tvVisibleCount = 10;
         animeVisibleCount = 10;
 
@@ -429,55 +438,60 @@ async function loadMoreAnime() {
 async function loadMoreAnimePage() {
     if (animePage >= animeTotalPages) return false;
 
-    const nextPage = animePage + 1;
+    let added = 0;
 
-    console.log(
-        "LOADING TMDB ANIME PAGE:",
-        nextPage,
-        "/",
-        animeTotalPages
-    );
+    while (animePage < animeTotalPages && allAnimeData.length < animeVisibleCount + 10) {
+        const nextPage = animePage + 1;
 
-    const response = await fetch(
-        `https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${nextPage}`
-    );
+        console.log(
+            "LOADING TMDB ANIME PAGE:",
+            nextPage,
+            "/",
+            animeTotalPages
+        );
 
-    if (!response.ok) {
-        console.error("ANIME API ERROR:", response.status);
-        return false;
+        const response = await fetch(
+            `https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${nextPage}`
+        );
+
+        if (!response.ok) {
+            console.error("ANIME API ERROR:", response.status);
+            return added > 0;
+        }
+
+        const data = await response.json();
+
+        animePage = data.page || nextPage;
+        animeTotalPages = data.total_pages || animeTotalPages;
+
+        const results = data.results || [];
+
+        const newAnime = results
+            .filter(i =>
+                i.original_language === "ja" &&
+                (i.genre_ids || []).includes(16)
+            )
+            .map(i => ({
+                type: "tv",
+                id: i.id,
+                title: i.name,
+                poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+                    : "",
+                videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
+            }));
+
+        allAnimeData.push(...newAnime);
+        added += newAnime.length;
+
+        console.log(
+            "ANIME FOUND:",
+            newAnime.length,
+            "| TOTAL:",
+            allAnimeData.length
+        );
     }
 
-    const data = await response.json();
-
-    animePage = data.page || nextPage;
-    animeTotalPages = data.total_pages || animeTotalPages;
-
-    const results = data.results || [];
-
-    const newAnime = results
-        .filter(i =>
-            i.original_language === "ja" &&
-            (i.genre_ids || []).includes(16)
-        )
-        .map(i => ({
-            type: "tv",
-            id: i.id,
-            title: i.name,
-            poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-                : "",
-            videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
-        }));
-
-    allAnimeData.push(...newAnime);
-
-    console.log(
-        "ANIME LOADED:",
-        newAnime.length,
-        "| TOTAL:",
-        allAnimeData.length
-    );
-
-    return true;
+    return added > 0;
 }
 
 async function loadMoreMoviePage() {
@@ -686,6 +700,26 @@ function showSkeleton(rowId, count = 10) {
     }
 }
 
+// Update Arrow State
+function updateArrowState(row) {
+    if (!row) return;
+
+    const leftBtn = document.querySelector(
+        `.arrow.left[data-target="${row.id}"]`
+    );
+
+    const rightBtn = document.querySelector(
+        `.arrow.right[data-target="${row.id}"]`
+    );
+
+    if (!leftBtn || !rightBtn) return;
+
+    leftBtn.innerHTML = `<i class="fa-solid fa-chevron-left"></i>`;
+    leftBtn.classList.remove("startMode");
+
+    rightBtn.innerHTML = `<i class="fa-solid fa-chevron-right"></i>`;
+    rightBtn.classList.remove("seeMoreMode");
+}
 
 // Render
 function render(catId, rowId, data) {
@@ -732,7 +766,7 @@ function render(catId, rowId, data) {
             row.appendChild(div);
         });
         // Update Right Arrow
-        updateRightArrow(rowId);
+        updateArrowState(row);
     }, 200);
 }
 
@@ -1747,67 +1781,70 @@ function setupRowScrolling() {
 document.querySelectorAll(".arrow").forEach(btn => {
     btn.addEventListener("click", async () => {
         const target = document.getElementById(btn.dataset.target);
-        const amount = btn.classList.contains("left") ? -scrollAmount : scrollAmount;
+        if (!target) return;
+
+        const amount = btn.classList.contains("left") ? -scrollAmount
+            : scrollAmount;
+
         const max = target.scrollWidth - target.clientWidth;
-        const next = target.scrollLeft + amount;
 
-        if (btn.classList.contains("right") && target.scrollLeft >= max - 5) {
+        // LEFT
+        if (btn.classList.contains("left")) {
+            if (target.scrollLeft <= 5) {
+                target.dataset.hitStart = "true";
 
-            // See More
-            if (btn.classList.contains("seeMoreMode")) {
-                btn.classList.remove("seeMoreMode");
-                btn.innerHTML = `
-                    <i class="fa-solid fa-chevron-right"></i>
-                `;
+                btn.innerHTML = `<span>↶</span>`;
+                btn.classList.add("startMode");
 
-                if (btn.id === "movieRightArrow") {
-                    await loadMoreMovies();
-                } else if (btn.id === "tvRightArrow") {
-                    await loadMoreTV();
-                } else if (btn.id === "animeRightArrow") {
-                    await loadMoreAnime();
-                }
-
-                // Wait for render to finish
-                setTimeout(() => {
-                    const newMax = target.scrollWidth - target.clientWidth;
-
-                    target.scrollTo({
-                        left: Math.min(
-                            target.scrollLeft + scrollAmount,
-                            newMax
-                        ),
-                        behavior: "smooth"
-                    });
-
-                    // Re-check after the carousel moves
-                    setTimeout(() => {
-                        updateRightArrow(btn.dataset.target);
-                    }, 400);
-                }, 350);
+                target.scrollTo({
+                    left: 0,
+                    behavior: "smooth"
+                });
 
                 return;
             }
 
-            // Reached end
-            console.log("REACHED END:", btn.dataset.target);
-
-            if (
-                btn.id === "movieRightArrow" ||
-                btn.id === "tvRightArrow" ||
-                btn.id === "animeRightArrow"
-            ) {
-                btn.innerHTML = `
-                    <span>See More</span>
-                    <i class="fa-solid fa-chevron-right"></i>
-                `;
-                btn.classList.add("seeMoreMode");
-            }
+            target.scrollBy({
+                left: -scrollAmount,
+                behavior: "smooth"
+            });
 
             return;
         }
 
-        // Normal boundary
+        // RIGHT → AUTO LOAD AT END
+        if (
+            btn.classList.contains("right") &&
+            target.scrollLeft >= max - 5
+        ) {
+            if (btn.id === "movieRightArrow") {
+                await loadMoreMovies();
+            } else if (btn.id === "tvRightArrow") {
+                await loadMoreTV();
+            } else if (btn.id === "animeRightArrow") {
+                await loadMoreAnime();
+            }
+
+            setTimeout(() => {
+                const newMax = target.scrollWidth - target.clientWidth;
+
+                target.scrollTo({
+                    left: Math.min(
+                        target.scrollLeft + scrollAmount,
+                        newMax
+                    ),
+                    behavior: "smooth"
+                });
+
+                updateArrowState(target);
+            }, 350);
+
+            return;
+        }
+
+        // NORMAL BOUNDARY
+        const next = target.scrollLeft + amount;
+
         if (next < 0 || next > max) {
             target.scrollLeft = clamp(next, 0, max);
             target.classList.remove("bounce");
@@ -1820,116 +1857,35 @@ document.querySelectorAll(".arrow").forEach(btn => {
             left: amount,
             behavior: "smooth"
         });
+
+        setTimeout(() => {
+            updateArrowState(target);
+        }, 250);
     });
 });
 
-// Update Right Arrows
-function updateRightArrow(rowId) {
-    const row = document.getElementById(rowId);
-    if (!row) return;
 
-    const config = {
-        movieResults: {
-            button: "movieRightArrow",
-            visible: movieVisibleCount,
-            loaded: allMovieData.length,
-            page: moviePage,
-            totalPages: movieTotalPages
-        },
-        tvResults: {
-            button: "tvRightArrow",
-            visible: tvVisibleCount,
-            loaded: allTVData.length,
-            page: tvPage,
-            totalPages: tvTotalPages
-        },
-        animeResults: {
-            button: "animeRightArrow",
-            visible: animeVisibleCount,
-            loaded: allAnimeData.length,
-            page: animePage,
-            totalPages: animeTotalPages
-        }
-    };
+// ROW SCROLL STATE
+document.querySelectorAll(".row").forEach(row => {
+    row.addEventListener("scroll", () => {
+        const leftBtn = document.querySelector(
+            `.arrow.left[data-target="${row.id}"]`
+        );
 
-    const state = config[rowId];
-    if (!state) return;
+        if (!leftBtn) return;
 
-    const btn = document.getElementById(state.button);
-    if (!btn) return;
-
-    const max = row.scrollWidth - row.clientWidth;
-
-    if (row.scrollLeft < max - 5) {
-        btn.innerHTML = `
-            <i class="fa-solid fa-chevron-right"></i>
-        `;
-        btn.classList.remove("seeMoreMode");
-        return;
-    }
-
-    const hasMore =
-        state.visible < state.loaded ||
-        state.page < state.totalPages;
-
-    if (hasMore) {
-        btn.innerHTML = `
-            <span>See More</span>
-            <i class="fa-solid fa-chevron-right"></i>
-        `;
-        btn.classList.add("seeMoreMode");
-        return;
-    }
-
-    btn.innerHTML = `
-        <i class="fa-solid fa-chevron-right"></i>
-    `;
-    btn.classList.remove("seeMoreMode");
-}
-
-
-document
-    .getElementById("movieResults")
-    ?.addEventListener("scroll", () => {
-        updateMovieRightArrow();
-    });
-
-
-const movieRow = document.getElementById("movieResults");
-const movieRightArrow = document.getElementById("movieRightArrow");
-
-if (movieRow && movieRightArrow) {
-
-    movieRow.addEventListener("scroll", () => {
-
-        const max =
-            movieRow.scrollWidth - movieRow.clientWidth;
-
-        const atEnd =
-            movieRow.scrollLeft >= max - 5;
-
-        if (atEnd) {
-
-            movieRightArrow.innerHTML = `
-                <span>See More</span>
-                <i class="fa-solid fa-chevron-right"></i>
-            `;
-
-            movieRightArrow.classList.add("seeMoreMode");
-
+        if (row.scrollLeft <= 5) {
+            if (row.dataset.hitStart === "true") {
+                leftBtn.innerHTML = `<span>↶</span>`;
+                leftBtn.classList.add("startMode");
+            }
         } else {
-
-            movieRightArrow.innerHTML = `
-                <i class="fa-solid fa-chevron-right"></i>
-            `;
-
-            movieRightArrow.classList.remove("seeMoreMode");
-
+            leftBtn.innerHTML = `<i class="fa-solid fa-chevron-left"></i>`;
+            leftBtn.classList.remove("startMode");
+            row.dataset.hitStart = "false";
         }
-
     });
-
-}
+});
 }
 
 setupRowScrolling();
