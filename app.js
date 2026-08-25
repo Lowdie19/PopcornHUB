@@ -124,12 +124,11 @@ async function loadHome() {
             )
         );
 
-        allTVData = normalTVItems.map(i => ({
+        allAnimeData = animeItems.map(i => ({
             type: "tv",
             id: i.id,
             title: i.name,
-            poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-                : "",
+            poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}` : "",
             videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
         }));
 
@@ -762,11 +761,16 @@ function render(catId, rowId, data) {
                 </div>
             `;
 
-            div.onclick = () => { openModal(item); };
+            div.onclick = () => {
+                openModal(item);
+            };
+
             row.appendChild(div);
         });
-        // Update Right Arrow
+
+        // Update Arrow State
         updateArrowState(row);
+
     }, 200);
 }
 
@@ -823,6 +827,8 @@ function openModal(item) {
 
     loadDetails(item);
 }
+
+
 async function loadDetails(item){
   const box = document.getElementById("episodeControls");
   box.innerHTML = "";
@@ -900,44 +906,56 @@ function convertToVidlink(url) {
 // Update video
 function updateVideo(url, options = {}) {
     console.log("UPDATE VIDEO:", url);
+
     autoNextLock = false;
+
     const container = document.getElementById("videoContainer");
     container.innerHTML = "";
+
     const params = new URLSearchParams();
 
     // Core features
     if (options.progress != null) {
         params.set("progress", options.progress);
     }
+
     if (options.autoplayNextEpisode) {
         params.set("autoplayNextEpisode", "true");
     }
+
     if (options.nextEpisode) {
         params.set("nextEpisode", "true");
     }
+
     if (options.episodeSelector) {
         params.set("episodeSelector", "true");
     }
+
     if (options.overlay) {
         params.set("overlay", "true");
     }
+
     if (options.color) {
         params.set("color", options.color);
     }
 
+    const separator = url.includes("?") ? "&" : "?";
+
     const iframe = document.createElement("iframe");
     iframe.id = "videoFrame";
     iframe.allowFullscreen = true;
-    
+
     iframe.setAttribute(
         "allow",
         "autoplay; encrypted-media"
     );
 
     iframe.src =
-        url +
-        (params.toString() ? "?" + params.toString() : "");
+        params.toString() ? url + separator + params.toString()
+            : url;
+
     container.appendChild(iframe);
+
     addPlayerSwitchButton(url, options);
 }
 
@@ -1546,51 +1564,71 @@ async function renderTVControls(tvId) {
     box.appendChild(seasonRowWrapper);
     box.appendChild(grid);
 
-    async function loadEpisodes(sNum) {
-        grid.innerHTML = "Loading episodes...";
-        
-        const res = await fetch(
-          `https://api.themoviedb.org/3/tv/${tvId}/season/${sNum}?api_key=${TMDB_API_KEY}`
-        );
-        if (!res.ok) {
-          throw new Error(`Season Load Error: ${res.status}`);
-        }
-        
-        const sData = await res.json();
-        grid.innerHTML = "";
-        
-        sData.episodes.forEach(ep => {
-            const card = document.createElement("div");
-            card.className = "episodeItem";
-            card.dataset.ep = ep.episode_number;
-            card.dataset.season = sNum;
-            card.innerHTML = `
-                <img
-                  loading="lazy"
-                  src="${
-                    ep.still_path ?
-                        'https://image.tmdb.org/t/p/w500' + ep.still_path
-                      : 'https://via.placeholder.com/500x281'
-                  }"
-                  alt="${ep.name}">
-                <div class="epMeta">
-                    <div>${ep.episode_number}. ${ep.name}</div>
-                    <p>${
-                      ep.overview ?
-                        ep.overview.substring(0, 60) + '...'
-                        : 'No description'
-                    }</p>
-                </div>
-            `;
-            
+// Load Episodes
+async function loadEpisodes(sNum) {
+    grid.innerHTML = "Loading episodes...";
+
+    const res = await fetch(
+        `https://api.themoviedb.org/3/tv/${tvId}/season/${sNum}?api_key=${TMDB_API_KEY}`
+    );
+
+    if (!res.ok) {
+        throw new Error(`Season Load Error: ${res.status}`);
+    }
+
+    const sData = await res.json();
+    grid.innerHTML = "";
+
+    sData.episodes.forEach(ep => {
+        const card = document.createElement("div");
+        card.className = "episodeItem";
+        card.dataset.ep = ep.episode_number;
+        card.dataset.season = sNum;
+
+        card.innerHTML = `
+            <img
+                loading="lazy"
+                src="${
+                    ep.still_path
+                        ? "https://image.tmdb.org/t/p/w500" + ep.still_path
+                        : "https://via.placeholder.com/500x281"
+                }"
+                alt="${ep.name}">
+
+            <div class="epMeta">
+                <div>${ep.episode_number}. ${ep.name}</div>
+                <p>${
+                    ep.overview
+                        ? ep.overview.substring(0, 60) + "..."
+                        : "No description"
+                }</p>
+            </div>
+        `;
+
+        // Play Episode
         card.onclick = () => {
             lastAutoNextKey = "";
             manualEpisodeChange = true;
-            currentEpisodeKey = `${tvId}-${sNum}-${ep.episode_number}`;
-            setActiveEpisode(sNum, ep.episode_number);
-            const saved = getProgress(currentEpisodeKey);
-            console.log("LOADED:", currentEpisodeKey, saved);
-            const savedProgress = saved?.watched ?? 0;
+
+            currentEpisodeKey =
+                `${tvId}-${sNum}-${ep.episode_number}`;
+
+            setActiveEpisode(
+                sNum,
+                ep.episode_number
+            );
+
+            const saved =
+                getProgress(currentEpisodeKey);
+
+            console.log(
+                "LOADED:",
+                currentEpisodeKey,
+                saved
+            );
+
+            const savedProgress =
+                saved?.watched ?? 0;
 
             updateVideo(
                 `https://player.videasy.net/tv/${tvId}/${sNum}/${ep.episode_number}`,
@@ -1602,12 +1640,13 @@ async function renderTVControls(tvId) {
                 }
             );
         };
-            grid.appendChild(card);
-        });
-        
-// AUTO SELECT LAST WATCHED
+
+        grid.appendChild(card);
+    });
+
+    // Auto Select Last Watched
     let selectedEpisode = sData.episodes[0];
-        
+
     if (
         initialSeasonLoad &&
         savedShow &&
@@ -1616,35 +1655,39 @@ async function renderTVControls(tvId) {
         const found = sData.episodes.find(
             ep => ep.episode_number === savedShow.episode
         );
-        
+
         if (found) {
             selectedEpisode = found;
         }
     }
-        
-    initialSeasonLoad = false;
-        
-      currentEpisodeKey =
-      `${tvId}-${sNum}-${selectedEpisode.episode_number}`;
-        
-      const saved = getProgress(currentEpisodeKey);
-      const savedProgress =
-      saved?.watched ?? 0;
-      setActiveEpisode(
-          sNum,
-          selectedEpisode.episode_number
-      );
 
-      updateVideo(
-          `https://player.videasy.net/tv/${tvId}/${sNum}/${selectedEpisode.episode_number}`,
-          {
-              autoplayNextEpisode: true,
-              overlay: true,
-              color: "#bbf523",
-              progress: savedProgress
-          }
-      );
-    }
+    initialSeasonLoad = false;
+
+    currentEpisodeKey =
+        `${tvId}-${sNum}-${selectedEpisode.episode_number}`;
+
+    const saved =
+        getProgress(currentEpisodeKey);
+
+    const savedProgress =
+        saved?.watched ?? 0;
+
+    setActiveEpisode(
+        sNum,
+        selectedEpisode.episode_number
+    );
+
+    // Play Selected Episode
+    updateVideo(
+        `https://player.videasy.net/tv/${tvId}/${sNum}/${selectedEpisode.episode_number}`,
+        {
+            autoplayNextEpisode: true,
+            overlay: true,
+            color: "#bbf523",
+            progress: savedProgress
+        }
+    );
+}
     
     // Automatically click first season pill
     if (savedShow) {
@@ -1670,7 +1713,6 @@ function goHome(){ searchInput.value=""; document.getElementById("stats").innerH
 
 // CAROUSEL SYSTEM
 function setupRowScrolling() {
-    const scrollAmount = 600;
     const preloadRatio = 0.75;
     const rows = document.querySelectorAll(".row");
 
@@ -1687,12 +1729,34 @@ function setupRowScrolling() {
         return value;
     }
 
-    function clamp(value, min, max) {
-        return Math.max(min, Math.min(max, value));
-    }
-
     function getMaxScroll(row) {
         return Math.max(0, row.scrollWidth - row.clientWidth);
+    }
+
+    // Dynamic page size based on visible cards
+    function getPageScroll(row) {
+        const firstCard = row.querySelector(".movie, .skeletonCard");
+
+        if (!firstCard) {
+            return row.clientWidth;
+        }
+
+        const cardWidth =
+            firstCard.getBoundingClientRect().width;
+
+        const styles = getComputedStyle(row);
+        const gap =
+            parseFloat(styles.columnGap || styles.gap) || 0;
+
+        const visibleCards = Math.max(
+            1,
+            Math.floor(
+                (row.clientWidth + gap) /
+                (cardWidth + gap)
+            )
+        );
+
+        return visibleCards * (cardWidth + gap);
     }
 
     // Arrow State
@@ -1710,33 +1774,61 @@ function setupRowScrolling() {
         if (!leftBtn || !rightBtn) return;
 
         const max = getMaxScroll(row);
-        const atStart = row.scrollLeft <= 5;
-        const atEnd = row.scrollLeft >= max - 5;
 
-        leftBtn.style.display = atStart ? "none" : "";
-        rightBtn.style.display = atEnd ? "none" : "";
+        const atStart =
+            row.scrollLeft <= 5;
 
-        leftBtn.innerHTML = `<i class="fa-solid fa-chevron-left"></i>`;
-        rightBtn.innerHTML = `<i class="fa-solid fa-chevron-right"></i>`;
+        const atEnd =
+            max <= 5 ||
+            row.scrollLeft >= max - 5;
 
-        leftBtn.classList.remove("startMode", "seeMoreMode");
-        rightBtn.classList.remove("startMode", "seeMoreMode");
+        leftBtn.style.display =
+            atStart ? "none" : "";
+
+        rightBtn.style.display =
+            atEnd ? "none" : "";
+
+        leftBtn.innerHTML =
+            `<i class="fa-solid fa-chevron-left"></i>`;
+
+        rightBtn.innerHTML =
+            `<i class="fa-solid fa-chevron-right"></i>`;
+
+        leftBtn.classList.remove(
+            "startMode",
+            "seeMoreMode"
+        );
+
+        rightBtn.classList.remove(
+            "startMode",
+            "seeMoreMode"
+        );
     }
 
     // Auto Preload
     async function preloadIfNeeded(row) {
-        if (!row || row.dataset.loading === "true") return;
+        if (!row) return;
 
-        const loader = carouselLoaders[row.id];
+        if (row.dataset.loading === "true") {
+            return;
+        }
+
+        const loader =
+            carouselLoaders[row.id];
+
         if (!loader) return;
 
-        const max = getMaxScroll(row);
+        const max =
+            getMaxScroll(row);
 
         if (max <= 0) return;
 
-        const progress = row.scrollLeft / max;
+        const progress =
+            row.scrollLeft / max;
 
-        if (progress < preloadRatio) return;
+        if (progress < preloadRatio) {
+            return;
+        }
 
         row.dataset.loading = "true";
 
@@ -1755,176 +1847,292 @@ function setupRowScrolling() {
 
     // Edge Bounce
     function bounceIfNeeded(row) {
-        const max = getMaxScroll(row);
+        const max =
+            getMaxScroll(row);
 
-        if (row.scrollLeft <= 0 || row.scrollLeft >= max) {
+        if (
+            row.scrollLeft <= 0 ||
+            row.scrollLeft >= max
+        ) {
             row.classList.remove("bounce");
+
             void row.offsetWidth;
+
             row.classList.add("bounce");
         }
     }
 
     // Setup Rows
     rows.forEach(row => {
+
         row._isMouseDown = false;
         row._isTouchDown = false;
         row._dragged = false;
 
-        // MOUSE DOWN
-        row.addEventListener("mousedown", e => {
-            row._isMouseDown = true;
-            row._dragged = false;
-            row._startX = e.pageX;
-            row._scrollStart = row.scrollLeft;
-            row.style.cursor = "grabbing";
-        });
+        // =========================
+        // MOUSE DRAG
+        // =========================
 
-        // MOUSE MOVE
-        row.addEventListener("mousemove", e => {
-            if (!row._isMouseDown) return;
+        row.addEventListener(
+            "mousedown",
+            e => {
+                row._isMouseDown = true;
+                row._dragged = false;
 
-            e.preventDefault();
+                row._startX = e.pageX;
+                row._scrollStart =
+                    row.scrollLeft;
 
-            const walk = e.pageX - row._startX;
-
-            if (Math.abs(walk) > 5) {
-                row._dragged = true;
+                row.style.cursor =
+                    "grabbing";
             }
+        );
 
-            const raw = row._scrollStart - walk;
-            const max = getMaxScroll(row);
+        row.addEventListener(
+            "mousemove",
+            e => {
+                if (!row._isMouseDown) {
+                    return;
+                }
 
-            row.scrollLeft = rubber(raw, 0, max);
-        });
+                e.preventDefault();
 
-        // MOUSE UP
-        window.addEventListener("mouseup", () => {
-            if (!row._isMouseDown) return;
+                const walk =
+                    e.pageX - row._startX;
 
-            row._isMouseDown = false;
-            row.style.cursor = "grab";
+                if (Math.abs(walk) > 5) {
+                    row._dragged = true;
+                }
 
-            if (!row._dragged) return;
+                const raw =
+                    row._scrollStart - walk;
 
-            if (
-                row.scrollLeft <= 0 ||
-                row.scrollLeft >= getMaxScroll(row)
-            ) {
+                const max =
+                    getMaxScroll(row);
+
+                row.scrollLeft =
+                    rubber(raw, 0, max);
+            }
+        );
+
+        window.addEventListener(
+            "mouseup",
+            () => {
+                if (!row._isMouseDown) {
+                    return;
+                }
+
+                row._isMouseDown = false;
+                row.style.cursor = "grab";
+
+                if (!row._dragged) {
+                    return;
+                }
+
                 bounceIfNeeded(row);
             }
-        });
+        );
 
-        // TOUCH START
-        row.addEventListener("touchstart", e => {
-            row._isTouchDown = true;
-            row._dragged = false;
-            row._startX = e.touches[0].pageX;
-            row._scrollStart = row.scrollLeft;
-        }, { passive: true });
+        // =========================
+        // TOUCH SWIPE
+        // =========================
 
-        // TOUCH MOVE
-        row.addEventListener("touchmove", e => {
-            if (!row._isTouchDown) return;
+        row.addEventListener(
+            "touchstart",
+            e => {
+                if (!e.touches.length) {
+                    return;
+                }
 
-            const x = e.touches[0].pageX;
-            const walk = x - row._startX;
+                row._isTouchDown = true;
+                row._dragged = false;
 
-            if (Math.abs(walk) > 5) {
-                row._dragged = true;
+                row._startX =
+                    e.touches[0].pageX;
+
+                row._scrollStart =
+                    row.scrollLeft;
+            },
+            {
+                passive: true
             }
+        );
 
-            const raw = row._scrollStart - walk;
-            const max = getMaxScroll(row);
+        row.addEventListener(
+            "touchmove",
+            e => {
+                if (
+                    !row._isTouchDown ||
+                    !e.touches.length
+                ) {
+                    return;
+                }
 
-            row.scrollLeft = rubber(raw, 0, max);
-        }, { passive: false });
+                const x =
+                    e.touches[0].pageX;
 
-        // TOUCH END
-        row.addEventListener("touchend", () => {
-            if (!row._dragged) {
+                const walk =
+                    x - row._startX;
+
+                if (Math.abs(walk) > 5) {
+                    row._dragged = true;
+                }
+
+                const raw =
+                    row._scrollStart - walk;
+
+                const max =
+                    getMaxScroll(row);
+
+                row.scrollLeft =
+                    rubber(raw, 0, max);
+
+                // Prevent page movement
+                // once horizontal swipe is detected
+                if (row._dragged) {
+                    e.preventDefault();
+                }
+            },
+            {
+                passive: false
+            }
+        );
+
+        row.addEventListener(
+            "touchend",
+            () => {
+                if (!row._isTouchDown) {
+                    return;
+                }
+
                 row._isTouchDown = false;
-                return;
-            }
 
-            row._isTouchDown = false;
+                if (!row._dragged) {
+                    return;
+                }
 
-            if (
-                row.scrollLeft <= 0 ||
-                row.scrollLeft >= getMaxScroll(row)
-            ) {
                 bounceIfNeeded(row);
             }
-        });
+        );
 
+        row.addEventListener(
+            "touchcancel",
+            () => {
+                row._isTouchDown = false;
+                row._dragged = false;
+            }
+        );
+
+        // =========================
         // SCROLL
-        row.addEventListener("scroll", () => {
-            updateArrowState(row);
-            preloadIfNeeded(row);
-        });
+        // =========================
 
-        updateArrowState(row);
+        row.addEventListener(
+            "scroll",
+            () => {
+                updateArrowState(row);
+                preloadIfNeeded(row);
+            }
+        );
+
+        // =========================
+        // INITIAL STATE
+        // =========================
+
+        requestAnimationFrame(() => {
+            updateArrowState(row);
+        });
     });
 
+    // =========================
     // ARROWS
-    document.querySelectorAll(".arrow").forEach(btn => {
-        btn.addEventListener("click", async () => {
-            const target = document.getElementById(btn.dataset.target);
+    // =========================
 
-            if (!target) return;
+    document.querySelectorAll(".arrow")
+        .forEach(btn => {
 
-            const max = getMaxScroll(target);
+        btn.addEventListener(
+            "click",
+            async () => {
 
-            // LEFT
-            if (btn.classList.contains("left")) {
-                if (target.scrollLeft <= 5) {
-                    target.scrollTo({
-                        left: 0,
+                const target =
+                    document.getElementById(
+                        btn.dataset.target
+                    );
+
+                if (!target) return;
+
+                const max =
+                    getMaxScroll(target);
+
+                const pageScroll =
+                    getPageScroll(target);
+
+                // =========================
+                // LEFT
+                // =========================
+
+                if (
+                    btn.classList.contains("left")
+                ) {
+
+                    target.scrollBy({
+                        left: -pageScroll,
                         behavior: "smooth"
                     });
 
                     return;
                 }
 
+                // =========================
+                // RIGHT
+                // =========================
+
+                if (
+                    target.scrollLeft >=
+                    max - 5
+                ) {
+
+                    await preloadIfNeeded(target);
+
+                    setTimeout(() => {
+
+                        const newMax =
+                            getMaxScroll(target);
+
+                        target.scrollTo({
+                            left: Math.min(
+                                target.scrollLeft +
+                                pageScroll,
+                                newMax
+                            ),
+                            behavior: "smooth"
+                        });
+
+                        updateArrowState(target);
+
+                    }, 100);
+
+                    return;
+                }
+
+                // =========================
+                // NORMAL RIGHT
+                // =========================
+
                 target.scrollBy({
-                    left: -scrollAmount,
+                    left: pageScroll,
                     behavior: "smooth"
                 });
 
-                return;
-            }
-
-            // RIGHT
-            if (target.scrollLeft >= max - 5) {
-                await preloadIfNeeded(target);
-
                 setTimeout(() => {
-                    const newMax = getMaxScroll(target);
-
-                    target.scrollTo({
-                        left: Math.min(
-                            target.scrollLeft + scrollAmount,
-                            newMax
-                        ),
-                        behavior: "smooth"
-                    });
 
                     updateArrowState(target);
-                }, 100);
+                    preloadIfNeeded(target);
 
-                return;
+                }, 150);
             }
-
-            // NORMAL RIGHT SCROLL
-            target.scrollBy({
-                left: scrollAmount,
-                behavior: "smooth"
-            });
-
-            setTimeout(() => {
-                updateArrowState(target);
-                preloadIfNeeded(target);
-            }, 100);
-        });
+        );
     });
 }
 
