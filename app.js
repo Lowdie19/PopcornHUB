@@ -1933,6 +1933,9 @@ function setupRowScrolling() {
             row._startX = e.touches[0].clientX;
             row._startY = e.touches[0].clientY;
             row._scrollStart = row.scrollLeft;
+            row._lastX = row._startX;
+            row._lastTime = performance.now();
+            row._velocity = 0;
         }, { passive: true });
 
         row.addEventListener("touchmove", e => {
@@ -1944,41 +1947,54 @@ function setupRowScrolling() {
             const dx = x - row._startX;
             const dy = y - row._startY;
 
-            // Wait until the gesture has a clear direction
+            // DIRECTION LOCK
             if (!row._touchDirection) {
                 const distance = Math.hypot(dx, dy);
 
                 if (distance < 8) return;
 
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    row._touchDirection = "horizontal";
-                } else {
-                    row._touchDirection = "vertical";
-                }
+                row._touchDirection =
+                    Math.abs(dx) > Math.abs(dy) ? "horizontal"
+                        : "vertical";
             }
 
-            // Vertical gesture = let the page scroll normally
+            // VERTICAL = PAGE SCROLL
             if (row._touchDirection === "vertical") {
                 return;
             }
 
-            // Horizontal gesture = carousel
+            // HORIZONTAL = CAROUSEL
             e.preventDefault();
 
             if (Math.abs(dx) > 5) {
                 row._dragged = true;
             }
 
+            // VELOCITY
+            const now = performance.now();
+            const dt = Math.max(1, now - row._lastTime);
+
+            const moveX = x - row._lastX;
+
+            row._velocity =
+                moveX / dt;
+
+            row._lastX = x;
+            row._lastTime = now;
+
+            // DIRECT DRAG
             const max = getMaxScroll(row);
 
-            const raw = row._scrollStart - dx;
+            const raw =
+                row._scrollStart - dx;
 
-            row.scrollLeft = rubber(
-                raw,
-                0,
-                max,
-                0.45
-            );
+            row.scrollLeft =
+                rubber(
+                    raw,
+                    0,
+                    max,
+                    0.45
+                );
         }, { passive: false });
 
         row.addEventListener("touchend", () => {
@@ -1990,11 +2006,31 @@ function setupRowScrolling() {
                 row._touchDirection === "horizontal" &&
                 row._dragged
             ) {
-                bounceIfNeeded(row);
+                const max = getMaxScroll(row);
+
+                // MOMENTUM
+                const velocity = row._velocity || 0;
+
+                const momentum =
+                    velocity * 280;
+
+                const target =
+                    Math.max(
+                        0,
+                        Math.min(
+                            row.scrollLeft - momentum,
+                            max
+                        )
+                    );
+
+                row.scrollTo({
+                    left: target,
+                    behavior: "smooth"
+                });
             }
 
             row._touchDirection = null;
-            row._touchLocked = false;
+            row._velocity = 0;
         }, { passive: true });
 
         row.addEventListener("touchcancel", () => {
