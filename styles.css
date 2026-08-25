@@ -129,26 +129,25 @@ body {
 
 /* ROW */
 .row {
-  display: flex;
-  gap: 15px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 10px;
-  align-items: flex-start;
-  scroll-behavior: smooth;
-  touch-action: pan-y;
- -webkit-overflow-scrolling: touch;
-
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
-
-  cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 10px;
+    align-items: flex-start;
+    scroll-behavior: smooth;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
 }
+
 .row::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 
 /* MOVIE CARDS */
@@ -975,32 +974,15 @@ button {
     pointer-events: none;
 }
 
-/* Arrow See More */
-.arrow.seeMoreMode {
-    width: 110px;
-    right: -20px;
-    color: white;
-    font-size: 14px;
-    gap: 5px;
-}
 
-.arrow.seeMoreMode:hover {
-    color: #bbf523;
-}
 
-.arrow.seeMoreMode span {
-    white-space: nowrap;
-}
-      /* =========================
-        MOBILE
-      ========================= */
+      /* MOBILE ========================= */
       @media (max-width: 768px) {
         .videoModalContent {
           width: calc(100vw - 20px);
           height: calc(100vh - 20px);
           margin: 10px auto;
         }
-        /* VIDEO SIDE */
         .videoContainer {
           flex: 1.3;
           height: 100%;
@@ -1012,7 +994,6 @@ button {
           position: absolute;
           inset: 0;
         }
-        /* RIGHT PANEL */
         .videoMeta {
           flex: 1;
           display: flex;
@@ -1022,7 +1003,6 @@ button {
           background: var(--bg);
           gap: 10px;
         }
-        /* TITLE + DESCRIPTION */
         #modalTitle {
           margin-top: 20px;
           font-size: 16px;
@@ -1032,7 +1012,6 @@ button {
           font-size: 13px;
           color: var(--text-muted);
         }
-        /* EPISODE CONTROLS FIX */
         #episodeControls {
           display: flex !important;
           flex-direction: column;
@@ -1074,122 +1053,188 @@ button {
         .epMeta {
           padding: 0;
         }
+
         .epMeta div {
           font-size: 12px;
         }
         .epMeta p {
           font-size: 10px;
         }
+
         .category {
           padding: 15px 10px;
         }
+
         .category h2 {
           font-size: 18px;
         }
+
         .row {
-          gap: 10px;
+            touch-action: pan-x;
+            cursor: grab;
         }
-        .movie {
-          min-width: 140px;
-          max-width: 140px;
-          height: 210px;
-        }
-        .movie,
-        .skeletonCard {
-            min-width: 140px;
-            max-width: 140px;
-            height: 210px;
-        }
+
         .videoMeta,
         .seasonRow {
           scrollbar-width: none;
           -ms-overflow-style: none;
         }
+
         .videoMeta::-webkit-scrollbar,
         .seasonRow::-webkit-scrollbar {
           display: none;
         }
+
         .description {
           flex-shrink: 0;
         }
+
         .description::after {
           height: 18px;
         }
-        .emptySearch{
+
+        .emptySearch {
           scale: 0.8;
           font-size: large;
           padding: 0;
         }
-      }
 
-      @media (orientation: portrait) {
+        /* MOBILE CARD TEXT */
+        .movieInfo {
+          padding: 7px;
+        }
+
+        .movieInfo strong {
+          font-size: 11px;
+          line-height: 1.2;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .movieInfo .genre {
+          font-size: 9px;
+          margin-top: 2px;
+        }
+
+        /* MOBILE REMOVE BUTTON */
+        .removeBtn {
+            width: auto;
+            min-width: 0;
+            height: auto;
+
+            top: 50%;
+            left: 50%;
+            right: auto;
+
+            transform: translate(-50%, -50%);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 10px;
+            font-size: 11px;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .removeBtn:active {
+            transform: translate(-50%, -50%) scale(.90);
+        }
+
+      /* MOBILE PORTRAIT  ========================= */
+      @media (max-width: 768px) and (orientation: portrait) {
+
+        .movie,
+        .skeletonCard {
+          min-width: calc((100% - 20px) / 3);
+          max-width: calc((100% - 20px) / 3);
+          height: auto;
+          aspect-ratio: 2 / 3;
+        }
+
+        /* MOBILE PORTRAIT CLOSE */
+        #mobileCloseBtn {
+          display: flex !important;
+          position: fixed;
+          right: 20px;
+          bottom: 20px;
+          z-index: 9999;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .closeBtn {
+          display: none;
+        }
+
         .videoModalContent {
           height: auto;
           max-height: 90dvh;
           flex-direction: column;
         }
+
         .videoContainer {
           flex: none;
           height: 40vh;
         }
+
         .videoMeta {
           flex: 1;
           overflow-y: auto;
           min-height: 0;
         }
+
         .seasonRow {
           padding: 15px;
         }
+
         .episodeGrid {
           margin: 10px;
         }
-        /* Floating Close Button */
-        #mobileCloseBtn {
-          display: block;
-
-          position: fixed;
-
-          right: 20px;
-          bottom: 20px;
-
-          z-index: 9999;
-        }
-        .closeBtn {
-          display: none;
-        }
       }
 
-      @media (orientation: landscape) {
+      /* MOBILE LANDSCAPE ================= */
+      @media (max-width: 768px) and (orientation: landscape) {
         .videoModalContent {
           overscroll-behavior: contain;
           flex-direction: row;
           height: calc(100dvh - 20px);
           max-height: 90dvh;
         }
+
         .videoContainer {
           flex: 1.2;
           height: 100%;
         }
+
         .videoMeta {
           flex: 1;
           overflow-y: auto;
-          min-height: 0; /* prevents flex overflow bug */
+          min-height: 0;
         }
+
         .category {
           transform: none !important;
           width: 100% !important;
         }
+
         .closeBtn {
-          font-size: 23px; /* makes the ✕ bigger */
+          font-size: 23px;
         }
+
         .seasonRow {
           padding: 15px;
         }
+
         .episodeGrid {
           display: flex;
           flex-direction: column;
           gap: 8px;
         }
+
         .episodeItem {
           display: flex;
           flex-direction: row;
@@ -1197,6 +1242,7 @@ button {
           gap: 10px;
           padding: 6px;
         }
+
         .episodeItem img {
           width: 90px;
           height: 50px;
@@ -1204,4 +1250,14 @@ button {
           object-fit: cover;
           flex-shrink: 0;
         }
-      }
+
+        /* Landscape card sizing */
+        .movie,
+        .skeletonCard {
+          width: 18vh;
+          min-width: 18vh;
+          max-width: 18vh;
+          height: 27vh;
+        }
+        }
+}
