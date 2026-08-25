@@ -136,7 +136,7 @@ body {
     padding-bottom: 10px;
     align-items: flex-start;
     scroll-behavior: smooth;
-    touch-action: pan-x;
+    touch-action: pan-x pan-y;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -1069,10 +1069,6 @@ button {
           font-size: 18px;
         }
 
-        .row {
-            touch-action: pan-x;
-            cursor: grab;
-        }
 
         .videoMeta,
         .seasonRow {
