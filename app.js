@@ -1716,13 +1716,14 @@ function setupRowScrolling() {
     const preloadRatio = 0.75;
     const rows = document.querySelectorAll(".row");
 
-    // Carousel Loaders
+    // LOADERS
     const carouselLoaders = {
         movieResults: loadMoreMovies,
         tvResults: loadMoreTV,
         animeResults: loadMoreAnime
     };
 
+    // HELPERS
     function rubber(value, min, max, strength = 0.35) {
         if (value < min) return min + (value - min) * strength;
         if (value > max) return max + (value - max) * strength;
@@ -1733,9 +1734,10 @@ function setupRowScrolling() {
         return Math.max(0, row.scrollWidth - row.clientWidth);
     }
 
-    // Dynamic page size based on visible cards
+    // DYNAMIC PAGE SIZE
     function getPageScroll(row) {
-        const firstCard = row.querySelector(".movie, .skeletonCard");
+        const firstCard =
+            row.querySelector(".movie, .skeletonCard");
 
         if (!firstCard) {
             return row.clientWidth;
@@ -1759,7 +1761,7 @@ function setupRowScrolling() {
         return visibleCards * (cardWidth + gap);
     }
 
-    // Arrow State
+    // ARROW STATE
     function updateArrowState(row) {
         if (!row) return;
 
@@ -1774,19 +1776,11 @@ function setupRowScrolling() {
         if (!leftBtn || !rightBtn) return;
 
         const max = getMaxScroll(row);
+        const atStart = row.scrollLeft <= 5;
+        const atEnd = row.scrollLeft >= max - 5;
 
-        const atStart =
-            row.scrollLeft <= 5;
-
-        const atEnd =
-            max <= 5 ||
-            row.scrollLeft >= max - 5;
-
-        leftBtn.style.display =
-            atStart ? "none" : "";
-
-        rightBtn.style.display =
-            atEnd ? "none" : "";
+        leftBtn.style.display = atStart ? "none" : "";
+        rightBtn.style.display = atEnd ? "none" : "";
 
         leftBtn.innerHTML =
             `<i class="fa-solid fa-chevron-left"></i>`;
@@ -1805,30 +1799,25 @@ function setupRowScrolling() {
         );
     }
 
-    // Auto Preload
+    // AUTO PRELOAD
     async function preloadIfNeeded(row) {
-        if (!row) return;
-
-        if (row.dataset.loading === "true") {
+        if (
+            !row ||
+            row.dataset.loading === "true"
+        ) {
             return;
         }
 
-        const loader =
-            carouselLoaders[row.id];
-
+        const loader = carouselLoaders[row.id];
         if (!loader) return;
 
-        const max =
-            getMaxScroll(row);
-
+        const max = getMaxScroll(row);
         if (max <= 0) return;
 
         const progress =
             row.scrollLeft / max;
 
-        if (progress < preloadRatio) {
-            return;
-        }
+        if (progress < preloadRatio) return;
 
         row.dataset.loading = "true";
 
@@ -1845,294 +1834,251 @@ function setupRowScrolling() {
         }
     }
 
-    // Edge Bounce
+    // EDGE BOUNCE
     function bounceIfNeeded(row) {
-        const max =
-            getMaxScroll(row);
+        const max = getMaxScroll(row);
 
         if (
             row.scrollLeft <= 0 ||
             row.scrollLeft >= max
         ) {
             row.classList.remove("bounce");
-
             void row.offsetWidth;
-
             row.classList.add("bounce");
         }
     }
 
-    // Setup Rows
+    // SETUP ROWS
     rows.forEach(row => {
-
         row._isMouseDown = false;
         row._isTouchDown = false;
         row._dragged = false;
+        row._gestureDirection = null;
 
-        // =========================
-        // MOUSE DRAG
-        // =========================
+        // DESKTOP DRAG
+        row.addEventListener("mousedown", e => {
+            row._isMouseDown = true;
+            row._dragged = false;
 
-        row.addEventListener(
-            "mousedown",
-            e => {
-                row._isMouseDown = true;
-                row._dragged = false;
+            row._startX = e.pageX;
+            row._scrollStart = row.scrollLeft;
 
-                row._startX = e.pageX;
-                row._scrollStart =
-                    row.scrollLeft;
+            row.style.cursor = "grabbing";
+        });
 
-                row.style.cursor =
-                    "grabbing";
+        row.addEventListener("mousemove", e => {
+            if (!row._isMouseDown) return;
+
+            e.preventDefault();
+
+            const walk =
+                e.pageX - row._startX;
+
+            if (Math.abs(walk) > 5) {
+                row._dragged = true;
             }
-        );
 
-        row.addEventListener(
-            "mousemove",
-            e => {
-                if (!row._isMouseDown) {
-                    return;
-                }
+            const raw =
+                row._scrollStart - walk;
 
-                e.preventDefault();
+            const max =
+                getMaxScroll(row);
 
-                const walk =
-                    e.pageX - row._startX;
+            row.scrollLeft =
+                rubber(raw, 0, max);
+        });
 
-                if (Math.abs(walk) > 5) {
-                    row._dragged = true;
-                }
+        window.addEventListener("mouseup", () => {
+            if (!row._isMouseDown) return;
 
-                const raw =
-                    row._scrollStart - walk;
+            row._isMouseDown = false;
+            row.style.cursor = "grab";
 
-                const max =
-                    getMaxScroll(row);
+            if (!row._dragged) return;
 
-                row.scrollLeft =
-                    rubber(raw, 0, max);
-            }
-        );
+            bounceIfNeeded(row);
+        });
 
-        window.addEventListener(
-            "mouseup",
-            () => {
-                if (!row._isMouseDown) {
-                    return;
-                }
-
-                row._isMouseDown = false;
-                row.style.cursor = "grab";
-
-                if (!row._dragged) {
-                    return;
-                }
-
-                bounceIfNeeded(row);
-            }
-        );
-
-        // =========================
-        // TOUCH SWIPE
-        // =========================
-
+        // MOBILE TOUCH START
         row.addEventListener(
             "touchstart",
             e => {
-                if (!e.touches.length) {
-                    return;
-                }
+                if (!e.touches.length) return;
 
                 row._isTouchDown = true;
                 row._dragged = false;
+                row._gestureDirection = null;
 
                 row._startX =
                     e.touches[0].pageX;
 
+                row._startY =
+                    e.touches[0].pageY;
+
                 row._scrollStart =
                     row.scrollLeft;
             },
-            {
-                passive: true
-            }
+            { passive: true }
         );
 
-        row.addEventListener(
-            "touchmove",
-            e => {
-                if (
-                    !row._isTouchDown ||
-                    !e.touches.length
-                ) {
-                    return;
+        // TOUCH
+        row.addEventListener("touchstart", e => {
+            if (!e.touches.length) return;
+
+            row._isTouchDown = true;
+            row._dragged = false;
+            row._touchLocked = false;
+            row._touchDirection = null;
+
+            row._startX = e.touches[0].clientX;
+            row._startY = e.touches[0].clientY;
+            row._scrollStart = row.scrollLeft;
+        }, { passive: true });
+
+        row.addEventListener("touchmove", e => {
+            if (!row._isTouchDown || !e.touches.length) return;
+
+            const x = e.touches[0].clientX;
+            const y = e.touches[0].clientY;
+
+            const dx = x - row._startX;
+            const dy = y - row._startY;
+
+            // Wait until the gesture has a clear direction
+            if (!row._touchDirection) {
+                const distance = Math.hypot(dx, dy);
+
+                if (distance < 8) return;
+
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    row._touchDirection = "horizontal";
+                } else {
+                    row._touchDirection = "vertical";
                 }
-
-                const x =
-                    e.touches[0].pageX;
-
-                const walk =
-                    x - row._startX;
-
-                if (Math.abs(walk) > 5) {
-                    row._dragged = true;
-                }
-
-                const raw =
-                    row._scrollStart - walk;
-
-                const max =
-                    getMaxScroll(row);
-
-                row.scrollLeft =
-                    rubber(raw, 0, max);
-
-                // Prevent page movement
-                // once horizontal swipe is detected
-                if (row._dragged) {
-                    e.preventDefault();
-                }
-            },
-            {
-                passive: false
             }
-        );
 
-        row.addEventListener(
-            "touchend",
-            () => {
-                if (!row._isTouchDown) {
-                    return;
-                }
+            // Vertical gesture = let the page scroll normally
+            if (row._touchDirection === "vertical") {
+                return;
+            }
 
-                row._isTouchDown = false;
+            // Horizontal gesture = carousel
+            e.preventDefault();
 
-                if (!row._dragged) {
-                    return;
-                }
+            if (Math.abs(dx) > 5) {
+                row._dragged = true;
+            }
 
+            const max = getMaxScroll(row);
+
+            const raw = row._scrollStart - dx;
+
+            row.scrollLeft = rubber(
+                raw,
+                0,
+                max,
+                0.45
+            );
+        }, { passive: false });
+
+        row.addEventListener("touchend", () => {
+            if (!row._isTouchDown) return;
+
+            row._isTouchDown = false;
+
+            if (
+                row._touchDirection === "horizontal" &&
+                row._dragged
+            ) {
                 bounceIfNeeded(row);
             }
-        );
 
-        row.addEventListener(
-            "touchcancel",
-            () => {
-                row._isTouchDown = false;
-                row._dragged = false;
-            }
-        );
+            row._touchDirection = null;
+            row._touchLocked = false;
+        }, { passive: true });
 
-        // =========================
+        row.addEventListener("touchcancel", () => {
+            row._isTouchDown = false;
+            row._touchDirection = null;
+            row._touchLocked = false;
+        }, { passive: true });
+
         // SCROLL
-        // =========================
+        row.addEventListener("scroll", () => {
+            updateArrowState(row);
+            preloadIfNeeded(row);
+        });
 
-        row.addEventListener(
-            "scroll",
-            () => {
-                updateArrowState(row);
-                preloadIfNeeded(row);
-            }
-        );
-
-        // =========================
-        // INITIAL STATE
-        // =========================
-
+        // INITIAL ARROW STATE
         requestAnimationFrame(() => {
             updateArrowState(row);
         });
     });
 
-    // =========================
     // ARROWS
-    // =========================
+    document.querySelectorAll(".arrow").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const target =
+                document.getElementById(
+                    btn.dataset.target
+                );
 
-    document.querySelectorAll(".arrow")
-        .forEach(btn => {
+            if (!target) return;
 
-        btn.addEventListener(
-            "click",
-            async () => {
+            const max =
+                getMaxScroll(target);
 
-                const target =
-                    document.getElementById(
-                        btn.dataset.target
-                    );
+            const pageScroll =
+                getPageScroll(target);
 
-                if (!target) return;
-
-                const max =
-                    getMaxScroll(target);
-
-                const pageScroll =
-                    getPageScroll(target);
-
-                // =========================
-                // LEFT
-                // =========================
-
-                if (
-                    btn.classList.contains("left")
-                ) {
-
-                    target.scrollBy({
-                        left: -pageScroll,
-                        behavior: "smooth"
-                    });
-
-                    return;
-                }
-
-                // =========================
-                // RIGHT
-                // =========================
-
-                if (
-                    target.scrollLeft >=
-                    max - 5
-                ) {
-
-                    await preloadIfNeeded(target);
-
-                    setTimeout(() => {
-
-                        const newMax =
-                            getMaxScroll(target);
-
-                        target.scrollTo({
-                            left: Math.min(
-                                target.scrollLeft +
-                                pageScroll,
-                                newMax
-                            ),
-                            behavior: "smooth"
-                        });
-
-                        updateArrowState(target);
-
-                    }, 100);
-
-                    return;
-                }
-
-                // =========================
-                // NORMAL RIGHT
-                // =========================
-
+            // LEFT
+            if (
+                btn.classList.contains("left")
+            ) {
                 target.scrollBy({
-                    left: pageScroll,
+                    left: -pageScroll,
                     behavior: "smooth"
                 });
 
+                return;
+            }
+
+            // RIGHT AT END
+            if (
+                target.scrollLeft >= max - 5
+            ) {
+                await preloadIfNeeded(target);
+
                 setTimeout(() => {
+                    const newMax =
+                        getMaxScroll(target);
+
+                    target.scrollTo({
+                        left: Math.min(
+                            target.scrollLeft +
+                                pageScroll,
+                            newMax
+                        ),
+                        behavior: "smooth"
+                    });
 
                     updateArrowState(target);
-                    preloadIfNeeded(target);
+                }, 100);
 
-                }, 150);
+                return;
             }
-        );
+
+            // NORMAL RIGHT
+            target.scrollBy({
+                left: pageScroll,
+                behavior: "smooth"
+            });
+
+            setTimeout(() => {
+                updateArrowState(target);
+                preloadIfNeeded(target);
+            }, 150);
+        });
     });
 }
 
