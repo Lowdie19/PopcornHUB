@@ -52,25 +52,50 @@ let loadingMoreMovies = false;
 
 const TMDB_API_KEY = "7124d4e6e0feb015f07fc9a57bc27227";
 
-// Debounced search
-let timeout;
+
+// =========================
+// SEARCH TRIGGER
+// =========================
+let searchDebounce;
+let lastSearchQuery = "";
+
 const searchInput = document.getElementById("searchInput");
 
-searchInput.addEventListener("keydown", e => {
-    if (e.key === "Enter") {
-        clearTimeout(timeout);
-        timeout = null;
-        searchAll();
+function triggerSearch() {
+    const query = searchInput.value.trim();
+
+    // Prevent duplicate search
+    if (query === lastSearchQuery) {
+        return;
     }
+
+    lastSearchQuery = query;
+
+    searchAll();
+}
+
+// Typing
+searchInput.addEventListener("input", () => {
+
+    clearTimeout(searchDebounce);
+
+    searchDebounce = setTimeout(() => {
+        triggerSearch();
+    }, 400);
 });
 
-searchInput.addEventListener("input", () => {
-    clearTimeout(timeout);
+// Enter
+searchInput.addEventListener("keydown", e => {
 
-    timeout = setTimeout(() => {
-        timeout = null;
-        searchAll();
-    }, 600);
+    if (e.key !== "Enter") {
+        return;
+    }
+
+    e.preventDefault();
+
+    clearTimeout(searchDebounce);
+
+    triggerSearch();
 });
 
 // Category Titles Helper
@@ -872,6 +897,8 @@ async function searchAll() {
     // =====================================
     if (!query) {
 
+        lastSearchQuery = "";
+        
         currentContentMode = "home";
         currentSearchQuery = "";
 
@@ -1250,7 +1277,7 @@ function render(catId, rowId, data) {
 
             div.innerHTML = `
                 <img loading="lazy"
-                    src="${item.poster || "https://via.placeholder.com/300x450?text=No+Image"}"
+                    src="${item.poster || "./no_image_available.png"}"
                     alt="${item.title}">
 
                 <div class="movieInfo">
@@ -2988,7 +3015,7 @@ function appendMovieCards() {
                 loading="lazy"
                 src="${
                     item.poster ||
-                    "https://via.placeholder.com/300x450?text=No+Image"
+                    "./no_image_available.png"
                 }"
                 alt="${item.title}">
 
