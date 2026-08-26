@@ -53,24 +53,24 @@ let loadingMoreMovies = false;
 const TMDB_API_KEY = "7124d4e6e0feb015f07fc9a57bc27227";
 
 // Debounced search
-let searchDebounce;
+let timeout;
 const searchInput = document.getElementById("searchInput");
 
-searchInput.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter") {
-        return;
+searchInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+        clearTimeout(timeout);
+        timeout = null;
+        searchAll();
     }
-    clearTimeout(searchDebounce);
-    searchAll();
 });
 
 searchInput.addEventListener("input", () => {
+    clearTimeout(timeout);
 
-    clearTimeout(searchDebounce);
-
-    searchDebounce = setTimeout(() => {
+    timeout = setTimeout(() => {
+        timeout = null;
         searchAll();
-    }, 300);
+    }, 600);
 });
 
 // Category Titles Helper
