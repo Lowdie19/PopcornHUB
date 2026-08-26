@@ -32,6 +32,7 @@ let searchMovieTotalPages = 1;
 
 let searchTVPage = 1;
 let searchTVTotalPages = 1;
+let searchTVLoading = false;
 
 let searchAnimePage = 1;
 let searchAnimeTotalPages = 1;
@@ -137,11 +138,16 @@ async function loadHome() {
     const movieRow = document.getElementById("movieResults");
     const tvRow = document.getElementById("tvResults");
     const animeRow = document.getElementById("animeResults");
+
     document.getElementById("emptySearch").style.display = "none";
 
-    if (!movieRow.children.length) showSkeleton("movieResults");
-    if (!tvRow.children.length) showSkeleton("tvResults");
-    if (!animeRow.children.length) showSkeleton("animeResults");
+    movieRow.innerHTML = "";
+    tvRow.innerHTML = "";
+    animeRow.innerHTML = "";
+
+    showSkeleton("movieResults");
+    showSkeleton("tvResults");
+    showSkeleton("animeResults");
 
     setCategoryTitles(true);
 
@@ -736,14 +742,13 @@ async function loadMoreSearchMovies() {
 // SEARCH LOAD MORE TV
 // =========================
 async function loadMoreSearchTV() {
-    if (searchTVExhausted) return false;
-    
-    if (currentContentMode !== "search" || !currentSearchQuery) {
+    if (searchTVLoading ||
+        currentContentMode !== "search" ||
+        !currentSearchQuery) {
         return false;
     }
 
     if (searchTVPage >= searchTVTotalPages) {
-        searchTVExhausted = true;
         console.log("NO MORE SEARCH TV");
         return false;
     }
@@ -759,110 +764,110 @@ async function loadMoreSearchTV() {
         searchTVTotalPages
     );
 
-    const res = await fetch(
-        `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(currentSearchQuery)}&page=${nextPage}`
-    );
+    searchTVLoading = true;
 
-    if (!res.ok) {
-        throw new Error(`Search TV API ${res.status}`);
-    }
+    try {
+        const res = await fetch(
+            `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(currentSearchQuery)}&page=${nextPage}`
+        );
 
-    const data = await res.json();
+        if (!res.ok) {
+            throw new Error(`Search TV API ${res.status}`);
+        }
 
-    searchTVPage = data.page || nextPage;
-    searchTVTotalPages = data.total_pages || searchTVTotalPages;
+        const data = await res.json();
 
-    const tvResults = data.results || [];
+        searchTVPage = data.page || nextPage;
+        searchTVTotalPages =
+            data.total_pages || searchTVTotalPages;
 
-    const animeItems = tvResults.filter(i =>
-        i.original_language === "ja" &&
-        (i.genre_ids || []).includes(16)
-    );
+        const tvResults = data.results || [];
 
-    const normalTVItems = tvResults.filter(i =>
-        !(
+        const animeItems = tvResults.filter(i =>
             i.original_language === "ja" &&
             (i.genre_ids || []).includes(16)
-        )
-    );
+        );
 
-    const newTV = normalTVItems.map(i => ({
-        type: "tv",
-        id: i.id,
-        title: i.name,
-        poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-            : "",
-        videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
-    }));
+        const normalTVItems = tvResults.filter(i =>
+            !(
+                i.original_language === "ja" &&
+                (i.genre_ids || []).includes(16)
+            )
+        );
 
-    const newAnime = animeItems.map(i => ({
-        type: "tv",
-        id: i.id,
-        title: i.name,
-        poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
-            : "",
-        videasyUrl: `https://player.videasy.net/tv/${i.id}/1/1`
-    }));
+        const newTV = normalTVItems.map(i => ({
+            type: "tv",
+            id: i.id,
+            title: i.name,
+            poster: i.poster_path
+                ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+                : "",
+            videasyUrl:
+                `https://player.videasy.net/tv/${i.id}/1/1`
+        }));
 
-    // Prevent duplicate TV
-    const existingTVIds = new Set(
-        searchTVData.map(i => i.id)
-    );
+        const newAnime = animeItems.map(i => ({
+            type: "tv",
+            id: i.id,
+            title: i.name,
+            poster: i.poster_path
+                ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+                : "",
+            videasyUrl:
+                `https://player.videasy.net/tv/${i.id}/1/1`
+        }));
 
-    const uniqueTV = newTV.filter(
-        i => !existingTVIds.has(i.id)
-    );
+        const tvIds = new Set(searchTVData.map(i => i.id));
+        const animeIds = new Set(searchAnimeData.map(i => i.id));
 
-    searchTVData.push(...uniqueTV);
+        const uniqueTV = newTV.filter(i => !tvIds.has(i.id));
+        const uniqueAnime =
+            newAnime.filter(i => !animeIds.has(i.id));
 
-    // Prevent duplicate Anime
-    const existingAnimeIds = new Set(
-        searchAnimeData.map(i => i.id)
-    );
+        searchTVData.push(...uniqueTV);
+        searchAnimeData.push(...uniqueAnime);
 
-    const uniqueAnime = newAnime.filter(
-        i => !existingAnimeIds.has(i.id)
-    );
+        searchTVVisibleCount = Math.min(
+            searchTVVisibleCount + uniqueTV.length,
+            searchTVData.length
+        );
 
-    searchAnimeData.push(...uniqueAnime);
+        searchAnimeVisibleCount = Math.min(
+            searchAnimeVisibleCount + uniqueAnime.length,
+            searchAnimeData.length
+        );
 
-    searchTVVisibleCount = Math.min(
-        searchTVVisibleCount + uniqueTV.length,
-        searchTVData.length
-    );
+        render(
+            "tvCategory",
+            "tvResults",
+            searchTVData.slice(0, searchTVVisibleCount)
+        );
 
-    searchAnimeVisibleCount = Math.min(
-        searchAnimeVisibleCount + uniqueAnime.length,
-        searchAnimeData.length
-    );
+        render(
+            "animeCategory",
+            "animeResults",
+            searchAnimeData.slice(0, searchAnimeVisibleCount)
+        );
 
-    render(
-        "tvCategory",
-        "tvResults",
-        searchTVData.slice(0, searchTVVisibleCount)
-    );
+        document.getElementById("animeCategory").style.display =
+            searchAnimeData.length ? "block" : "none";
 
-    render(
-        "animeCategory",
-        "animeResults",
-        searchAnimeData.slice(0, searchAnimeVisibleCount)
-    );
+        console.log(
+            "SEARCH TV:",
+            searchTVData.length,
+            "| ANIME:",
+            searchAnimeData.length,
+            "| PAGE:",
+            searchTVPage,
+            "/",
+            searchTVTotalPages
+        );
 
-    document.getElementById("animeCategory").style.display =
-        searchAnimeData.length ? "block" : "none";
+        return uniqueTV.length > 0 || uniqueAnime.length > 0;
 
-    console.log(
-        "SEARCH TV:",
-        searchTVData.length,
-        "| ANIME:",
-        searchAnimeData.length,
-        "| PAGE:",
-        searchTVPage,
-        "/",
-        searchTVTotalPages
-    );
-
-    return uniqueTV.length > 0 || uniqueAnime.length > 0;
+    } finally {
+        searchTVLoading = false;
+    }
 }
 
 
@@ -870,10 +875,8 @@ async function loadMoreSearchTV() {
 // SEARCH LOAD MORE ANIME
 // =========================
 async function loadMoreSearchAnime() {
-    // Anime comes from the same TMDB TV search endpoint.
-    // TV pagination controls both TV and Anime results.
-
-    if (currentContentMode !== "search" || !currentSearchQuery) {
+    if (currentContentMode !== "search" ||
+        !currentSearchQuery) {
         return false;
     }
 
@@ -1015,8 +1018,7 @@ async function searchAll() {
             id: i.id,
             title: i.title,
 
-            poster: i.poster_path
-                ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+            poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
                 : "",
 
             videasyUrl:
@@ -2114,8 +2116,7 @@ async function loadEpisodes(sNum) {
             <img
                 loading="lazy"
                 src="${
-                    ep.still_path
-                        ? "https://image.tmdb.org/t/p/w500" + ep.still_path
+                    ep.still_path ? "https://image.tmdb.org/t/p/w500" + ep.still_path
                         : "https://via.placeholder.com/500x281"
                 }"
                 alt="${ep.name}">
@@ -2123,8 +2124,7 @@ async function loadEpisodes(sNum) {
             <div class="epMeta">
                 <div>${ep.episode_number}. ${ep.name}</div>
                 <p>${
-                    ep.overview
-                        ? ep.overview.substring(0, 60) + "..."
+                    ep.overview ? ep.overview.substring(0, 60) + "..."
                         : "No description"
                 }</p>
             </div>
