@@ -1,13 +1,13 @@
-const CACHE_NAME = "PopcornHUB-v2";
+const CACHE_NAME = "PopcornHUB-v3";
 
 const ASSETS = [
-  "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.json",
   "./icon.png",
-  "./favicon.ico"
+  "./favicon.ico",
+  "./no_image_available.png"
 ];
 
 // =========================
@@ -65,21 +65,27 @@ self.addEventListener("activate", event => {
 // FETCH
 // =========================
 self.addEventListener("fetch", event => {
+    const url = event.request.url;
 
-  const url = event.request.url;
+    // Don't cache API calls
+    if (
+        url.includes("api.themoviedb.org") ||
+        url.includes("anilist")
+    ) {
+        return;
+    }
 
-  // Don't interfere with TMDB / AniList API requests
-  if (
-    url.includes("api.themoviedb.org") ||
-    url.includes("anilist")
-  ) {
-    return;
-  }
+    // Don't intercept external images
+    if (
+        url.includes("image.tmdb.org") ||
+        url.includes("via.placeholder.com")
+    ) {
+        return;
+    }
 
-  event.respondWith(
-    fetch(event.request)
-      .catch(() =>
-        caches.match(event.request)
-      )
-  );
+    event.respondWith(
+        fetch(event.request).catch(() =>
+            caches.match(event.request)
+        )
+    );
 });
