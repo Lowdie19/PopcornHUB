@@ -2201,8 +2201,6 @@ async function loadEpisodes(sNum) {
   }
 }
 
-function scrollToCategory(id){ document.getElementById(id).scrollIntoView({ behavior:"smooth", block:"start" }); }
-
 function goHome(){
     searchInput.value="";
     window.scrollTo({ top:0, behavior:"smooth" });
