@@ -645,15 +645,6 @@ button {
   filter: brightness(0.5);
 }
 
-.statLink{
-  cursor:pointer;
-  transition:0.2s;
-}
-
-.statLink:hover{
-  color:var(--accentA);
-}
-
 .description {
   color: var(--text-muted);
   line-height: 1.5;
