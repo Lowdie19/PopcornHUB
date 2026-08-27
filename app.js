@@ -799,8 +799,7 @@ async function loadMoreSearchTV() {
             type: "tv",
             id: i.id,
             title: i.name,
-            poster: i.poster_path
-                ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+            poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
                 : "",
             videasyUrl:
                 `https://player.videasy.net/tv/${i.id}/1/1`
@@ -810,8 +809,7 @@ async function loadMoreSearchTV() {
             type: "tv",
             id: i.id,
             title: i.name,
-            poster: i.poster_path
-                ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
+            poster: i.poster_path ? `https://image.tmdb.org/t/p/w500${i.poster_path}`
                 : "",
             videasyUrl:
                 `https://player.videasy.net/tv/${i.id}/1/1`
@@ -923,8 +921,6 @@ async function searchAll() {
         searchTVVisibleCount = 0;
         searchAnimeVisibleCount = 0;
 
-        document.getElementById("stats").innerHTML = "";
-        document.getElementById("stats").style.display = "block";
         document.getElementById("emptySearch").style.display = "none";
 
         await loadHome();
@@ -1082,27 +1078,6 @@ async function searchAll() {
         searchTVVisibleCount = searchTVData.length;
         searchAnimeVisibleCount = searchAnimeData.length;
 
-        // =====================================
-        // STATS
-        // =====================================
-        document.getElementById("stats").innerHTML =
-            `<span class="statLink"
-                onclick="scrollToCategory('movieCategory')">
-                <i class="fa-solid fa-film"></i>
-                ${searchMovieData.length} Movies
-            </span>
-            &nbsp;|&nbsp;
-            <span class="statLink"
-                onclick="scrollToCategory('tvCategory')">
-                <i class="fa-solid fa-clapperboard"></i>
-                ${searchTVData.length} TV Series
-            </span>
-            &nbsp;|&nbsp;
-            <span class="statLink"
-                onclick="scrollToCategory('animeCategory')">
-                <i class="fa-solid fa-tv"></i>
-                ${searchAnimeData.length} Anime
-            </span>`;
 
         // =====================================
         // RENDER PAGE 1
@@ -1141,12 +1116,8 @@ async function searchAll() {
             searchAnimeData.length === 0;
 
         document.getElementById("emptySearch").style.display =
-            noResults ? "flex"
-                : "none";
+            noResults ? "flex" : "none";
 
-        document.getElementById("stats").style.display =
-            noResults ? "none"
-                : "block";
 
         // =====================================
         // DEBUG
@@ -1321,8 +1292,6 @@ function closeModal() {
         ) {
             searchInput.value = "";
             document.getElementById("emptySearch").style.display = "none";
-            document.getElementById("stats").innerHTML = "";
-            document.getElementById("stats").style.display = "block";
             moveContinueWatching(true);
             loadHome();
             return;
@@ -2234,7 +2203,13 @@ async function loadEpisodes(sNum) {
 
 function scrollToCategory(id){ document.getElementById(id).scrollIntoView({ behavior:"smooth", block:"start" }); }
 
-function goHome(){ searchInput.value=""; document.getElementById("stats").innerHTML=""; window.scrollTo({ top:0, behavior:"smooth" }); loadHome(); loadContinueWatching(); moveContinueWatching(true);}
+function goHome(){
+    searchInput.value="";
+    window.scrollTo({ top:0, behavior:"smooth" });
+    loadHome();
+    loadContinueWatching();
+    moveContinueWatching(true);
+}
 
 // CAROUSEL SYSTEM
 function setupRowScrolling() {
