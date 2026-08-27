@@ -90,13 +90,6 @@ body {
   font-size: 16px;
 }
 
-/* STATS */
-#stats {
-  text-align: center;
-  color: var(--text-muted);
-  padding: 15px;
-  font-size: 14px;
-}
 
 /* CATEGORIES WRAPPER */
 #categoryGroup {
