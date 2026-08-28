@@ -1665,10 +1665,8 @@ function addPlayerSwitchButton(currentUrl, currentOptions = {}) {
     // PC: click inside player
     container.addEventListener("click", showPlayerSwitch);
 
-    // Mobile: tap
-    container.addEventListener("touchstart", showPlayerSwitch, {
-        passive: true
-    });
+    // Mobile / touch / pen / mouse
+    container.addEventListener("pointerdown", showPlayerSwitch);
 
     // Mouse leaves player
     container.addEventListener("mouseleave", hidePlayerSwitch);
