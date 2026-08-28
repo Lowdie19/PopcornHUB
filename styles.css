@@ -1122,7 +1122,7 @@ button {
 
 
 /* MOBILE PORTRAIT =============== */
-@media (max-width: 700px) and (orientation: portrait) {
+@media (orientation: portrait) and (max-width: 700px) {
 
   .movie,
   .skeletonCard {
@@ -1170,38 +1170,79 @@ button {
 
 
 /* MOBILE LANDSCAPE =============== */
-@media (max-width: 899px) and (orientation: landscape) {
+@media (orientation: landscape) and (max-height: 600px) {
 
   .videoModalContent {
     width: calc(100vw - 20px);
     height: calc(100dvh - 20px);
     max-height: none;
     margin: 10px auto;
+
+    display: flex;
     flex-direction: row;
+
     overscroll-behavior: contain;
   }
+
   .videoContainer {
-    flex: 1 1 0;
+    flex: 1.2 1 0;
     width: auto;
     height: 100%;
-    aspect-ratio: auto;
     min-width: 0;
   }
 
   .videoMeta {
     flex: 1 1 0;
     width: auto;
-    height: auto;
-    min-width: 240px;
+    height: 100%;
+    min-width: 0;
     min-height: 0;
+
     overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* LANDSCAPE CLOSE BUTTON */
+
+  #mobileCloseBtn {
+    display: none !important;
   }
 
   .closeBtn {
+    display: flex;
     font-size: 23px;
   }
-  
+
+  /* LANDSCAPE EPISODES */
+
+  .seasonRow {
+    padding: 15px;
+  }
+
+  .episodeGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .episodeItem {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+  }
+
+  .episodeItem img {
+    width: 90px;
+    height: 50px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
   /* LANDSCAPE CARDS */
+
   .movie,
   .skeletonCard {
     width: 18vh;
