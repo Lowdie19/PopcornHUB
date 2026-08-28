@@ -166,10 +166,12 @@ body {
     right:0;
     bottom:0;
     padding: 12px;
-    background:linear-gradient(
-        transparent,
-        rgba(0,0,0,.95)
-    );
+
+    border-top: 1px solid var(--surface-light);
+    background: color-mix(in srgb, var(--bg) 75%, transparent);
+    box-shadow: 0 0 8px 5px color-mix(in srgb, var(--bg) 60%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 
     opacity:0;
     transform:translateY(20px);
@@ -1012,12 +1014,12 @@ button {
     padding: 0;
   }
 
-  /* MOBILE CARD TEXT */
+  /* MOBILE CARD TEXT INFO */
   .movieInfo {
     padding: 7px;
   }
   .movieInfo strong {
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.2;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -1025,8 +1027,8 @@ button {
     overflow: hidden;
   }
   .movieInfo .genre {
-    font-size: 9px;
-    margin-top: 2px;
+    font-size: 10px;
+    margin: 5px 0;
   }
   
   /* MOBILE REMOVE BUTTON */
@@ -1034,15 +1036,16 @@ button {
     width: auto;
     min-width: 0;
     height: auto;
-    top: 50%;
+    top: 35%;
     left: 50%;
     right: auto;
     transform: translate(-50%, -50%);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
-    font-size: 11px;
+    padding: 16px 25px;
+    border-radius: 30px;
+    font-size: 12px;
     line-height: 1;
     white-space: nowrap;
   }
@@ -1066,11 +1069,7 @@ button {
   .description::after {
     height: 18px;
   }
-  .movieInfo {
-    border-top: 1px solid var(--surface-light);
-    background: var(--bg);
-    box-shadow: 0 0 8px 5px var(--bg);
-  }
+
   /* MOBILE EPISODES */
   .seasonRow {
     padding: 15px;
@@ -1127,7 +1126,7 @@ button {
 
 /* MOBILE PORTRAIT =============== */
 @media (orientation: portrait) and (max-width: 700px) {
-
+  
   .movie,
   .skeletonCard {
     min-width: calc((100% - 20px) / 3);
@@ -1155,7 +1154,7 @@ button {
     min-height: 0;
     overflow-y: auto;
   }
-
+  
   /* PORTRAIT CLOSE BUTTON */
   #mobileCloseBtn {
     display: flex !important;
@@ -1172,63 +1171,52 @@ button {
   
 }
 
-
 /* MOBILE LANDSCAPE =============== */
 @media (orientation: landscape) and (max-height: 600px) {
-
+  
   .videoModalContent {
     width: calc(100vw - 20px);
     height: calc(100dvh - 20px);
     max-height: none;
     margin: 10px auto;
-
     display: flex;
     flex-direction: row;
-
     overscroll-behavior: contain;
   }
-
   .videoContainer {
     flex: 1.2 1 0;
     width: auto;
     height: 100%;
     min-width: 0;
   }
-
   .videoMeta {
     flex: 1 1 0;
     width: auto;
     height: 100%;
     min-width: 0;
     min-height: 0;
-
     overflow-y: auto;
     overflow-x: hidden;
   }
 
   /* LANDSCAPE CLOSE BUTTON */
-
   #mobileCloseBtn {
     display: none !important;
   }
-
   .closeBtn {
     display: flex;
     font-size: 23px;
   }
-
+  
   /* LANDSCAPE EPISODES */
-
   .seasonRow {
     padding: 15px;
   }
-
   .episodeGrid {
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
-
   .episodeItem {
     display: flex;
     flex-direction: row;
@@ -1236,7 +1224,6 @@ button {
     gap: 10px;
     padding: 6px;
   }
-
   .episodeItem img {
     width: 90px;
     height: 50px;
@@ -1244,14 +1231,52 @@ button {
     object-fit: cover;
     flex-shrink: 0;
   }
-
+  
   /* LANDSCAPE CARDS */
-
   .movie,
   .skeletonCard {
     width: 32vh;
     min-width: 32vh;
     max-width: 32vh;
     height: 48vh;
+  }
+  
+  /* LANDSCAPE MOVIE INFO */
+  .movieInfo {
+    padding: 7px;
+  }
+  .movieInfo strong {
+    font-size: 12px;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .movieInfo .genre {
+    font-size: 10px;
+    margin: 5px 0;
+  }
+  
+  /* LANDSCAPE REMOVE BUTTON */
+  .removeBtn {
+    width: auto;
+    min-width: 0;
+    height: auto;
+    top: 35%;
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 25px;
+    border-radius: 30px;
+    font-size: 12px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .removeBtn:active {
+    transform: translate(-50%, -50%) scale(.90);
   }
 }
