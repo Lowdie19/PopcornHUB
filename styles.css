@@ -1066,7 +1066,11 @@ button {
   .description::after {
     height: 18px;
   }
-
+  .movieInfo {
+    border-top: 1px solid var(--surface-light);
+    background: var(--bg);
+    box-shadow: 0 0 8px 5px var(--bg);
+  }
   /* MOBILE EPISODES */
   .seasonRow {
     padding: 15px;
@@ -1245,9 +1249,9 @@ button {
 
   .movie,
   .skeletonCard {
-    width: 18vh;
-    min-width: 18vh;
-    max-width: 18vh;
-    height: 27vh;
+    width: 32vh;
+    min-width: 32vh;
+    max-width: 32vh;
+    height: 48vh;
   }
 }
