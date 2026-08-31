@@ -40,7 +40,7 @@ body {
   user-select: none;
 }
 .logo .popcorn {
-  color: #ffffff;
+  color: var(--text);
 }
 .logo .hub {
   background: var(--accentA);
@@ -51,7 +51,7 @@ body {
   line-height: 1.1;
 }
 .hero p {
-  margin-top: 10px;
+  margin-top: .5rem;
   color: var(--text-muted);
   font-size: 1rem;
 }
@@ -63,12 +63,12 @@ body {
   z-index: 100;
   background: var(--bg);
   backdrop-filter: blur(10px);
-  padding: 20px;
+  padding: 1.25rem;
   border-bottom: 1px solid var(--surface);
 
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: .5rem;
   flex-wrap: nowrap; /* prevent wrapping */
   flex-direction: row;
 }
@@ -76,13 +76,13 @@ body {
   flex: 1 1 auto;       /* flexible width */
   min-width: 150px;     /* won't shrink too small */
   max-width: 600px;     /* won't grow too big */
-  padding: 12px 20px;
-  border-radius: 30px;
+  padding: .5rem 1rem;
+  border-radius: .8rem;
   border: 1px solid var(--surface-light);
   outline: none;
   background: var(--surface);
-  color: #fff;
-  font-size: 16px;
+  color: var(--text);
+  font-size: 1rem;
 }
 
 
@@ -91,7 +91,6 @@ body {
   display: flex;
   flex-direction: column; /* stack categories vertically */
   align-items: flex-start; /* LEFT ALIGN */
-  padding: 10px;
 }
 
 /* Continue Watching Position */
@@ -105,13 +104,13 @@ body {
 /* EACH CATEGORY */
 .category {
   width: 100%;
-  padding: 15px;
+  padding: 1rem;
 }
 .category h2 {
-  margin-bottom: 15px;
-  font-size: 22px;
-  border-left: 5px solid var(--accentA);
-  padding-left: 10px;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  border-left: .25rem solid var(--accentA);
+  padding-left: 1rem;
 }
 
 /* ROW */
@@ -155,7 +154,7 @@ body {
   height: 100%;        /* IMPORTANT */
   object-fit: cover;
   display: block;      /* removes inline image gap bug */
-  border-radius: 8px;
+  border-radius: .8rem;
   
   -webkit-user-drag: none; 
   pointer-events: none;
@@ -165,7 +164,7 @@ body {
     left:0;
     right:0;
     bottom:0;
-    padding: 12px;
+    padding: .8rem;
 
     border-top: 1px solid var(--surface-light);
     background: color-mix(in srgb, var(--bg) 75%, transparent);
@@ -230,39 +229,7 @@ body {
   opacity: 1;
 }
 
-/* MODAL BOX */
-.videoModalContent {
-  position: relative;
 
-  width: min(1200px, calc(100vw - 40px));
-  height: min(800px, calc(100vh - 40px));
-
-  margin: 20px auto;
-
-  display: flex;
-  flex-direction: column;
-
-  background: var(--bg);
-  box-shadow: -15px 15px 25px black;
-  border: 1px solid var(--bg);
-  border-radius: 14px;
-  overflow: hidden;
-  z-index: 2;
-
-  transform: scale(0.92);
-  opacity: 0;
-  transition: transform 0.25s ease, opacity 0.25s ease;
-}
-
-/* when modal is active */
-.detailModal.show .videoModalContent {
-  transform: scale(1);
-  opacity: 1;
-}
-@keyframes modalPop {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
 
 /* GENERAL BUTTON */
 button {
@@ -378,7 +345,6 @@ button {
     display: none;
 }
 
-
 /* VIDEO RESPONSIVE CONTAINER */
 .videoContainer {
   flex: 1.2;
@@ -397,8 +363,7 @@ button {
 .videoMeta {
   flex: 1;
   overflow-y: auto;
-  padding: 0 12px 12px 12px !important;
-  margin: 10px;
+  margin: 1rem;
 }
 .videoMeta::after {
   content: "";
@@ -406,10 +371,11 @@ button {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 30px;
-  background: linear-gradient(to bottom, transparent, var(--bg));
+  height: 5rem;
+  background: linear-gradient(to bottom, transparent, black);
   pointer-events: none;
 }
+
 .videoMeta,
 .seasonRow {
   scrollbar-width: thin; /* Firefox */
@@ -435,26 +401,11 @@ button {
 .seasonRow::-webkit-scrollbar-thumb:hover {
   background-color: var(--surface-light)
 }
-.videoMeta h2 {
-  margin-bottom: 5px;
-  font-size: 20px;
-}
 .videoMeta p {
   margin: 3px 0;
   color: var(--text-muted);
 }
-#episodeControls {
-    display: none;
-    margin-top: 20px;
-    border-top: 1px solid transparent;
-    background-image:
-        linear-gradient(var(--bg),var(--bg)),
-        linear-gradient(to right,
-            transparent,
-            var(--surface-light),
-            transparent);
-    background-clip: padding-box, border-box;
-}
+
 .seasonRowWrapper {
     position: sticky;
     top: 0;
@@ -497,12 +448,13 @@ button {
 
 /* Season Pill Selector */
 .seasonRow {
-    padding: 10px;
+    padding: .8rem;
     display: flex;
-    gap: 10px;
+    gap: .25rem;
     overflow-x: auto;
     background-color: var(--surface);
-    box-shadow: 0 10px 15px var(--bg);
+    box-shadow: 0 0 1rem var(--bg);
+    border-top: 1px solid transparent;
     border-bottom: 1px solid transparent;
     background-image:
         linear-gradient(var(--bg), var(--bg)),
@@ -513,8 +465,8 @@ button {
     background-clip: padding-box, border-box;
 }
 .seasonPill {
-    padding: 8px 16px;
-    border-radius: 4px;
+    padding: .5rem .8rem;
+    border-radius: .5rem;
     background: var(--surface);
     color: var(--text);
     cursor: pointer;
@@ -533,26 +485,14 @@ button {
 .episodeGrid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 10px;
-    margin: 20px;
+    gap: .8rem;
+    margin: 1rem;
 }
 
-.episodeItem {
-    background: var(--bg);
-    border-radius: 4px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: 0.3s;
-}
-.episodeItem:hover { background: var(--bg); }
-.episodeItem img {
-    width: 100%;
-    aspect-ratio: 16/9;
-    object-fit: cover;
-}
-.epMeta { padding: 10px; text-align: left;}
+
+.epMeta { padding: .5rem; text-align: left;}
 .epMeta div { font-size: 0.9rem; font-weight: bold; }
-.epMeta p { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+.epMeta p { font-size: 0.75rem; color: var(--text-muted); margin-top: .5rem; }
 
 #episodeControls select,
 .episodeSelect {
@@ -576,25 +516,15 @@ button {
   background: var(--accentA);
   color: black;
 }
-.episodeSearch {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: none;
-  outline: none;
-  font-size: 14px;
-  background: var(--surface);
-  color: #fff;
-  width: 100%;
-}
 .episodeItem {
-  padding: 8px;
+  padding: .5rem;
   text-align: center;
-  border-radius: 6px;
+  border-radius: .5rem;
   background: black;
   color: var(--text);
   font-weight: bold;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   transition: background 0.3s, color 0.3s, outline 0.3s;
 }
 .episodeItem:hover {
@@ -612,12 +542,17 @@ button {
 .episodeItem.played {
   filter: brightness(0.5);
 }
+.episodeItem img {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+}
 .description {
   color: var(--text-muted);
   line-height: 1.5;
-  font-size: 14px;
+  font-size: .85rem;
   overflow: hidden;
-  max-height: 7.2em;
+  max-height: 7rem;
   transition: max-height 0.35s ease;
   position: relative;
 }
@@ -629,7 +564,7 @@ button {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 25px !important;
+  height: 1rem !important;
   background: linear-gradient(to bottom, transparent, var(--bg));
   pointer-events: none;
   opacity: 0;
@@ -643,7 +578,7 @@ button {
 
 /* expanded state */
 .description.expanded {
-  max-height: 500px;
+  max-height: 10rem;
 }
 .description.expanded::after {
   opacity: 0;
@@ -656,9 +591,9 @@ button {
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 13px;
+  font-size: .85rem;
   transition: 0.2s;
-  padding: 10px;
+  padding: .85rem;
 }
 .readMoreBtn:hover {
   background: none;
@@ -691,18 +626,6 @@ button {
         transform .25s ease;
 }
 
-.seasonPill {
-    padding: 8px 16px;
-    border-radius: 4px;
-    background: var(--surface);
-    color: var(--text);
-    cursor: pointer;
-    font-weight: bold;
-    border: 1px solid var(--surface-light);
-    white-space: nowrap;
-    transition: 0.3s;
-}
-
 
 .removeBtn{
     position:absolute;
@@ -718,7 +641,7 @@ button {
     border-radius:10px;
     background:var(--surface);
     color:var(--text);
-    font-size:14px;
+    font-size: 1.5;
     font-weight:600;
     cursor:pointer;
     transition:
@@ -781,7 +704,6 @@ button {
     height:100%;
     background:var(--accentA);
 }
-
 
 
 .emptySearch{
@@ -928,14 +850,27 @@ button {
 /* =========================================
     MODAL BASE
 ========================================= */
-
 .videoModalContent {
-  width: min(1400px, calc(100vw - 24px));
-  height: min(92dvh, 900px);
-  margin: 12px auto;
+  position: relative;
+
+  width: min(1200px, calc(100vw - 40px));
+  height: min(800px, calc(100vh - 40px));
+
+  margin: 1rem auto;
+
   display: flex;
   flex-direction: column;
+
+  background: var(--bg);
+  box-shadow: -15px 15px 25px black;
+  border: 1px solid var(--bg);
+  border-radius: 14px;
   overflow: hidden;
+  z-index: 2;
+
+  transform: scale(0.92);
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease;
 }
 .videoContainer {
   flex: 0 0 auto;
@@ -948,6 +883,16 @@ button {
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
+}
+
+/* when modal is active */
+.detailModal.show .videoModalContent {
+  transform: scale(1);
+  opacity: 1;
+}
+@keyframes modalPop {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 /* =========================================
@@ -993,33 +938,31 @@ button {
 @media (max-width: 768px) {
 
   .hero {
-    padding: 20px 15px 5px;
+    padding: .8rem;
   }
   .logo {
-    font-size: 2rem;
-    gap: 6px;
+    font-size: 1.5rem;
+    gap: .5rem;
   }
   .hero p {
-    font-size: 0.85rem;
-  }
-  .category {
-    padding: 15px 10px;
-  }
-  .category h2 {
-    font-size: 18px;
+    font-size: 0.8rem;
   }
   .emptySearch {
     scale: 0.8;
     font-size: large;
     padding: 0;
   }
+  .category h2 {
+    font-size: 1.25rem;
+  }
+
 
   /* MOBILE CARD TEXT INFO */
   .movieInfo {
-    padding: 7px;
+    padding: .5rem;
   }
   .movieInfo strong {
-    font-size: 12px;
+    font-size: .8rem;
     line-height: 1.2;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -1027,11 +970,11 @@ button {
     overflow: hidden;
   }
   .movieInfo .genre {
-    font-size: 10px;
-    margin: 5px 0;
+    font-size: .8rem;
+    margin: .5rem 0;
   }
   
-  /* MOBILE REMOVE BUTTON */
+  /* MOBILE CARD REMOVE BUTTON */
   .removeBtn {
     width: auto;
     min-width: 0;
@@ -1043,9 +986,9 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px 25px;
-    border-radius: 30px;
-    font-size: 12px;
+    padding: 1rem;
+    border-radius: 1.5rem;
+    font-size: .8rem;
     line-height: 1;
     white-space: nowrap;
   }
@@ -1071,26 +1014,23 @@ button {
   }
 
   /* MOBILE EPISODES */
-  .seasonRow {
-    padding: 15px;
-  }
   .episodeGrid {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin: 10px;
+    gap: .5rem;
+    margin: 1rem .25rem;
   }
+
   .episodeItem {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 10px;
-    padding: 6px;
+    gap: .8rem;
+    padding: .5rem;
   }
   .episodeItem img {
-    width: 90px;
-    height: 50px;
-    border-radius: 4px;
+    width: 30vw;
+    border-radius: .25rem;
     object-fit: cover;
     flex-shrink: 0;
   }
@@ -1098,28 +1038,18 @@ button {
     padding: 0;
   }
   .epMeta div {
-    font-size: 12px;
+    font-size: .75rem;
   }
   .epMeta p {
-    font-size: 10px;
+    font-size: .75rem;
   }
   #modalTitle {
-    margin-top: 20px;
-    font-size: 16px;
+    font-size: 1.25rem;
     line-height: 1.2;
   }
   #modalOverview {
-    font-size: 13px;
+    font-size: .75rem;
     color: var(--text-muted);
-  }
-  #episodeControls {
-    display: flex !important;
-    flex-direction: column;
-    gap: 8px;
-  }
-  #episodeControls select {
-    width: 100%;
-    font-size: 14px;
   }
 }
 
@@ -1144,7 +1074,7 @@ button {
   }
   .videoContainer {
     flex: 0 0 auto;
-    width: 100%;
+    width: auto;
     height: auto;
     aspect-ratio: 16 / 9;
   }
@@ -1159,8 +1089,8 @@ button {
   #mobileCloseBtn {
     display: flex !important;
     position: fixed;
-    right: 20px;
-    bottom: 20px;
+    right: 1rem;
+    bottom: 1rem;
     z-index: 9999;
     align-items: center;
     justify-content: center;
@@ -1186,13 +1116,13 @@ button {
   .videoContainer {
     flex: 1.2 1 0;
     width: auto;
-    height: 100%;
+    height: auto;
     min-width: 0;
   }
   .videoMeta {
     flex: 1 1 0;
     width: auto;
-    height: 100%;
+    height: auto;
     min-width: 0;
     min-height: 0;
     overflow-y: auto;
@@ -1205,12 +1135,12 @@ button {
   }
   .closeBtn {
     display: flex;
-    font-size: 23px;
+    font-size: 1.25rem;
   }
   
   /* LANDSCAPE EPISODES */
   .seasonRow {
-    padding: 15px;
+    padding: .5rem;
   }
   .episodeGrid {
     display: flex;
@@ -1243,10 +1173,10 @@ button {
   
   /* LANDSCAPE MOVIE INFO */
   .movieInfo {
-    padding: 7px;
+    padding: .5rem;
   }
   .movieInfo strong {
-    font-size: 12px;
+    font-size: .8rem;
     line-height: 1.2;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -1254,8 +1184,8 @@ button {
     overflow: hidden;
   }
   .movieInfo .genre {
-    font-size: 10px;
-    margin: 5px 0;
+    font-size: .8rem;
+    margin: .5rem 0;
   }
   
   /* LANDSCAPE REMOVE BUTTON */
@@ -1270,13 +1200,17 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px 25px;
-    border-radius: 30px;
-    font-size: 12px;
+    padding: 1rem;
+    border-radius: 1.5rem;
+    font-size: 1rem;
     line-height: 1;
     white-space: nowrap;
   }
   .removeBtn:active {
     transform: translate(-50%, -50%) scale(.90);
+  }
+  .modalBackdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(25px);
   }
 }
