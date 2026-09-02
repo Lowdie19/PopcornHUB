@@ -1124,6 +1124,12 @@ button {
     width: 100%;
     font-size: 14px;
   }
+  .arrow {
+    color: white;
+  }
+  .arrow:active i {
+    transform: scale(.8);
+  }
 }
 
 
