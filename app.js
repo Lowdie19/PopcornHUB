@@ -2281,6 +2281,40 @@ function setupRowScrolling() {
         return visibleCards * (cardWidth + gap);
     }
 
+    // CENTERED CARD
+    function updateCenteredCard(row) {
+        const isMobile =
+            window.matchMedia("(orientation: portrait) and (max-width: 700px), (orientation: landscape) and (max-height: 600px)").matches;
+
+        if (!isMobile) return;
+
+        if (!row) return;
+
+        const rowRect = row.getBoundingClientRect();
+        const rowCenter = rowRect.left + rowRect.width / 2;
+
+        let closest = null;
+        let closestDistance = Infinity;
+
+        row.querySelectorAll(".movie").forEach(card => {
+            const rect = card.getBoundingClientRect();
+            const cardCenter = rect.left + rect.width / 2;
+            const distance = Math.abs(cardCenter - rowCenter);
+
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closest = card;
+            }
+        });
+
+        row.querySelectorAll(".movie.centered")
+            .forEach(card => card.classList.remove("centered"));
+
+        if (closest) {
+            closest.classList.add("centered");
+        }
+    }
+
     // ARROW STATE
     function updateArrowState(row) {
         if (!row) return;
@@ -2373,6 +2407,7 @@ function setupRowScrolling() {
         row._isMouseDown = false;
         row._isTouchDown = false;
         row._dragged = false;
+        row._centeredTimer = null;
         row._gestureDirection = null;
 
         // DESKTOP DRAG
@@ -2563,11 +2598,21 @@ function setupRowScrolling() {
         row.addEventListener("scroll", () => {
             updateArrowState(row);
             preloadIfNeeded(row);
+            updateCenteredCard(row);
+
+            clearTimeout(row._centeredTimer);
+
+            row._centeredTimer = setTimeout(() => {
+                row.querySelectorAll(".movie.centered").forEach(card => {
+                    card.classList.remove("centered");
+                });
+            }, 3000);
         });
 
         // INITIAL ARROW STATE
         requestAnimationFrame(() => {
             updateArrowState(row);
+            updateCenteredCard(row);
         });
     });
 
