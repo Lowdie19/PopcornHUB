@@ -1149,6 +1149,12 @@ button {
     display: none;
   }
   
+  /* CENTERED CARD INFO */
+  .movie.centered .movieInfo {
+      opacity: 1;
+      transform: translateY(0);
+  }
+  
 }
 
 /* MOBILE LANDSCAPE =============== */
@@ -1236,5 +1242,10 @@ button {
   .movieInfo .genre {
     font-size: 10px;
     margin: 5px 0;
+  }
+    /* CENTERED CARD INFO */
+  .movie.centered .movieInfo {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
