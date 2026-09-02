@@ -2080,20 +2080,24 @@ async function loadEpisodes(sNum) {
         card.dataset.season = sNum;
 
         card.innerHTML = `
-            <img
-                loading="lazy"
-                src="${
-                    ep.still_path ? "https://image.tmdb.org/t/p/w500" + ep.still_path
-                        : "https://via.placeholder.com/500x281"
-                }"
-                alt="${ep.name}">
+            <div class="episodeThumb">
+                <img
+                    loading="lazy"
+                    src="${
+                        ep.still_path ? "https://image.tmdb.org/t/p/w500" + ep.still_path
+                            : "https://via.placeholder.com/500x281"
+                    }"
+                    alt="${ep.name}">
+
+                ${ep.runtime ? `<span class="episodeRuntime">${
+                    ep.runtime >= 60 ? `${Math.floor(ep.runtime / 60)}h ${ep.runtime % 60 ? `${ep.runtime % 60}m` : ""}`
+                        : `${ep.runtime}m`
+                }</span>` : ""}
+            </div>
 
             <div class="epMeta">
                 <div>${ep.episode_number}. ${ep.name}</div>
-                <p>${
-                    ep.overview ? ep.overview.substring(0, 60) + "..."
-                        : "No description"
-                }</p>
+                <p>${ep.overview || "No description"}</p>
             </div>
         `;
 
