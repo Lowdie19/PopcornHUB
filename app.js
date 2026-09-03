@@ -1329,6 +1329,9 @@ async function loadDetails(item){
   const box = document.getElementById("episodeControls");
   box.innerHTML = "";
 
+  const oldRuntime = document.getElementById("movieRuntime");
+  if (oldRuntime) oldRuntime.remove();
+
   try {
 
     // ================= MOVIE =================
@@ -1343,9 +1346,10 @@ async function loadDetails(item){
           throw new Error(`Movie Details Error ${res.status}`);
         }
 
-        const data = await res.json();
-      setDescription(data.overview);
-      return;
+    const data = await res.json();
+    setDescription(data.overview);
+    setRuntime(data.runtime);
+    return;
     }
 
     // ================= TV Series/Anime =================
@@ -2690,6 +2694,26 @@ function setupRowScrolling() {
 setupRowScrolling();
 loadHome();
 loadContinueWatching();
+
+
+function setRuntime(runtime) {
+    const oldRuntime = document.getElementById("movieRuntime");
+    if (oldRuntime) oldRuntime.remove();
+
+    if (!runtime) return;
+
+    const el = document.createElement("div");
+    el.id = "movieRuntime";
+    el.className = "movieRuntime";
+
+    const hours = Math.floor(runtime / 60);
+    const minutes = runtime % 60;
+
+    el.textContent = `◷ ${hours ? `${hours}h${minutes ? ` ${minutes}m` : ""}` : `${minutes}m`}`;
+
+    document.getElementById("modalOverview").after(el);
+}
+
 
 function setDescription(text) {
   const overviewEl = document.getElementById("modalOverview");
