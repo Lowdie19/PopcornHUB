@@ -118,7 +118,7 @@ function renderGrid(containerId, items) {
   container.innerHTML = "";
 
   if (!items || items.length === 0) {
-    container.innerHTML = `<div class="col-span-full py-12 text-center text-zinc-500 text-sm">No titles found.</div>`;
+    container.innerHTML = `<div class="col-span-full py-12 text-center text-zinc-500 text-sm">Your watchlist is empty.</div>`;
     return;
   }
 
@@ -235,7 +235,7 @@ function updateHeroWatchlistBtn(item) {
     btn.innerHTML = `<i class="fa-solid fa-check text-brand"></i> IN WATCHLIST`;
     btn.className = "bg-brand/20 border border-brand text-brand font-extrabold px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl flex items-center gap-2 text-xs sm:text-sm transition active:scale-95";
   } else {
-    btn.innerHTML = `<i class="fa-solid fa-bookmark"></i> + WATCHLIST`;
+    btn.innerHTML = `<i class="fa-solid fa-plus mr-1"></i> WATCHLIST`;
     btn.className = "glass-btn text-white font-extrabold px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl flex items-center gap-2 text-xs sm:text-sm transition active:scale-95";
   }
 }
@@ -442,7 +442,7 @@ function updateDetailWatchlistButton() {
     btn.innerHTML = `<i class="fa-solid fa-check text-brand"></i> IN WATCHLIST`;
     btn.className = "bg-brand/20 border border-brand text-brand font-extrabold px-6 py-3 rounded-xl flex items-center gap-2 text-sm transition";
   } else {
-    btn.innerHTML = `<i class="fa-solid fa-bookmark"></i> + WATCHLIST`;
+    btn.innerHTML = `<i class="fa-solid fa-plus mr-1"></i> WATCHLIST`;
     btn.className = "bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-extrabold px-6 py-3 rounded-xl flex items-center gap-2 text-sm transition";
   }
 }
