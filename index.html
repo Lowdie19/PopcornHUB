@@ -31,7 +31,7 @@
     <div class="flex items-center gap-8">
       <a href="#" onclick="switchPage('home'); return false;" class="flex items-center gap-1 font-black text-2xl tracking-tighter hover:opacity-90 transition" aria-label="PopcornHUB Home">
         <span class="text-white font-extrabold">Popcorn</span>
-        <span class="bg-brand text-black px-2 py-0.5 rounded-lg font-black text-xl">HUB</span>
+        <span class="bg-brand text-black px-2 py0 rounded-lg font-black text-xl">HUB</span>
       </a>
       <div class="hidden md:flex items-center gap-6 text-sm font-semibold text-zinc-400">
         <button onclick="switchPage('home')" id="nav-home" class="nav-btn text-brand transition"><i class="fa-solid fa-house text-xs mr-1"></i> Home</button>
@@ -87,7 +87,7 @@
                 <i class="fa-solid fa-play"></i> WATCH NOW
               </button>
               <button id="heroWatchlistBtn" class="glass-btn text-white font-extrabold px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl flex items-center gap-2 text-xs sm:text-sm transition active:scale-95">
-                <i class="fa-solid fa-bookmark"></i> + WATCHLIST
+                <i class="fa-solid fa-plus mr-1"></i> WATCHLIST
               </button>
             </div>
           </div>
@@ -103,27 +103,43 @@
       <!-- PROMO BANNER -->
       <section class="px-4 md:px-10">
         <div class="bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-zinc-900 border border-brand/30 rounded-2xl p-6 sm:p-8 text-center space-y-2 relative overflow-hidden">
-          <h2 class="text-2xl md:text-4xl font-black text-brand tracking-tight">POPCORNHUB</h2>
+         <!-- <h2 class="text-2xl md:text-4xl font-black text-brand tracking-tight">POPCORNHUB</h2> -->
+          <h2 class="text-2xl md:text-4xl font-black tracking-tight">
+            <span class="text-white">POPCORN</span><span class="text-brand">HUB</span>
+          </h2>
           <p class="text-xs md:text-sm text-zinc-400">The Official Home for Free Movies & TV Series Streaming</p>
         </div>
       </section>
 
-      <!-- HOME MOVIES ROW -->
-      <section class="px-4 md:px-10 space-y-4">
-        <h2 class="text-xl font-bold border-l-4 border-brand pl-3 flex items-center gap-2">
-          <i class="fa-solid fa-fire text-brand text-sm"></i> Trending Movies
-        </h2>
-        <div id="homeMoviesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+       <!-- HOME MOVIES ROW -->
+      <section class="px-4 sm:px-6 lg:px-12 space-y-4">
+        <div class="flex items-center gap-4">
+          <h2 class="text-xl font-black tracking-widest border-l-4 border-brand pl-5 whitespace-nowrap">
+            TRENDING MOVIES
+          </h2>
+          <div class="h-px flex-1 bg-white/10"></div>
+        </div>
+
+        <div
+          id="homeMoviesGrid"
+          class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"
+        ></div>
       </section>
 
       <!-- HOME TV ROW -->
-      <section class="px-4 md:px-10 space-y-4">
-        <h2 class="text-xl font-bold border-l-4 border-brand pl-3 flex items-center gap-2">
-          <i class="fa-solid fa-tv text-brand text-sm"></i> Popular TV Shows
-        </h2>
-        <div id="homeTvGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      <section class="px-4 sm:px-6 lg:px-12 space-y-4">
+        <div class="flex items-center gap-4">
+          <h2 class="text-xl font-black tracking-wide border-l-4 border-brand pl-5 whitespace-nowrap flex items-center gap-2">
+            POPULAR TV SERIES
+          </h2>
+          <div class="h-px flex-1 bg-white/10"></div>
+        </div>
+
+        <div
+          id="homeTvGrid"
+          class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"
+        ></div>
       </section>
-    </div>
 
     <!-- 2. MOVIES CATALOG VIEW -->
     <div id="moviesView" class="page-view hidden px-4 md:px-10 py-8 space-y-6">
@@ -222,7 +238,7 @@
               <i class="fa-solid fa-play"></i> PLAY NOW
             </button>
             <button id="detailWatchlistBtn" class="bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-extrabold px-6 py-3 rounded-xl flex items-center gap-2 text-sm transition">
-              <i class="fa-solid fa-bookmark"></i> + WATCHLIST
+              <i class="fa-solid fa-plus mr-1"></i> WATCHLIST
             </button>
           </div>
         </div>
