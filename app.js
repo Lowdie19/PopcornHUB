@@ -34,21 +34,83 @@ document.addEventListener("DOMContentLoaded", () => {
   setupSearch();
   setupCatalogFilters();
   updateWatchlistBadge();
+  setupMobileDrawerEvents();
+  setupHeroSwipe();
 });
+
+/* ==========================================================================
+   MOBILE DRAWER & BOTTOM NAV HELPERS
+   ========================================================================== */
+function setupMobileDrawerEvents() {
+  const overlay = document.getElementById("mobileDrawerOverlay");
+  const closeBtn = document.getElementById("closeMobileDrawer");
+
+  if (overlay) overlay.addEventListener("click", () => toggleMobileDrawer(false));
+  if (closeBtn) closeBtn.addEventListener("click", () => toggleMobileDrawer(false));
+}
+
+function toggleMobileDrawer(open) {
+  const drawer = document.getElementById("mobileDrawer");
+  const overlay = document.getElementById("mobileDrawerOverlay");
+  if (!drawer || !overlay) return;
+
+  if (open) {
+    drawer.classList.remove("-translate-x-full");
+    overlay.classList.remove("opacity-0", "pointer-events-none");
+    overlay.classList.add("opacity-100");
+  } else {
+    drawer.classList.add("-translate-x-full");
+    overlay.classList.remove("opacity-100");
+    overlay.classList.add("opacity-0", "pointer-events-none");
+  }
+}
+
+function focusMobileSearch() {
+  const input = document.getElementById("searchInput");
+  if (input) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    input.focus();
+  }
+}
 
 /* ==========================================================================
    ROUTING & NAVIGATION
    ========================================================================== */
 function switchPage(pageId) {
+  toggleMobileDrawer(false);
+
   document.querySelectorAll(".page-view").forEach(el => el.classList.add("hidden"));
   document.getElementById("searchView").classList.add("hidden");
 
   const targetView = document.getElementById(`${pageId}View`);
   if (targetView) targetView.classList.remove("hidden");
 
+  // Reset Desktop Nav highlight
   document.querySelectorAll(".nav-btn").forEach(btn => btn.classList.remove("text-brand"));
   const activeNav = document.getElementById(`nav-${pageId}`);
   if (activeNav) activeNav.classList.add("text-brand");
+
+  // Reset Drawer Nav highlight
+  document.querySelectorAll(".drawer-nav-btn").forEach(btn => {
+    btn.classList.remove("text-brand", "bg-zinc-900/80");
+    btn.classList.add("text-zinc-300");
+  });
+  const activeDrawerNav = document.getElementById(`drawer-nav-${pageId}`);
+  if (activeDrawerNav) {
+    activeDrawerNav.classList.add("text-brand", "bg-zinc-900/80");
+    activeDrawerNav.classList.remove("text-zinc-300");
+  }
+
+  // Reset Bottom Nav highlight
+  document.querySelectorAll(".bottom-nav-btn").forEach(btn => {
+    btn.classList.remove("text-brand");
+    btn.classList.add("text-zinc-400");
+  });
+  const activeBottomHome = document.getElementById("bottom-nav-home");
+  if (pageId === "home" && activeBottomHome) {
+    activeBottomHome.classList.add("text-brand");
+    activeBottomHome.classList.remove("text-zinc-400");
+  }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -128,7 +190,7 @@ function renderGrid(containerId, items) {
 
   items.forEach(item => {
     const card = document.createElement("div");
-    card.className = "group bg-zinc-900 rounded-xl overflow-hidden cursor-pointer hover:-translate-y-1.5 transition duration-300 border border-zinc-800/80 hover:border-brand/50 flex flex-col";
+    card.className = "group bg-zinc-900 rounded-xl overflow-hidden cursor-pointer hover:-translate-y-1.5 transition duration-300 border border-zinc-800/80 hover:border-brand/50 flex flex-col min-w-[140px] sm:min-w-0";
     card.setAttribute("tabindex", "0");
     card.setAttribute("aria-label", `${item.title} (${item.year})`);
     
@@ -159,7 +221,7 @@ function renderGridLoading(containerId) {
   container.innerHTML = "";
   for (let i = 0; i < 6; i++) {
     const dummy = document.createElement("div");
-    dummy.className = "bg-zinc-900/60 rounded-xl overflow-hidden border border-zinc-800/50 animate-pulse-bg aspect-[2/3]";
+    dummy.className = "bg-zinc-900/60 rounded-xl overflow-hidden border border-zinc-800/50 animate-pulse-bg aspect-[2/3] min-w-[140px] sm:min-w-0";
     container.appendChild(dummy);
   }
 }
@@ -178,9 +240,20 @@ function initHeroCarousel() {
 function startHeroTimer() {
   if (heroTimer) clearInterval(heroTimer);
   heroTimer = setInterval(() => {
-    const nextIdx = (currentHeroIndex + 1) % heroItems.length;
-    setHeroSlide(nextIdx);
+    nextHeroSlide();
   }, 5000);
+}
+
+function nextHeroSlide() {
+  if (!heroItems || heroItems.length === 0) return;
+  const nextIdx = (currentHeroIndex + 1) % heroItems.length;
+  setHeroSlide(nextIdx);
+}
+
+function previousHeroSlide() {
+  if (!heroItems || heroItems.length === 0) return;
+  const prevIdx = (currentHeroIndex - 1 + heroItems.length) % heroItems.length;
+  setHeroSlide(prevIdx);
 }
 
 function setHeroSlide(index) {
@@ -229,6 +302,46 @@ function setHeroSlide(index) {
     bg.style.backgroundImage = `url('${createFallbackSVG("PopcornHUB")}')`;
     applySlide();
   };
+}
+
+function setupHeroSwipe() {
+  const heroBanner = document.getElementById("heroBanner");
+  if (!heroBanner) return;
+
+  let startX = 0;
+  let startY = 0;
+  let deltaX = 0;
+  let deltaY = 0;
+  const minSwipeDistance = 40;
+
+  heroBanner.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    deltaX = 0;
+    deltaY = 0;
+  }, { passive: true });
+
+  heroBanner.addEventListener("touchmove", (e) => {
+    if (e.touches.length !== 1) return;
+    deltaX = e.touches[0].clientX - startX;
+    deltaY = e.touches[0].clientY - startY;
+  }, { passive: true });
+
+  heroBanner.addEventListener("touchend", (e) => {
+    if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX < 0) {
+        nextHeroSlide();
+      } else {
+        previousHeroSlide();
+      }
+      startHeroTimer();
+    }
+    startX = 0;
+    startY = 0;
+    deltaX = 0;
+    deltaY = 0;
+  }, { passive: true });
 }
 
 function updateHeroWatchlistBtn(item) {
@@ -493,13 +606,18 @@ function updateDetailWatchlistButton() {
 
 function updateWatchlistBadge() {
   const badge = document.getElementById("watchlistBadgeCount");
-  if (!badge) return;
-  if (watchlist.length > 0) {
-    badge.innerText = watchlist.length;
-    badge.classList.remove("hidden");
-  } else {
-    badge.classList.add("hidden");
-  }
+  const drawerBadge = document.getElementById("drawerWatchlistBadgeCount");
+
+  const count = watchlist.length;
+  [badge, drawerBadge].forEach(b => {
+    if (!b) return;
+    if (count > 0) {
+      b.innerText = count;
+      b.classList.remove("hidden");
+    } else {
+      b.classList.add("hidden");
+    }
+  });
 }
 
 function renderWatchlistPage() {
