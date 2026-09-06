@@ -24,7 +24,7 @@
   </script>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="bg-[#0b0b0e] text-zinc-100 font-sans antialiased min-h-screen flex flex-col selection:bg-brand selection:text-black">
+<body class="bg-[#0b0b0e] text-zinc-100 font-sans antialiased min-h-screen flex flex-col selection:bg-brand selection:text-black pb-16 md:pb-0">
 
   <!-- NAVBAR -->
   <nav class="sticky top-0 z-50 flex items-center justify-between px-4 md:px-8 py-3 bg-[#0b0b0e]/95 backdrop-blur-md border-b border-zinc-800/80">
@@ -118,7 +118,7 @@
           </h2>
           <div class="h-px flex-1 bg-white/10"></div>
         </div>
-        <div id="homeTrendingTodayGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+        <div id="homeTrendingTodayGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mobile-horizontal-scroll"></div>
       </section>
 
       <!-- ROW 2: TRENDING THIS WEEK -->
@@ -129,7 +129,7 @@
           </h2>
           <div class="h-px flex-1 bg-white/10"></div>
         </div>
-        <div id="homeTrendingWeekGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+        <div id="homeTrendingWeekGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mobile-horizontal-scroll"></div>
       </section>
 
       <!-- ROW 3: POPULAR MOVIES -->
@@ -140,7 +140,7 @@
           </h2>
           <div class="h-px flex-1 bg-white/10"></div>
         </div>
-        <div id="homePopularMoviesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+        <div id="homePopularMoviesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mobile-horizontal-scroll"></div>
       </section>
 
       <!-- ROW 4: POPULAR TV SERIES -->
@@ -151,7 +151,7 @@
           </h2>
           <div class="h-px flex-1 bg-white/10"></div>
         </div>
-        <div id="homePopularTvGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+        <div id="homePopularTvGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mobile-horizontal-scroll"></div>
       </section>
     </div>
 
@@ -311,6 +311,60 @@
     </div>
 
   </main>
+
+  <!-- MOBILE OVERLAY & DRAWER MENU -->
+  <div id="mobileDrawerOverlay" class="fixed inset-0 bg-black/80 z-50 transition-opacity duration-300 opacity-0 pointer-events-none md:hidden"></div>
+  <aside id="mobileDrawer" class="fixed top-0 left-0 bottom-0 w-72 bg-[#0b0b0e] border-r border-zinc-800/80 z-50 p-6 flex flex-col justify-between transform -translate-x-full transition-transform duration-300 md:hidden">
+    <div class="space-y-6 overflow-y-auto max-h-full">
+      <div class="flex items-center justify-between pb-4 border-b border-zinc-800">
+        <div class="flex items-center gap-1 font-black text-xl tracking-tighter">
+          <span class="text-white">Popcorn</span>
+          <span class="bg-brand text-black px-1.5 py-0 rounded font-black text-lg">HUB</span>
+        </div>
+        <button id="closeMobileDrawer" aria-label="Close menu" class="text-zinc-400 hover:text-white p-2">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <nav class="space-y-2">
+        <button onclick="switchPage('home')" id="drawer-nav-home" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
+          <i class="fa-solid fa-house w-5 text-center"></i> Home
+        </button>
+        <button onclick="switchPage('movies')" id="drawer-nav-movies" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
+          <i class="fa-solid fa-film w-5 text-center"></i> Movies
+        </button>
+        <button onclick="switchPage('tv')" id="drawer-nav-tv" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
+          <i class="fa-solid fa-tv w-5 text-center"></i> TV Series
+        </button>
+        <button onclick="switchPage('watchlist')" id="drawer-nav-watchlist" class="drawer-nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-bookmark w-5 text-center"></i> Watchlist
+          </div>
+          <span id="drawerWatchlistBadgeCount" class="hidden bg-brand text-black font-extrabold text-[10px] px-1.5 py-0.2 rounded-full">0</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="text-[10px] text-zinc-500 text-center border-t border-zinc-800/80 pt-4">
+      &copy; 2026 PopcornHUB. All rights reserved.
+    </div>
+  </aside>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <div class="fixed bottom-0 left-0 right-0 z-40 bg-[#0b0b0e]/95 backdrop-blur-md border-t border-zinc-800/80 px-4 py-2 flex items-center justify-around md:hidden">
+    <button id="bottom-nav-home" onclick="switchPage('home')" class="bottom-nav-btn flex flex-col items-center gap-1 text-brand transition active:scale-95">
+      <i class="fa-solid fa-house text-lg"></i>
+      <span class="text-[10px] font-bold">Home</span>
+    </button>
+    <button id="bottom-nav-search" onclick="focusMobileSearch()" class="bottom-nav-btn flex flex-col items-center gap-1 text-zinc-400 hover:text-brand transition active:scale-95">
+      <i class="fa-solid fa-magnifying-glass text-lg"></i>
+      <span class="text-[10px] font-bold">Search</span>
+    </button>
+    <button id="bottom-nav-menu" onclick="toggleMobileDrawer(true)" class="bottom-nav-btn flex flex-col items-center gap-1 text-zinc-400 hover:text-brand transition active:scale-95">
+      <i class="fa-solid fa-bars text-lg"></i>
+      <span class="text-[10px] font-bold">Menu</span>
+    </button>
+  </div>
 
   <!-- FOOTER -->
   <footer class="border-t border-zinc-800/80 py-8 text-center text-xs text-zinc-500 mt-12 bg-[#0b0b0e]">
