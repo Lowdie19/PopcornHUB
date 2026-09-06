@@ -1,8 +1,6 @@
 /* ==========================================================================
    CONFIG & GLOBAL STATE
    ========================================================================== */
-// NOTE: Exposing a API Key directly in client-side JS is acceptable for prototypes,
-// but for production builds, requests should be proxied through a secure backend service.
 const TMDB_KEY = "15d2ea6d0dc1d476efbca3eba2b9bbfb";
 
 let activeItem = null;
@@ -95,18 +93,24 @@ async function fetchTMDB(endpoint) {
   }
 }
 
-function formatTMDB(list, type) {
+function formatTMDB(list, defaultType) {
   if (!Array.isArray(list)) return [];
-  return list.map(i => ({
-    id: i.id,
-    title: i.title || i.name || "Untitled",
-    poster: getTMDBImage(i.poster_path, "w500", i.title || i.name),
-    backdrop: i.backdrop_path ? getTMDBImage(i.backdrop_path, "w1280", "Hero") : null,
-    overview: i.overview || "No overview available.",
-    type: type || i.media_type || "movie",
-    rating: typeof i.vote_average === "number" && i.vote_average > 0 ? i.vote_average.toFixed(1) : "N/A",
-    year: (i.release_date || i.first_air_date || "").split("-")[0] || "2026"
-  }));
+  return list.map(i => {
+    let resolvedType = i.media_type || defaultType || "movie";
+    if (resolvedType !== "movie" && resolvedType !== "tv") {
+      resolvedType = i.title ? "movie" : "tv";
+    }
+    return {
+      id: i.id,
+      title: i.title || i.name || "Untitled",
+      poster: getTMDBImage(i.poster_path, "w500", i.title || i.name),
+      backdrop: i.backdrop_path ? getTMDBImage(i.backdrop_path, "w1280", "Hero") : null,
+      overview: i.overview || "No overview available.",
+      type: resolvedType,
+      rating: typeof i.vote_average === "number" && i.vote_average > 0 ? i.vote_average.toFixed(1) : "N/A",
+      year: (i.release_date || i.first_air_date || "").split("-")[0] || "2026"
+    };
+  });
 }
 
 /* ==========================================================================
@@ -118,7 +122,7 @@ function renderGrid(containerId, items) {
   container.innerHTML = "";
 
   if (!items || items.length === 0) {
-    container.innerHTML = `<div class="col-span-full py-12 text-center text-zinc-500 text-sm">Your watchlist is empty.</div>`;
+    container.innerHTML = `<div class="col-span-full py-12 text-center text-zinc-500 text-sm">No titles found.</div>`;
     return;
   }
 
@@ -296,36 +300,76 @@ function updateThumbnailsUI() {
    FETCH HOME & CATALOG DATA
    ========================================================================== */
 async function fetchHomeData() {
-  renderGridLoading("homeMoviesGrid");
-  renderGridLoading("homeTvGrid");
+  renderGridLoading("homeTrendingTodayGrid");
+  renderGridLoading("homeTrendingWeekGrid");
+  renderGridLoading("homePopularMoviesGrid");
+  renderGridLoading("homePopularTvGrid");
 
-  const [dataM, dataT] = await Promise.all([
-    fetchTMDB("trending/movie/week"),
-    fetchTMDB("trending/tv/week")
-  ]);
-
-  if (dataM && dataM.results) {
-    const movies = formatTMDB(dataM.results, "movie");
-    if (movies.length > 0) {
-      heroItems = movies.slice(0, 5);
-      initHeroCarousel();
+  // ROW 1: TRENDING TODAY (/trending/all/day)
+  try {
+    const dataToday = await fetchTMDB("trending/all/day");
+    if (dataToday && dataToday.results) {
+      const itemsToday = formatTMDB(dataToday.results);
+      if (itemsToday.length > 0) {
+        heroItems = itemsToday.slice(0, 5);
+        initHeroCarousel();
+      }
+      renderGrid("homeTrendingTodayGrid", itemsToday);
+    } else {
+      renderRowError("homeTrendingTodayGrid", "Unable to load today's trending titles.");
     }
-    renderGrid("homeMoviesGrid", movies);
-  } else {
-    document.getElementById("homeMoviesGrid").innerHTML = `<p class="text-zinc-500 text-sm col-span-full py-8 text-center">Unable to load trending movies right now.</p>`;
+  } catch (err) {
+    renderRowError("homeTrendingTodayGrid", "Unable to load today's trending titles.");
   }
 
-  if (dataT && dataT.results) {
-    const shows = formatTMDB(dataT.results, "tv");
-    renderGrid("homeTvGrid", shows);
-  } else {
-    document.getElementById("homeTvGrid").innerHTML = `<p class="text-zinc-500 text-sm col-span-full py-8 text-center">Unable to load popular TV shows right now.</p>`;
+  // ROW 2: TRENDING THIS WEEK (/trending/all/week)
+  try {
+    const dataWeek = await fetchTMDB("trending/all/week");
+    if (dataWeek && dataWeek.results) {
+      renderGrid("homeTrendingWeekGrid", formatTMDB(dataWeek.results));
+    } else {
+      renderRowError("homeTrendingWeekGrid", "Unable to load weekly trending titles.");
+    }
+  } catch (err) {
+    renderRowError("homeTrendingWeekGrid", "Unable to load weekly trending titles.");
+  }
+
+  // ROW 3: POPULAR MOVIES (/movie/popular)
+  try {
+    const dataPopM = await fetchTMDB("movie/popular");
+    if (dataPopM && dataPopM.results) {
+      renderGrid("homePopularMoviesGrid", formatTMDB(dataPopM.results, "movie"));
+    } else {
+      renderRowError("homePopularMoviesGrid", "Unable to load popular movies.");
+    }
+  } catch (err) {
+    renderRowError("homePopularMoviesGrid", "Unable to load popular movies.");
+  }
+
+  // ROW 4: POPULAR TV SERIES (/tv/popular)
+  try {
+    const dataPopTv = await fetchTMDB("tv/popular");
+    if (dataPopTv && dataPopTv.results) {
+      renderGrid("homePopularTvGrid", formatTMDB(dataPopTv.results, "tv"));
+    } else {
+      renderRowError("homePopularTvGrid", "Unable to load popular TV series.");
+    }
+  } catch (err) {
+    renderRowError("homePopularTvGrid", "Unable to load popular TV series.");
+  }
+}
+
+function renderRowError(containerId, message) {
+  const container = document.getElementById(containerId);
+  if (container) {
+    container.innerHTML = `<p class="text-zinc-500 text-sm col-span-full py-8 text-center">${message}</p>`;
   }
 }
 
 async function fetchCatalog(type, targetId) {
   renderGridLoading(targetId);
-  const data = await fetchTMDB(`trending/${type}/week`);
+  const endpoint = type === "movie" ? "movie/popular" : "tv/popular";
+  const data = await fetchTMDB(endpoint);
   if (data && data.results) {
     renderGrid(targetId, formatTMDB(data.results, type));
   } else {
@@ -653,7 +697,6 @@ async function executeSearch(query) {
 
   const data = await fetchTMDB(`search/multi?query=${encodeURIComponent(query)}`);
   
-  // Guard against outdated out-of-order API responses
   if (currentRequestId !== latestSearchRequestId) return;
 
   if (data && data.results) {
