@@ -31,7 +31,7 @@
     <div class="flex items-center gap-8">
       <a href="#" onclick="switchPage('home'); return false;" class="flex items-center gap-1 font-black text-2xl tracking-tighter hover:opacity-90 transition" aria-label="PopcornHUB Home">
         <span class="text-white font-extrabold">Popcorn</span>
-        <span class="bg-brand text-black px-2 py0 rounded-lg font-black text-xl">HUB</span>
+        <span class="bg-brand text-black px-2 py-0 rounded-lg font-black text-xl">HUB</span>
       </a>
       <div class="hidden md:flex items-center gap-6 text-sm font-semibold text-zinc-400">
         <button onclick="switchPage('home')" id="nav-home" class="nav-btn text-brand transition"><i class="fa-solid fa-house text-xs mr-1"></i> Home</button>
@@ -63,7 +63,7 @@
     </section>
 
     <!-- 1. HOME VIEW -->
-    <div id="homeView" class="page-view space-y-12">
+    <div id="homeView" class="page-view space-y-12 pb-12">
       
       <!-- PREMIUM CAROUSEL HERO BANNER -->
       <header id="heroBanner" class="relative w-full h-[55vh] sm:h-[65vh] md:h-[80vh] overflow-hidden bg-zinc-950 flex items-end">
@@ -103,7 +103,6 @@
       <!-- PROMO BANNER -->
       <section class="px-4 md:px-10">
         <div class="bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-zinc-900 border border-brand/30 rounded-2xl p-6 sm:p-8 text-center space-y-2 relative overflow-hidden">
-         <!-- <h2 class="text-2xl md:text-4xl font-black text-brand tracking-tight">POPCORNHUB</h2> -->
           <h2 class="text-2xl md:text-4xl font-black tracking-tight">
             <span class="text-white">POPCORN</span><span class="text-brand">HUB</span>
           </h2>
@@ -111,35 +110,50 @@
         </div>
       </section>
 
-       <!-- HOME MOVIES ROW -->
+      <!-- ROW 1: TRENDING TODAY -->
       <section class="px-4 sm:px-6 lg:px-12 space-y-4">
         <div class="flex items-center gap-4">
-          <h2 class="text-xl font-black tracking-widest border-l-4 border-brand pl-5 whitespace-nowrap">
-            TRENDING MOVIES
+          <h2 class="text-xl font-black tracking-widest border-l-4 border-brand pl-5 whitespace-nowrap uppercase">
+            TRENDING TODAY
           </h2>
           <div class="h-px flex-1 bg-white/10"></div>
         </div>
-
-        <div
-          id="homeMoviesGrid"
-          class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"
-        ></div>
+        <div id="homeTrendingTodayGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
       </section>
 
-      <!-- HOME TV ROW -->
+      <!-- ROW 2: TRENDING THIS WEEK -->
       <section class="px-4 sm:px-6 lg:px-12 space-y-4">
         <div class="flex items-center gap-4">
-          <h2 class="text-xl font-black tracking-wide border-l-4 border-brand pl-5 whitespace-nowrap flex items-center gap-2">
+          <h2 class="text-xl font-black tracking-widest border-l-4 border-brand pl-5 whitespace-nowrap uppercase">
+            TRENDING THIS WEEK
+          </h2>
+          <div class="h-px flex-1 bg-white/10"></div>
+        </div>
+        <div id="homeTrendingWeekGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      </section>
+
+      <!-- ROW 3: POPULAR MOVIES -->
+      <section class="px-4 sm:px-6 lg:px-12 space-y-4">
+        <div class="flex items-center gap-4">
+          <h2 class="text-xl font-black tracking-widest border-l-4 border-brand pl-5 whitespace-nowrap uppercase">
+            POPULAR MOVIES
+          </h2>
+          <div class="h-px flex-1 bg-white/10"></div>
+        </div>
+        <div id="homePopularMoviesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      </section>
+
+      <!-- ROW 4: POPULAR TV SERIES -->
+      <section class="px-4 sm:px-6 lg:px-12 space-y-4">
+        <div class="flex items-center gap-4">
+          <h2 class="text-xl font-black tracking-wide border-l-4 border-brand pl-5 whitespace-nowrap flex items-center gap-2 uppercase">
             POPULAR TV SERIES
           </h2>
           <div class="h-px flex-1 bg-white/10"></div>
         </div>
-
-        <div
-          id="homeTvGrid"
-          class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"
-        ></div>
+        <div id="homePopularTvGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
       </section>
+    </div>
 
     <!-- 2. MOVIES CATALOG VIEW -->
     <div id="moviesView" class="page-view hidden px-4 md:px-10 py-8 space-y-6">
