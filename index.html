@@ -470,8 +470,15 @@
   <aside id="mobileDrawer" class="fixed top-0 left-0 bottom-0 w-72 bg-[#0b0b0e] border-r border-zinc-800/80 z-50 -translate-x-full transition-transform duration-300 flex flex-col justify-between p-6">
     <div class="space-y-8">
       <div class="flex items-center justify-between">
-        <a href="#" onclick="switchPage('home'); toggleMobileDrawer(false); return false;" class="flex items-center gap-1 font-black text-2xl tracking-tighter">
-          <img src="assets/PopcornHUB.png" alt="PopcornHUB" class="h-8 sm:h-10 w-auto object-contain drop-shadow-[0_0_5px_rgba(181,248,24,0.3)]">
+        <a href="#" onclick="switchPage('home'); return false;" class="flex items-center gap-1 font-black text-2xl tracking-tighter" aria-label="PopcornHUB Home">
+          <div class="relative overflow-hidden inline-block group">
+            <!-- Logo Image -->
+            <img src="assets/PopcornHUB.png" alt="PopcornHUB" class="h-8 sm:h-10 w-auto object-contain block">
+
+            <!-- Full-Height Realistic Brightening Shine -->
+            <span class="absolute -top-1/2 bottom-[-50%] w-1/2 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-in-out bg-gradient-to-r from-transparent via-white/80 to-transparent skew-x-[-45deg] pointer-events-none mix-blend-color-dodge"
+                  style="mask-image: url('assets/PopcornHUB.png'); -webkit-mask-image: url('assets/PopcornHUB.png'); mask-size: contain; -webkit-mask-size: contain; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; mask-position: center; -webkit-mask-position: center;"></span>
+          </div>
         </a>
         <button id="closeMobileDrawer" class="text-zinc-400 hover:text-white text-xl p-1" aria-label="Close Drawer">
           <i class="fa-solid fa-xmark"></i>
