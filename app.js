@@ -4,7 +4,7 @@
 const TMDB_KEY = "15d2ea6d0dc1d476efbca3eba2b9bbfb";
 
 let activeItem = null;
-let currentServer = "videasy";
+let currentServer = "vidzee";
 let currentSeason = 1;
 let currentEpisode = 1;
 
@@ -664,7 +664,7 @@ function openPlatformCatalog(platformId, isBackEvent = false) {
   platformTotalPages = 1;
   displayedPlatformIds.clear();
 
-  switchPage("platformCatalog", isBackEvent);
+  switchPage("platformCatalog", true);
   if (!isBackEvent) {
     pushSpaState("platformCatalog", platformId);
   }
@@ -891,7 +891,7 @@ function startHeroTimer() {
   if (heroTimer) clearInterval(heroTimer);
   heroTimer = setInterval(() => {
     nextHeroSlide();
-  }, 6000);
+  }, 5000);
 }
 
 function nextHeroSlide() {
@@ -1465,8 +1465,19 @@ function setupMoviePlayer(item, isBackEvent = false) {
 }
 
 function loadMovieIframe(id) {
-  let url = `https://player.videasy.to/movie/${id}`;
-  if (currentServer === "vidlink") url = `https://vidlink.pro/movie/${id}`;
+  let url;
+  if (currentServer === "vidcore") {
+    url = `https://vidcore.io/movie/${id}`;
+  } else if (currentServer === "vidlink") {
+    url = `https://vidlink.pro/movie/${id}`;
+  } else if (currentServer === "vidsrc") {
+    url = `https://vidsrc.sh/embed/movie/${id}`;
+  } else if (currentServer === "videasy") {
+    url = `https://player.videasy.to/movie/${id}`;
+  } else if (currentServer === "vidzee") {
+    url = `https://player.vidzee.wtf/embed/movie/${id}`;
+  }
+
   document.getElementById("movieIframe").src = url;
 }
 
@@ -1566,8 +1577,18 @@ function renderTvEpisodes(tvId, episodeCount) {
 }
 
 function loadTvIframe(id) {
-  let url = `https://player.videasy.to/tv/${id}/${currentSeason}/${currentEpisode}`;
-  if (currentServer === "vidlink") url = `https://vidlink.pro/tv/${id}/${currentSeason}/${currentEpisode}`;
+  let url = `https://player.vidzee.wtf/embed/tv/${id}/${currentSeason}/${currentEpisode}`;
+  if (currentServer === "vidcore") {
+    url = `https://vidcore.io/tv/${id}/${currentSeason}/${currentEpisode}`;
+  } else if (currentServer === "vidlink") {
+    url = `https://vidlink.pro/tv/${id}/${currentSeason}/${currentEpisode}`;
+  } else if (currentServer === "vidsrc") {
+    url = `https://vidsrc.sh/embed/tv/${id}/${currentSeason}/${currentEpisode}`;
+  } else if (currentServer === "videasy") {
+    url = `https://player.videasy.to/tv/${id}/${currentSeason}/${currentEpisode}`;
+  } else if (currentServer === "vidzee") {
+    url = `https://player.vidzee.wtf/embed/tv/${id}/${currentSeason}/${currentEpisode}`;
+  }
   document.getElementById("tvIframe").src = url;
 }
 
@@ -1576,8 +1597,11 @@ function renderServers(containerId, onClick) {
   if (!container) return;
 
   const servers = [
-    { id: "videasy", name: "Nova" },
-    { id: "vidlink", name: "Vortex" }
+  { id: "vidcore", name: "KERNEL" },
+  { id: "vidlink", name: "BUTTER" },
+  { id: "vidsrc", name: "CARAMEL" },
+  { id: "videasy", name: "CHEESE" },
+  { id: "vidzee", name: "PREMIUM" }
   ];
 
   container.innerHTML = "";
