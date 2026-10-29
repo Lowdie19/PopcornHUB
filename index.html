@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PopcornHUB - Stream Movies, TV & Anime</title>
+  
+  <!-- PWA & Mobile Web App Meta Tags -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0b0b0e" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PopcornHUB" />
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#b5f818',
+              hover: '#9ee000',
+              dark: '#121212'
+            },
+            secondary: {
+              DEFAULT: '#e7b34e',
+              hover: '#d49d37'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-[#0b0b0e] text-zinc-100 font-sans antialiased min-h-screen flex flex-col selection:bg-brand selection:text-black pb-20 md:pb-0">
+
+  <!-- NAVBAR: logo + compact search on the left, navigation on the right -->
+  <nav id="mainNavbar" class="sticky top-0 z-50 bg-[#0b0b0e]/90 backdrop-blur-xl border-b border-zinc-800/80">
+    <div class="relative flex items-center gap-4 px-4 md:px-8 py-3">
+      <a href="#" onclick="this.classList.remove('logo-click-animate'); void this.offsetWidth; this.classList.add('logo-click-animate'); switchPage('home'); return false;" class="popcorn-brand-link flex-shrink-0 flex items-center gap-1 font-black text-2xl tracking-tighter" aria-label="PopcornHUB Home">
+        <div class="relative overflow-hidden inline-block group">
+          <img src="assets/PopcornHUB.png" alt="PopcornHUB" class="h-8 sm:h-10 w-auto object-contain block">
+          <span class="absolute -top-1/2 bottom-[-50%] w-1/2 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-in-out bg-gradient-to-r from-transparent via-white/80 to-transparent skew-x-[-45deg] pointer-events-none mix-blend-color-dodge" style="mask-image: url('assets/PopcornHUB.png'); -webkit-mask-image: url('assets/PopcornHUB.png'); mask-size: contain; -webkit-mask-size: contain; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; mask-position: center; -webkit-mask-position: center;"></span>
+        </div>
+      </a>
+
+      <!-- Compact unified search; filters expand below when requested -->
+      <div id="globalSearchShell" class="global-search-shell relative flex items-center min-w-0 flex-1 md:flex-none md:w-[min(30vw,360px)]">
+        <div class="global-search-control relative flex items-center w-full">
+          <button id="toggleSearchFilters" type="button" aria-expanded="false" aria-controls="searchFilterPanel" aria-label="Show search filters" title="Filters" class="search-filter-toggle absolute left-1.5 inline-flex items-center justify-center w-8 h-8 text-sm text-white transition">
+            <i class="fa-solid fa-sliders text-[13px]" aria-hidden="true"></i>
+          </button>
+          <label for="searchInput" class="sr-only">Search movies and TV shows</label>
+          <input id="searchInput" type="text" placeholder="Search movies & TV..." aria-label="Search movies and TV shows" autocomplete="off" class="global-search-input bg-zinc-900/90 text-xs md:text-sm text-zinc-200 rounded-full pl-11 pr-20 py-2.5 focus:outline-none w-full transition-all">
+          <button id="clearSearch" type="button" onclick="clearSearch()" aria-label="Clear search" class="hidden absolute right-12 text-zinc-500 hover:text-white text-xs">✕</button>
+          <button id="submitSearch" type="button" aria-label="Search" title="Search" class="search-submit-toggle absolute right-1.5 inline-flex items-center justify-center w-8 h-8 text-sm text-white transition">
+            <i class="fa-solid fa-magnifying-glass text-[13px]" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div id="searchFilterPanel" class="search-filter-panel hidden" aria-label="Search filters">
+          <div class="flex flex-wrap items-center gap-2">
+            <label class="sr-only" for="searchTypeFilter">Filter by title type</label>
+            <select id="searchTypeFilter" class="search-select" aria-label="Title type">
+              <option value="all">All</option><option value="movie">Movies</option><option value="tv">TV Shows</option>
+            </select>
+            <label class="sr-only" for="searchGenreFilter">Filter by genre</label>
+            <div id="searchGenreControl" class="search-genre-control">
+              <select id="searchGenreFilter" class="search-select search-genre-source" aria-hidden="true" tabindex="-1"><option value="">All genres</option><option value="28">Action</option><option value="12">Adventure</option><option value="16">Animation</option><option value="35">Comedy</option><option value="80">Crime</option><option value="99">Documentary</option><option value="18">Drama</option><option value="10751">Family</option><option value="14">Fantasy</option><option value="27">Horror</option><option value="9648">Mystery</option><option value="10749">Romance</option><option value="878">Sci-Fi</option><option value="53">Thriller</option><option value="10752">War</option></select>
+              <button id="searchGenreTrigger" type="button" class="search-select search-genre-trigger" aria-haspopup="listbox" aria-expanded="false">All genres <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+              <div id="searchGenreMenu" class="search-genre-menu hidden" role="listbox" aria-label="Choose genre"></div>
+            </div>
+            <label class="sr-only" for="searchSortFilter">Sort search results</label>
+            <select id="searchSortFilter" class="search-select"><option value="relevance">Relevance</option><option value="rating">Top rated</option><option value="newest">Newest</option><option value="title">Title A–Z</option></select>
+            <button type="button" id="resetSearchFilters" onclick="clearSearchFilters()" class="search-filter-reset ml-auto inline-flex items-center justify-center rounded-lg w-9 h-9 text-zinc-400 hover:text-white transition" aria-label="Reset filters" title="Reset filters"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <div id="desktopNavLinks" class="desktop-nav-links hidden lg:flex items-center justify-end gap-4 xl:gap-6 text-xs xl:text-sm font-semibold text-zinc-400 ml-auto whitespace-nowrap flex-shrink-0" aria-label="Main navigation">
+        <button onclick="switchPage('home')" id="nav-home" class="nav-btn text-brand transition" aria-label="Home" title="Home"><i class="fa-solid fa-house text-xs mr-1" aria-hidden="true"></i><span class="nav-label">Home</span></button>
+        <button onclick="switchPage('movies')" id="nav-movies" class="nav-btn hover:text-brand transition" aria-label="Movies" title="Movies"><i class="fa-solid fa-film text-xs mr-1" aria-hidden="true"></i><span class="nav-label">Movies</span></button>
+        <button onclick="switchPage('tv')" id="nav-tv" class="nav-btn hover:text-brand transition" aria-label="TV Series" title="TV Series"><i class="fa-solid fa-tv text-xs mr-1" aria-hidden="true"></i><span class="nav-label">TV Series</span></button>
+        <button onclick="switchPage('platforms')" id="nav-platforms" class="nav-btn hover:text-brand transition" aria-label="Catalogs" title="Catalogs"><i class="fa-solid fa-layer-group text-xs mr-1" aria-hidden="true"></i><span class="nav-label">Catalogs</span></button>
+        <button onclick="switchPage('watchlist')" id="nav-watchlist" class="nav-btn hover:text-brand transition flex items-center gap-1" aria-label="Watchlist" title="Watchlist"><i class="fa-solid fa-bookmark text-xs mr-1" aria-hidden="true"></i><span class="nav-label">Watchlist</span><span id="watchlistBadgeCount" class="hidden bg-secondary text-black font-extrabold text-[10px] px-1.5 py-0.2 rounded-full">0</span></button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- APP VIEW CONTAINER -->
+  <main class="flex-grow">
+
+    <!-- SEARCH VIEW -->
+    <section id="searchView" class="hidden px-4 md:px-10 pt-0 pb-8 space-y-6" aria-live="polite">
+      <div id="searchStickyHeading" class="catalog-sticky-heading section-heading-with-back">
+        <button type="button" onclick="backFromSearchResults()" class="platform-back-btn section-back-btn" aria-label="Return to the current browsing page" title="Back to browsing"><span class="platform-back-circle"><i class="fa-solid fa-chevron-left text-xs"></i></span><span class="platform-back-text">BACK</span></button>
+        <div class="section-heading-copy"><h1 id="searchContextHeading" class="text-3xl font-black text-white uppercase tracking-tight">Search Results</h1>
+        <p id="searchContextLabel" class="text-xs text-zinc-400 mt-1">Search across movies and TV shows</p></div>
+      </div>
+      <div id="searchResultsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      <div id="searchLoadMoreContainer" class="pt-4 flex justify-center"></div>
+    </section>
+
+    <!-- 1. HOME VIEW -->
+    <div id="homeView" class="page-view space-y-12 pb-12">
+      
+      <!-- PREMIUM CAROUSEL HERO BANNER -->
+      <header id="heroBanner" class="relative w-full h-[55vh] sm:h-[65vh] md:h-[80vh] overflow-hidden bg-zinc-950 flex items-end">
+        <!-- Background Backdrops -->
+        <div id="heroBg" class="hero-bg absolute inset-0 bg-cover bg-center"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#0b0b0e] via-[#0b0b0e]/50 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-[#0b0b0e] via-[#0b0b0e]/40 to-transparent"></div>
+
+        <!-- Animated Content -->
+        <div id="heroContainer" class="hero-active relative z-10 w-full px-4 md:px-12 pb-10 sm:pb-12 flex items-end justify-between">
+          <div class="max-w-2xl space-y-3 sm:space-y-4 hero-content">
+            <div class="flex items-center gap-2">
+              <span class="bg-brand text-black text-[10px] font-black tracking-widest px-2.5 py-1 rounded-md uppercase">TRENDING NOW</span>
+              <span id="heroBadgeYear" class="text-xs text-zinc-300 font-bold uppercase tracking-wider">MOVIE • 2026</span>
+            </div>
+            <!-- Main Hero Title -->
+            <h1 id="heroTitle" class="text-3xl sm:text-5xl md:text-7xl font-black tracking-tight text-white drop-shadow-2xl uppercase leading-none line-clamp-2 italic">Loading...</h1>
+            <!-- Main Hero Overview -->
+            <p id="heroOverview" class="text-zinc-300 text-xs sm:text-sm line-clamp-2 sm:line-clamp-3 leading-relaxed drop-shadow max-w-xl"></p>
+            
+            <div class="flex items-center gap-3 pt-2">
+              <button id="heroPlayBtn" class="bg-brand hover:bg-brand-hover text-black font-extrabold px-5 sm:px-7 py-3 sm:py-3.5 rounded-xl flex items-center gap-2 text-xs sm:text-sm transition shadow-lg shadow-brand/20 active:scale-95">
+                <i class="fa-solid fa-play"></i> WATCH NOW
+              </button>
+              <button id="heroWatchlistBtn" class="glass-btn text-white font-extrabold px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl flex items-center gap-2 text-xs sm:text-sm transition active:scale-95">
+                <i class="fa-solid fa-plus mr-1"></i> WATCHLIST
+              </button>
+            </div>
+          </div>
+
+          <!-- SIDE THUMBNAIL PREVIEW LIST (DESKTOP) -->
+          <div id="heroThumbnails" class="hidden lg:flex flex-col gap-2.5 z-20 pb-2"></div>
+        </div>
+
+        <!-- CAROUSEL INDICATOR DOTS -->
+        <div id="heroDots" class="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2"></div>
+      </header>
+
+      <!-- PROMO BANNER -->
+      <section class="px-4 md:px-10">
+        <div class="bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-zinc-900 border border-brand/30 rounded-2xl p-6 sm:p-8 text-center space-y-2 relative overflow-hidden">
+          <h2 class="text-2xl md:text-4xl font-black tracking-tight flex items-center justify-center gap-2 sm:gap-3">
+            <img src="icon.png" alt="PopcorHuB Icon" class="promo-title-icon" />
+            <span><span class="text-white">POPCORN</span><span class="text-brand">HUB</span></span>
+          </h2>
+          <p class="text-xs md:text-sm text-zinc-400">The Official Home for Free Movies & TV Series Streaming</p>
+        </div>
+      </section>
+
+      <!-- ROW 1: TRENDING TODAY -->
+      <section class="px-4 sm:px-6 lg:px-12 space-y-4">
+        <div class="flex items-center gap-4">
+          <h2 class="text-xl font-black tracking-widest border-l-4 border-brand pl-5 whitespace-nowrap uppercase">
+            TRENDING TODAY
+          </h2>
+          <div class="h-px flex-1 bg-white/10"></div>
+        </div>
+        <div id="homeTrendingTodayGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mobile-horizontal-scroll"></div>
+      </section>
+
+      <!-- ROW 2: TRENDING THIS WEEK -->
+      <section class="px-4 sm:px-6 lg:px-12 space-y-4">
+        <div class="flex items-center gap-4">
+          <h2 class="text-xl font-black tracking-widest border-l-4 border-brand pl-5 whitespace-nowrap uppercase">
+            TRENDING THIS WEEK
+          </h2>
+          <div class="h-px flex-1 bg-white/10"></div>
+        </div>
+        <div id="homeTrendingWeekGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mobile-horizontal-scroll"></div>
+      </section>
+
+      <!-- ROW 3: POPULAR MOVIES -->
+      <section class="px-4 sm:px-6 lg:px-12 space-y-4">
+        <div class="flex items-center gap-4">
+          <h2 class="text-xl font-black tracking-widest border-l-4 border-brand pl-5 whitespace-nowrap uppercase">
+            POPULAR MOVIES
+          </h2>
+          <div class="h-px flex-1 bg-white/10"></div>
+        </div>
+        <div id="homePopularMoviesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mobile-horizontal-scroll"></div>
+      </section>
+
+      <!-- ROW 4: POPULAR TV SERIES -->
+      <section class="px-4 sm:px-6 lg:px-12 space-y-4">
+        <div class="flex items-center gap-4">
+          <h2 class="text-xl font-black tracking-wide border-l-4 border-brand pl-5 whitespace-nowrap flex items-center gap-2 uppercase">
+            POPULAR TV SERIES
+          </h2>
+          <div class="h-px flex-1 bg-white/10"></div>
+        </div>
+        <div id="homePopularTvGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mobile-horizontal-scroll"></div>
+      </section>
+    </div>
+
+    <!-- 2. MOVIES CATALOG VIEW -->
+    <div id="moviesView" class="page-view hidden px-4 md:px-10 pt-0 pb-8 space-y-6">
+      <div class="catalog-sticky-heading section-heading-with-back">
+        <button type="button" onclick="navigateBackInApp()" class="platform-back-btn section-back-btn" aria-label="Go back to previous page" title="Back"><span class="platform-back-circle"><i class="fa-solid fa-chevron-left text-xs"></i></span><span class="platform-back-text">BACK</span></button>
+        <div class="section-heading-copy"><h1 class="text-3xl font-black text-white uppercase tracking-tight">Movies</h1>
+        <p class="text-xs text-zinc-400 mt-1">Explore amazing movies from around the world.</p></div>
+      </div>
+
+
+      <div id="moviesCatalogGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      <div id="moviesSeeMoreContainer" class="pt-4 flex justify-center"></div>
+    </div>
+
+    <!-- 3. TV SERIES CATALOG VIEW -->
+    <div id="tvView" class="page-view hidden px-4 md:px-10 pt-0 pb-8 space-y-6">
+      <div class="catalog-sticky-heading section-heading-with-back">
+        <button type="button" onclick="navigateBackInApp()" class="platform-back-btn section-back-btn" aria-label="Go back to previous page" title="Back"><span class="platform-back-circle"><i class="fa-solid fa-chevron-left text-xs"></i></span><span class="platform-back-text">BACK</span></button>
+        <div class="section-heading-copy"><h1 class="text-3xl font-black text-white uppercase tracking-tight">TV Series</h1>
+        <p class="text-xs text-zinc-400 mt-1">Explore amazing TV shows & series from around the world.</p></div>
+      </div>
+
+
+      <div id="tvCatalogGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      <div id="tvSeeMoreContainer" class="pt-4 flex justify-center"></div>
+    </div>
+
+    <!-- STREAMING PLATFORMS SELECTION VIEW -->
+    <div id="platformsView" class="page-view hidden px-4 md:px-10 pt-0 pb-8 space-y-6">
+      <div class="catalog-sticky-heading section-heading-with-back">
+        <button type="button" onclick="navigateBackInApp()" class="platform-back-btn section-back-btn" aria-label="Go back to previous page" title="Back"><span class="platform-back-circle"><i class="fa-solid fa-chevron-left text-xs"></i></span><span class="platform-back-text">BACK</span></button>
+        <div class="section-heading-copy"><h1 class="text-3xl font-black text-white uppercase tracking-tight">Catalogs</h1>
+        <p class="text-xs text-zinc-400 mt-1">Select a streaming service to explore its catalog.</p></div>
+      </div>
+      <div id="platformsSelectionGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-4"></div>
+    </div>
+
+    <!-- DYNAMIC PLATFORM CATALOG VIEW -->
+    <div id="platformCatalogView" class="page-view hidden px-4 md:px-10 pt-0 pb-8 space-y-6">
+      <div class="catalog-sticky-heading platform-catalog-sticky-heading">
+        <div class="flex items-center gap-3 min-w-0">
+          <button type="button" onclick="navigateBackInApp('platforms')" class="platform-back-btn section-back-btn shrink-0" aria-label="Go back to Catalogs" title="Back to Catalogs">
+            <span class="platform-back-circle"><i class="fa-solid fa-chevron-left text-xs"></i></span><span class="platform-back-text">PLATFORMS</span>
+          </button>
+          <div class="min-w-0">
+            <h1 id="platformCatalogTitle" class="text-2xl md:text-3xl font-black text-white uppercase tracking-tight">Platform</h1>
+            <p id="platformCatalogSubtitle" class="text-xs text-zinc-400 mt-1">Explore movies and TV series available on this platform.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="platform-catalog-filters flex flex-wrap items-center gap-2 rounded-xl">
+        <label class="sr-only" for="platformMediaTypeSelect">Content type</label>
+        <select id="platformMediaTypeSelect" class="search-select" aria-label="Content type">
+          <option value="all">All titles</option><option value="movie">Movies</option><option value="tv">TV Series</option>
+        </select>
+
+        <select id="platformGenreFilter" class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none text-zinc-200">
+          <option value="">ALL GENRES</option>
+          <option value="28">Action</option>
+          <option value="12">Adventure</option>
+          <option value="16">Animation</option>
+          <option value="35">Comedy</option>
+          <option value="80">Crime</option>
+          <option value="18">Drama</option>
+          <option value="14">Fantasy</option>
+          <option value="27">Horror</option>
+          <option value="10749">Romance</option>
+          <option value="878">Sci-Fi</option>
+          <option value="53">Thriller</option>
+        </select>
+
+        <select id="platformSortFilter" class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none text-zinc-200">
+          <option value="popularity.desc">POPULAR</option>
+          <option value="vote_average.desc">TOP RATED</option>
+        </select>
+
+        <button id="platformFilterBtn" class="search-filter-reset inline-flex items-center justify-center rounded-lg w-9 h-9 text-zinc-400 hover:text-white transition" aria-label="Refresh catalog" title="Refresh catalog"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+      </div>
+      <p id="platformCatalogStatus" class="hidden text-sm text-zinc-400" role="status"></p>
+
+      <div id="platformCatalogGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      <div id="platformLoadMoreContainer" class="pt-4 flex justify-center"></div>
+    </div>
+
+    <!-- WATCHLIST VIEW -->
+    <div id="watchlistView" class="page-view hidden px-4 md:px-10 pt-0 pb-8 space-y-6">
+      <div class="catalog-sticky-heading section-heading-with-back">
+        <button type="button" onclick="navigateBackInApp()" class="platform-back-btn section-back-btn" aria-label="Go back to previous page" title="Back"><span class="platform-back-circle"><i class="fa-solid fa-chevron-left text-xs"></i></span><span class="platform-back-text">BACK</span></button>
+        <div class="section-heading-copy"><h1 class="text-3xl font-black text-white uppercase tracking-tight">My Watchlist</h1>
+        <p class="text-xs text-zinc-400 mt-1">Your saved movies and TV series for easy access.</p></div>
+      </div>
+      <div id="watchlistGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+    </div>
+
+    <!-- 4. CONTENT DETAILS VIEW -->
+    <div id="detailView" class="page-view hidden px-4 md:px-12 py-8 max-w-6xl mx-auto">
+      <div class="detail-page-layout">
+        <div class="detail-back-row"><button type="button" onclick="navigateBackInApp()" class="platform-back-btn section-back-btn" aria-label="Go back to previous page" title="Back"><span class="platform-back-circle"><i class="fa-solid fa-chevron-left text-xs"></i></span><span class="platform-back-text">BACK</span></button></div>
+        <div class="detail-content-column space-y-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+        <div class="aspect-[2/3] rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 shadow-2xl">
+          <img id="detailPoster" class="w-full h-full object-cover" src="" alt="Poster">
+        </div>
+        <div class="md:col-span-2 space-y-5">
+          <h1 id="detailTitle" class="text-3xl md:text-5xl font-black uppercase tracking-tight italic"></h1>
+          <div class="flex flex-wrap items-center gap-2 text-xs uppercase font-semibold">
+            <span id="detailBadgeType" class="bg-brand text-black font-bold text-[10px] px-2 py-0.5 rounded"></span>
+            <span id="detailBadgeRating" class="bg-zinc-800 text-brand border border-brand/30 font-bold text-[10px] px-2 py-0.5 rounded">★ 0.0</span>
+            <span id="detailBadgeYear" class="bg-zinc-800 text-zinc-300 font-semibold text-[10px] px-2 py-0.5 rounded">2026</span>
+            <span id="detailGenres" class="text-zinc-400 ml-1"></span>
+          </div>
+          <p id="detailOverview" class="text-zinc-400 text-sm leading-relaxed"></p>
+          <div class="flex flex-wrap items-center gap-4 pt-2">
+            <button id="detailPlayNowBtn" type="button" class="bg-brand hover:bg-brand-hover text-black font-extrabold px-8 py-3 rounded-xl flex items-center gap-2 text-sm transition">
+              <i class="fa-solid fa-play" aria-hidden="true"></i><span id="detailPlayNowLabel">PLAY NOW</span>
+            </button>
+            <button id="detailWatchlistBtn" class="bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-extrabold px-6 py-3 rounded-xl flex items-center gap-2 text-sm transition">
+              <i class="fa-solid fa-plus mr-1"></i> WATCHLIST
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- OFFICIAL TRAILER SECTION -->
+      <div class="space-y-3 border-t border-zinc-800/80 pt-6">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-400">Official Trailer</h3>
+        <div class="aspect-video w-full max-w-3xl bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 flex items-center justify-center">
+          <iframe id="trailerFrame" class="w-full h-full hidden" src="" title="Official Trailer" allowfullscreen></iframe>
+          <div id="trailerFallback" class="text-zinc-500 text-sm font-medium flex items-center gap-2">
+            <i class="fa-solid fa-circle-exclamation text-brand"></i> Official trailer unavailable.
+          </div>
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. MOVIE PLAYER VIEW -->
+    <div id="moviePlayerView" class="page-view hidden px-4 md:px-10 py-6 space-y-6 max-w-6xl mx-auto">
+      <div class="player-main-row">
+        <div class="player-back-row"><button type="button" onclick="navigateBackInApp()" class="platform-back-btn section-back-btn" aria-label="Return to previous page and keep video in mini player" title="Back"><span class="platform-back-circle"><i class="fa-solid fa-chevron-left text-xs"></i></span><span class="platform-back-text">BACK</span></button></div>
+        <div id="moviePlayerHost" class="aspect-video w-full bg-black rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl relative">
+          <iframe id="movieIframe" class="w-full h-full border-0" title="Movie Player" allowfullscreen></iframe>
+        </div>
+      </div>
+      <div>
+        <div>
+          <div id="moviePlayerContext" class="text-xs font-semibold mb-1 flex items-center gap-1.5 flex-wrap">
+            <span class="text-brand font-bold">Movie</span>
+            <span class="text-zinc-500">|</span>
+            <span id="moviePlayerContextTitle" class="text-zinc-400"></span>
+          </div>
+          <h1 id="moviePlayerTitle" class="text-2xl md:text-3xl font-black uppercase text-white italic"></h1>
+        </div>
+      </div>
+      <button type="button" onclick="navigateBackInApp()" class="player-mobile-back platform-back-btn" aria-label="See more details and return to previous page"><span class="player-mobile-back-label">See more details</span><span class="player-mobile-back-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
+      <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3">
+        <p class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Select Source Server</p>
+        <div id="movieServerList" class="flex flex-wrap gap-2"></div>
+      </div>
+      <div class="space-y-4 pt-4">
+        <h3 class="text-lg font-bold border-l-4 border-brand pl-3">You Might Also Like</h3>
+        <div id="movieRelatedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+        <div id="movieRelatedLoadMoreContainer" class="pt-4 flex justify-center"></div>
+      </div>
+    </div>
+
+    <!-- 6. TV PLAYER VIEW -->
+    <div id="tvPlayerView" class="page-view hidden px-4 md:px-10 py-6 space-y-6 max-w-6xl mx-auto">
+      <div class="player-main-row">
+        <div class="player-back-row"><button type="button" onclick="navigateBackInApp()" class="platform-back-btn section-back-btn" aria-label="Return to previous page and keep video in mini player" title="Back"><span class="platform-back-circle"><i class="fa-solid fa-chevron-left text-xs"></i></span><span class="platform-back-text">BACK</span></button></div>
+        <div id="tvPlayerHost" class="aspect-video w-full bg-black rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl relative">
+          <iframe id="tvIframe" class="w-full h-full border-0" title="TV Player" allowfullscreen></iframe>
+        </div>
+      </div>
+      <div>
+        <div>
+          <div id="tvPlayerContext" class="text-xs font-semibold mb-1 flex items-center gap-1.5 flex-wrap">
+            <span class="text-brand font-bold">TV Series</span>
+            <span class="text-zinc-500">|</span>
+            <span id="tvPlayerContextDetail" class="text-zinc-400">Season 1 Episode 1</span>
+          </div>
+          <h1 id="tvPlayerTitle" class="text-2xl md:text-3xl font-black uppercase text-white italic"></h1>
+        </div>
+      </div>
+      <button type="button" onclick="navigateBackInApp()" class="player-mobile-back platform-back-btn" aria-label="See more details and return to previous page"><span class="player-mobile-back-label">See more details</span><span class="player-mobile-back-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
+      <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3">
+        <p class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Select Source Server</p>
+        <div id="tvServerList" class="flex flex-wrap gap-2"></div>
+      </div>
+      <div class="space-y-3">
+        <h3 id="seasonsHeading" class="text-sm font-bold uppercase tracking-wider text-zinc-500">Seasons</h3>
+        <div id="seasonTabs" class="flex items-center gap-2 overflow-x-auto pb-2"></div>
+      </div>
+      <div class="space-y-3">
+        <h3 id="episodesHeading" class="text-sm font-bold uppercase tracking-wider text-zinc-500">Episodes</h3>
+        <div id="episodesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-80 overflow-y-auto pr-1"></div>
+      </div>
+      <div class="space-y-4 pt-4">
+        <h3 class="text-lg font-bold border-l-4 border-brand pl-3">You Might Also Like</h3>
+        <div id="tvRelatedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <div id="mobileBottomNav" class="md:hidden fixed bottom-3 left-3 right-3 z-40 bg-[#121216]/95 backdrop-blur-md rounded-2xl border border-zinc-800/80 px-2 py-1.5 nav-gradient-shadow nav-grid-layout">
+    
+    <!-- 1. HOME -->
+    <div class="flex items-center justify-center">
+      <button onclick="switchPage('home')" id="bottom-nav-home" class="bottom-nav-btn py-1 px-2 text-brand transition flex flex-col items-center justify-center gap-0.5" aria-label="Go to Home">
+        <i class="fa-solid fa-house text-base"></i>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider">Home</span>
+      </button>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- 2. SEARCH -->
+    <div class="flex items-center justify-center">
+      <button onclick="focusMobileSearch()" class="py-1 px-2 text-zinc-400 hover:text-white transition flex flex-col items-center justify-center gap-0.5" aria-label="Quick Search">
+        <i class="fa-solid fa-magnifying-glass text-base"></i>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider">Search</span>
+      </button>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- 3. MENU -->
+    <div class="flex items-center justify-center">
+      <button onclick="toggleMobileDrawer(true)" class="py-1 px-2 text-zinc-400 hover:text-white transition flex flex-col items-center justify-center gap-0.5" aria-label="Open Drawer Menu">
+        <i class="fa-solid fa-bars text-base"></i>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider">Menu</span>
+      </button>
+    </div>
+
+    <div id="navTopDivider" class="nav-top-divider nav-divider"></div>
+
+    <!-- 4. TOP (DYNAMICALLY APPEARS ON SCROLL) -->
+    <div class="nav-top-wrapper flex items-center justify-center">
+      <button id="mobileBackToTop" class="py-1 px-2 text-zinc-400 hover:text-white transition flex flex-col items-center justify-center gap-0.5" aria-label="Scroll Back to Top">
+        <i class="fa-solid fa-chevron-up text-base"></i>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider">Top</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- MOBILE SIDE DRAWER MENU -->
+  <div id="mobileDrawerOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+  
+  <aside id="mobileDrawer" class="fixed top-0 left-0 bottom-0 w-72 bg-[#0b0b0e] border-r border-zinc-800/80 z-50 -translate-x-full transition-transform duration-300 flex flex-col justify-between p-6">
+    <div class="space-y-8">
+      <div class="flex items-center justify-between">
+        <a href="#" onclick="switchPage('home'); return false;" class="flex items-center gap-1 font-black text-2xl tracking-tighter" aria-label="PopcornHUB Home">
+          <div class="relative overflow-hidden inline-block group">
+            <!-- Logo Image -->
+            <img src="assets/PopcornHUB.png" alt="PopcornHUB" class="h-8 sm:h-10 w-auto object-contain block">
+
+            <!-- Full-Height Realistic Brightening Shine -->
+            <span class="absolute -top-1/2 bottom-[-50%] w-1/2 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-in-out bg-gradient-to-r from-transparent via-white/80 to-transparent skew-x-[-45deg] pointer-events-none mix-blend-color-dodge"
+                  style="mask-image: url('assets/PopcornHUB.png'); -webkit-mask-image: url('assets/PopcornHUB.png'); mask-size: contain; -webkit-mask-size: contain; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; mask-position: center; -webkit-mask-position: center;"></span>
+          </div>
+        </a>
+        <button id="closeMobileDrawer" class="text-zinc-400 hover:text-white text-xl p-1" aria-label="Close Drawer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <nav class="space-y-2 text-sm font-semibold">
+        <button id="drawer-nav-home" onclick="switchPage('home')" class="drawer-nav-btn w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-brand bg-zinc-900/80">
+          <i class="fa-solid fa-house text-base w-6 text-center"></i> Home
+        </button>
+        <button id="drawer-nav-movies" onclick="switchPage('movies')" class="drawer-nav-btn w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-zinc-300 hover:text-white hover:bg-zinc-900">
+          <i class="fa-solid fa-film text-base w-6 text-center"></i> Movies
+        </button>
+        <button id="drawer-nav-tv" onclick="switchPage('tv')" class="drawer-nav-btn w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-zinc-300 hover:text-white hover:bg-zinc-900">
+          <i class="fa-solid fa-tv text-base w-6 text-center"></i> TV Series
+        </button>
+        <button id="drawer-nav-platforms" onclick="switchPage('platforms')" class="drawer-nav-btn w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-zinc-300 hover:text-white hover:bg-zinc-900">
+          <i class="fa-solid fa-layer-group text-base w-6 text-center"></i> Catalogs
+        </button>
+        <button id="drawer-nav-watchlist" onclick="switchPage('watchlist')" class="drawer-nav-btn w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-zinc-300 hover:text-white hover:bg-zinc-900 justify-between">
+          <span class="flex items-center gap-3"><i class="fa-solid fa-bookmark text-base w-6 text-center"></i> Watchlist</span>
+          <span id="drawerWatchlistBadgeCount" class="hidden bg-secondary text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full">0</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="pt-6 border-t border-zinc-800/80 space-y-4">
+      <button id="drawer-nav-install" onclick="handleInstallAppClick()" class="w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-zinc-300 hover:text-secondary hover:bg-zinc-900 font-semibold text-sm">
+        <i class="fa-solid fa-download text-base w-6 text-center"></i> <span id="installBtnText">Install App</span>
+      </button>
+
+      <div class="text-[11px] text-zinc-500 font-medium leading-relaxed">
+        PopcornHUB &copy; 2026. Free streaming platform.
+      </div>
+    </div>
+  </aside>
+
+  <!-- Watchlist removal confirmation modal. -->
+  <div id="watchlistRemoveModal" class="vivamax-age-gate hidden" role="dialog" aria-modal="true" aria-labelledby="watchlistRemoveTitle" aria-describedby="watchlistRemoveDescription" aria-hidden="true">
+    <div class="vivamax-age-gate__card">
+      <div class="vivamax-age-gate__badge watchlist-remove-badge" aria-hidden="true"><i class="fa-solid fa-trash"></i></div>
+      <h2 id="watchlistRemoveTitle">Remove from Watchlist?</h2>
+      <p id="watchlistRemoveDescription">Are you sure you want to remove this title from your watchlist?</p>
+      <div class="vivamax-age-gate__actions">
+        <button id="watchlistRemoveCancel" type="button" class="vivamax-age-gate__cancel">Cancel</button>
+        <button id="watchlistRemoveConfirm" type="button" class="watchlist-remove-confirm">Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VivaMax catalog age confirmation; revealed only after the five-tap gesture. -->
+  <div id="vivamaxAgeGateModal" class="vivamax-age-gate hidden" role="dialog" aria-modal="true" aria-labelledby="vivamaxAgeGateTitle" aria-describedby="vivamaxAgeGateDescription" aria-hidden="true">
+    <div class="vivamax-age-gate__card">
+      <div class="vivamax-age-gate__badge" aria-hidden="true">18+</div>
+      <h2 id="vivamaxAgeGateTitle">18+ Content Notice</h2>
+      <p id="vivamaxAgeGateDescription">VivaMax may include mature content intended for adults. Please confirm that you are 18 years of age or older before revealing this catalog.</p>
+      <div class="vivamax-age-gate__actions">
+        <button id="vivamaxAgeGateCancel" type="button" class="vivamax-age-gate__cancel">Cancel</button>
+        <button id="vivamaxAgeGateConfirm" type="button" class="vivamax-age-gate__confirm">I’m 18 or older</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+
+    <!-- Persistent mini player: iframe is moved here (not cloned) to avoid restarting playback. -->
+    <aside id="miniPlayer" class="mini-player hidden" aria-label="Mini player">
+      <div class="mini-player__top">
+        <span id="miniPlayerTitle" class="mini-player__title">Now playing</span>
+        <div class="mini-player__actions">
+          <button id="miniPlayerReturn" type="button" aria-label="Return to full player" title="Return to player"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
+          <button id="miniPlayerClose" type="button" aria-label="Close mini player" title="Close player"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+      <div id="miniPlayerHost" class="mini-player__video"></div>
+    </aside>
+
+</body>
+</html>
