@@ -36,7 +36,7 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=22" />
 </head>
 <body class="bg-[#0b0b0e] text-zinc-100 font-sans antialiased min-h-screen flex flex-col selection:bg-brand selection:text-black pb-20 md:pb-0">
 
@@ -71,7 +71,7 @@
             </select>
             <label class="sr-only" for="searchGenreFilter">Filter by genre</label>
             <div id="searchGenreControl" class="search-genre-control">
-              <select id="searchGenreFilter" class="search-select search-genre-source" aria-hidden="true" tabindex="-1"><option value="">All genres</option><option value="28">Action</option><option value="12">Adventure</option><option value="16">Animation</option><option value="35">Comedy</option><option value="80">Crime</option><option value="99">Documentary</option><option value="18">Drama</option><option value="10751">Family</option><option value="14">Fantasy</option><option value="27">Horror</option><option value="9648">Mystery</option><option value="10749">Romance</option><option value="878">Sci-Fi</option><option value="53">Thriller</option><option value="10752">War</option></select>
+              <select id="searchGenreFilter" class="search-select search-genre-source" aria-hidden="true" tabindex="-1"><option value="">All genres</option><option value="28">Action</option><option value="12">Adventure</option><option value="16">Animation</option><option value="35">Comedy</option><option value="80">Crime</option><option value="99">Documentary</option><option value="18">Drama</option><option value="10751">Family</option><option value="14">Fantasy</option><option value="36">History</option><option value="27">Horror</option><option value="10402">Music</option><option value="9648">Mystery</option><option value="10749">Romance</option><option value="878">Sci-Fi</option><option value="10770">TV Movie</option><option value="53">Thriller</option><option value="10752">War</option><option value="37">Western</option><option value="10759">Action & Adventure</option><option value="10762">Kids</option><option value="10763">News</option><option value="10764">Reality</option><option value="10765">Sci-Fi & Fantasy</option><option value="10766">Soap</option><option value="10767">Talk</option><option value="10768">War & Politics</option></select>
               <button id="searchGenreTrigger" type="button" class="search-select search-genre-trigger" aria-haspopup="listbox" aria-expanded="false">All genres <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
               <div id="searchGenreMenu" class="search-genre-menu hidden" role="listbox" aria-label="Choose genre"></div>
             </div>
@@ -253,11 +253,6 @@
       </div>
 
       <div class="platform-catalog-filters flex flex-wrap items-center gap-2 rounded-xl">
-        <label class="sr-only" for="platformMediaTypeSelect">Content type</label>
-        <select id="platformMediaTypeSelect" class="search-select" aria-label="Content type">
-          <option value="all">All titles</option><option value="movie">Movies</option><option value="tv">TV Series</option>
-        </select>
-
         <select id="platformGenreFilter" class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none text-zinc-200">
           <option value="">ALL GENRES</option>
           <option value="28">Action</option>
@@ -265,12 +260,28 @@
           <option value="16">Animation</option>
           <option value="35">Comedy</option>
           <option value="80">Crime</option>
+          <option value="99">Documentary</option>
           <option value="18">Drama</option>
+          <option value="10751">Family</option>
           <option value="14">Fantasy</option>
+          <option value="36">History</option>
           <option value="27">Horror</option>
+          <option value="10402">Music</option>
+          <option value="9648">Mystery</option>
           <option value="10749">Romance</option>
           <option value="878">Sci-Fi</option>
+          <option value="10770">TV Movie</option>
           <option value="53">Thriller</option>
+          <option value="10752">War</option>
+          <option value="37">Western</option>
+          <option value="10759">Action &amp; Adventure</option>
+          <option value="10762">Kids</option>
+          <option value="10763">News</option>
+          <option value="10764">Reality</option>
+          <option value="10765">Sci-Fi &amp; Fantasy</option>
+          <option value="10766">Soap</option>
+          <option value="10767">Talk</option>
+          <option value="10768">War &amp; Politics</option>
         </select>
 
         <select id="platformSortFilter" class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none text-zinc-200">
@@ -342,7 +353,7 @@
     <!-- 5. MOVIE PLAYER VIEW -->
     <div id="moviePlayerView" class="page-view hidden px-4 md:px-10 py-6 space-y-6 max-w-6xl mx-auto">
       <div class="player-main-row">
-        <div class="player-back-row"><button type="button" onclick="navigateBackInApp()" class="platform-back-btn section-back-btn" aria-label="Return to previous page and keep video in mini player" title="Back"><span class="platform-back-circle"><i class="fa-solid fa-chevron-left text-xs"></i></span><span class="platform-back-text">BACK</span></button></div>
+        <div class="player-back-row"><button type="button" onclick="navigateBackFromPlayer()" class="platform-back-btn section-back-btn" aria-label="Return to the movie or series details and keep video in mini player" title="Back"><span class="platform-back-circle"><i class="fa-solid fa-chevron-left text-xs"></i></span><span class="platform-back-text">BACK</span></button></div>
         <div id="moviePlayerHost" class="aspect-video w-full bg-black rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl relative">
           <iframe id="movieIframe" class="w-full h-full border-0" title="Movie Player" allowfullscreen></iframe>
         </div>
@@ -357,7 +368,7 @@
           <h1 id="moviePlayerTitle" class="text-2xl md:text-3xl font-black uppercase text-white italic"></h1>
         </div>
       </div>
-      <button type="button" onclick="navigateBackInApp()" class="player-mobile-back platform-back-btn" aria-label="See more details and return to previous page"><span class="player-mobile-back-label">See more details</span><span class="player-mobile-back-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
+      <button type="button" onclick="navigateBackFromPlayer()" class="player-mobile-back platform-back-btn" aria-label="See more details and return to the movie or series details"><span class="player-mobile-back-label">See more details</span><span class="player-mobile-back-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
       <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3">
         <p class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Select Source Server</p>
         <div id="movieServerList" class="flex flex-wrap gap-2"></div>
@@ -372,7 +383,7 @@
     <!-- 6. TV PLAYER VIEW -->
     <div id="tvPlayerView" class="page-view hidden px-4 md:px-10 py-6 space-y-6 max-w-6xl mx-auto">
       <div class="player-main-row">
-        <div class="player-back-row"><button type="button" onclick="navigateBackInApp()" class="platform-back-btn section-back-btn" aria-label="Return to previous page and keep video in mini player" title="Back"><span class="platform-back-circle"><i class="fa-solid fa-chevron-left text-xs"></i></span><span class="platform-back-text">BACK</span></button></div>
+        <div class="player-back-row"><button type="button" onclick="navigateBackFromPlayer()" class="platform-back-btn section-back-btn" aria-label="Return to the movie or series details and keep video in mini player" title="Back"><span class="platform-back-circle"><i class="fa-solid fa-chevron-left text-xs"></i></span><span class="platform-back-text">BACK</span></button></div>
         <div id="tvPlayerHost" class="aspect-video w-full bg-black rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl relative">
           <iframe id="tvIframe" class="w-full h-full border-0" title="TV Player" allowfullscreen></iframe>
         </div>
@@ -387,7 +398,7 @@
           <h1 id="tvPlayerTitle" class="text-2xl md:text-3xl font-black uppercase text-white italic"></h1>
         </div>
       </div>
-      <button type="button" onclick="navigateBackInApp()" class="player-mobile-back platform-back-btn" aria-label="See more details and return to previous page"><span class="player-mobile-back-label">See more details</span><span class="player-mobile-back-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
+      <button type="button" onclick="navigateBackFromPlayer()" class="player-mobile-back platform-back-btn" aria-label="See more details and return to the movie or series details"><span class="player-mobile-back-label">See more details</span><span class="player-mobile-back-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
       <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3">
         <p class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Select Source Server</p>
         <div id="tvServerList" class="flex flex-wrap gap-2"></div>
@@ -403,6 +414,7 @@
       <div class="space-y-4 pt-4">
         <h3 class="text-lg font-bold border-l-4 border-brand pl-3">You Might Also Like</h3>
         <div id="tvRelatedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+        <div id="tvRelatedLoadMoreContainer" class="pt-4 flex justify-center"></div>
       </div>
     </div>
 
@@ -529,7 +541,7 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=21"></script>
 
     <!-- Persistent mini player: iframe is moved here (not cloned) to avoid restarting playback. -->
     <aside id="miniPlayer" class="mini-player hidden" aria-label="Mini player">

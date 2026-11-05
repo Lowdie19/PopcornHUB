@@ -925,18 +925,19 @@ body::after {
   }
 }
 
-/* Subtle press feedback for the home logo; keeps the navbar height unchanged. */
+/* Clearer press feedback for the home logo; keeps the navbar height unchanged. */
 .popcorn-brand-link { -webkit-tap-highlight-color: transparent; }
-.popcorn-brand-link.logo-click-animate > div > img {
-  animation: popcornLogoTap 150ms ease-out;
+.popcorn-brand-link.logo-click-animate > div {
+  animation: popcornLogoTap 180ms ease-in-out;
+  transform-origin: center center;
 }
 @keyframes popcornLogoTap {
-  0% { transform: scale(1); }
-  45% { transform: scale(.99); }
-  100% { transform: scale(1); }
+  0% { transform: translateY(0) scale(1); }
+  40%, 65% { transform: translateY(2px) scale(.97); }
+  100% { transform: translateY(0) scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .popcorn-brand-link.logo-click-animate > div > img { animation: none; }
+  .popcorn-brand-link.logo-click-animate > div { animation: none; }
 }
 
 
