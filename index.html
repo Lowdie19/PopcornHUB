@@ -36,7 +36,7 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=22" />
+  <link rel="stylesheet" href="styles.css?v=25" />
 </head>
 <body class="bg-[#0b0b0e] text-zinc-100 font-sans antialiased min-h-screen flex flex-col selection:bg-brand selection:text-black pb-20 md:pb-0">
 
@@ -358,17 +358,15 @@
           <iframe id="movieIframe" class="w-full h-full border-0" title="Movie Player" allowfullscreen></iframe>
         </div>
       </div>
-      <div>
-        <div>
-          <div id="moviePlayerContext" class="text-xs font-semibold mb-1 flex items-center gap-1.5 flex-wrap">
-            <span class="text-brand font-bold">Movie</span>
-            <span class="text-zinc-500">|</span>
-            <span id="moviePlayerContextTitle" class="text-zinc-400"></span>
-          </div>
-          <h1 id="moviePlayerTitle" class="text-2xl md:text-3xl font-black uppercase text-white italic"></h1>
+      <div class="player-sticky-info">
+        <div id="moviePlayerContext" class="text-xs font-semibold mb-1 flex items-center gap-1.5 flex-wrap">
+          <span class="text-brand font-bold">Movie</span>
+          <span class="text-zinc-500">|</span>
+          <span id="moviePlayerContextTitle" class="text-zinc-400"></span>
         </div>
+        <h1 id="moviePlayerTitle" class="text-2xl md:text-3xl font-black uppercase text-white italic"></h1>
+        <button type="button" onclick="navigateBackFromPlayer()" class="player-mobile-back platform-back-btn" aria-label="See more details and return to the movie or series details"><span class="player-mobile-back-label">See more details</span><span class="player-mobile-back-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
       </div>
-      <button type="button" onclick="navigateBackFromPlayer()" class="player-mobile-back platform-back-btn" aria-label="See more details and return to the movie or series details"><span class="player-mobile-back-label">See more details</span><span class="player-mobile-back-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
       <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3">
         <p class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Select Source Server</p>
         <div id="movieServerList" class="flex flex-wrap gap-2"></div>
@@ -388,17 +386,15 @@
           <iframe id="tvIframe" class="w-full h-full border-0" title="TV Player" allowfullscreen></iframe>
         </div>
       </div>
-      <div>
-        <div>
-          <div id="tvPlayerContext" class="text-xs font-semibold mb-1 flex items-center gap-1.5 flex-wrap">
-            <span class="text-brand font-bold">TV Series</span>
-            <span class="text-zinc-500">|</span>
-            <span id="tvPlayerContextDetail" class="text-zinc-400">Season 1 Episode 1</span>
-          </div>
-          <h1 id="tvPlayerTitle" class="text-2xl md:text-3xl font-black uppercase text-white italic"></h1>
+      <div class="player-sticky-info">
+        <div id="tvPlayerContext" class="text-xs font-semibold mb-1 flex items-center gap-1.5 flex-wrap">
+          <span class="text-brand font-bold">TV Series</span>
+          <span class="text-zinc-500">|</span>
+          <span id="tvPlayerContextDetail" class="text-zinc-400">Season 1 Episode 1</span>
         </div>
+        <h1 id="tvPlayerTitle" class="text-2xl md:text-3xl font-black uppercase text-white italic"></h1>
+        <button type="button" onclick="navigateBackFromPlayer()" class="player-mobile-back platform-back-btn" aria-label="See more details and return to the movie or series details"><span class="player-mobile-back-label">See more details</span><span class="player-mobile-back-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
       </div>
-      <button type="button" onclick="navigateBackFromPlayer()" class="player-mobile-back platform-back-btn" aria-label="See more details and return to the movie or series details"><span class="player-mobile-back-label">See more details</span><span class="player-mobile-back-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
       <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3">
         <p class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Select Source Server</p>
         <div id="tvServerList" class="flex flex-wrap gap-2"></div>
@@ -421,7 +417,7 @@
   </main>
 
   <!-- MOBILE BOTTOM NAV -->
-  <div id="mobileBottomNav" class="md:hidden fixed bottom-3 left-3 right-3 z-40 bg-[#121216]/95 backdrop-blur-md rounded-2xl border border-zinc-800/80 px-2 py-1.5 nav-gradient-shadow nav-grid-layout">
+  <div id="mobileBottomNav" class="md:hidden fixed bottom-3 left-3 right-3 z-[60] bg-[#121216]/95 backdrop-blur-md rounded-2xl border border-zinc-800/80 px-2 py-1.5 nav-gradient-shadow nav-grid-layout">
     
     <!-- 1. HOME -->
     <div class="flex items-center justify-center">
@@ -464,9 +460,9 @@
   </div>
 
   <!-- MOBILE SIDE DRAWER MENU -->
-  <div id="mobileDrawerOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+  <div id="mobileDrawerOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[65] opacity-0 pointer-events-none transition-opacity duration-300"></div>
   
-  <aside id="mobileDrawer" class="fixed top-0 left-0 bottom-0 w-72 bg-[#0b0b0e] border-r border-zinc-800/80 z-50 -translate-x-full transition-transform duration-300 flex flex-col justify-between p-6">
+  <aside id="mobileDrawer" class="fixed top-0 left-0 bottom-0 w-72 bg-[#0b0b0e] border-r border-zinc-800/80 z-[70] -translate-x-full transition-transform duration-300 flex flex-col justify-between p-6">
     <div class="space-y-8">
       <div class="flex items-center justify-between">
         <a href="#" onclick="switchPage('home'); return false;" class="flex items-center gap-1 font-black text-2xl tracking-tighter" aria-label="PopcornHUB Home">
@@ -541,7 +537,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=21"></script>
+  <script src="app.js?v=23"></script>
 
     <!-- Persistent mini player: iframe is moved here (not cloned) to avoid restarting playback. -->
     <aside id="miniPlayer" class="mini-player hidden" aria-label="Mini player">

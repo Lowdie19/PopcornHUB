@@ -1,5 +1,5 @@
 /* PopcornHUB service worker — resilient, same-origin app caching. */
-const CACHE_NAME = "PopcornHUB-v42-logo-press-feedback";
+const CACHE_NAME = "PopcornHUB-v45-mobile-nav-logo-shine";
 const APP_SHELL = [
   "./",
   "./index.html",

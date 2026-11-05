@@ -667,6 +667,23 @@ body::after {
   #tvPlayerView .player-back-row { margin-bottom: -2px; }
 }
 
+/* Sticky player information: keep title/context and mobile See More Details
+   visible directly beneath the global navbar while player content scrolls. */
+.player-sticky-info {
+  position: sticky;
+  top: var(--main-navbar-height, 65px);
+  z-index: 45;
+  isolation: isolate;
+  padding: 10px 0 12px;
+  margin-bottom: 0;
+  background: rgba(11, 11, 14, 0.5);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border-bottom: 0;
+}
+.player-sticky-info h1 { line-height: 1.15; }
+.player-sticky-info .player-mobile-back { margin-top: 8px; }
+
 /* Player Back placement: keep the video aligned with the title/content column.
    The player row is shifted into the existing left gutter on desktop; the Back
    control is positioned outside the video and does not reserve a grid column. */
@@ -1097,4 +1114,57 @@ body::after {
 
 @media (max-width: 390px) and (orientation: portrait) {
   #mainNavbar .popcorn-brand-link > div { width: 100px !important; max-width: 28vw !important; }
+}
+
+
+/* V24 refinement: compact player layouts keep Back accessible over the video.
+   At widths where the main navigation switches to icon-only controls, move the
+   existing Back control into the player frame instead of the outside gutter. */
+@media (max-width: 1279px) {
+  #moviePlayerView .player-main-row > .player-back-row,
+  #tvPlayerView .player-main-row > .player-back-row {
+    display: flex !important;
+    position: absolute;
+    z-index: 8;
+    top: 12px;
+    left: 12px;
+    min-height: 0;
+    margin: 0;
+  }
+  #moviePlayerView .player-main-row > .player-back-row .platform-back-circle,
+  #tvPlayerView .player-main-row > .player-back-row .platform-back-circle {
+    color: #fff;
+    background: rgba(24, 24, 27, 0.82);
+    border-color: rgba(161, 161, 170, 0.55);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+}
+
+@media (max-width: 767px) {
+  /* The overlaid Back control replaces the inline duplicate on compact screens. */
+  #moviePlayerView .player-sticky-info .player-mobile-back,
+  #tvPlayerView .player-sticky-info .player-mobile-back {
+    display: none !important;
+  }
+}
+
+
+/* V25: keep the mobile bottom navigation above sticky player information.
+   The drawer overlay and drawer remain above the navigation when the drawer is open. */
+@media (max-width: 767px) {
+  #mobileBottomNav { z-index: 60 !important; }
+  #mobileDrawerOverlay { z-index: 65 !important; }
+  #mobileDrawer { z-index: 70 !important; }
+}
+
+/* Touch-first devices (including mobile landscape): the logo shine is a hover-only
+   decoration and should not remain visible after an emulated/sticky hover. */
+@media (hover: none), (pointer: coarse) {
+  #mainNavbar .popcorn-brand-link > div > span,
+  #mobileDrawer a > div > span {
+    opacity: 0 !important;
+    transform: translateX(-100%) !important;
+    transition: none !important;
+  }
 }
