@@ -601,7 +601,7 @@ body::after {
 
 
 /* Lightweight persistent mini player */
-.mini-player { position: fixed; z-index: 120; right: 1rem; bottom: 1rem; width: min(360px, calc(100vw - 2rem)); background: #09090b; border: 1px solid #27272a; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+.mini-player { position: fixed; z-index: 25; right: 1rem; bottom: 1rem; width: min(360px, calc(100vw - 2rem)); background: #09090b; border: 1px solid #27272a; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
 .mini-player__top { min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .45rem .6rem .45rem .8rem; }
 .mini-player__title { color: #f4f4f5; font-size: .78rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini-player__actions { display: flex; gap: .3rem; flex-shrink: 0; }
@@ -610,6 +610,20 @@ body::after {
 .mini-player__video { width: 100%; aspect-ratio: 16 / 9; background: #000; }
 .mini-player__video iframe { width: 100%; height: 100%; border: 0; display: block; }
 .mini-player.hidden { display: none !important; }
+/* Full player mode overlays only the reserved video frame. Keep navigation,
+   Back controls, and player-page controls above the live iframe shell. */
+.mini-player.is-full-player {
+  position: fixed !important;
+  z-index: 6;
+  border-radius: 1rem;
+  box-shadow: 0 18px 48px rgba(0,0,0,.35);
+}
+.mini-player.is-full-player .mini-player__top { display: none; }
+.mini-player.is-full-player .mini-player__video {
+  width: 100%; height: 100%; aspect-ratio: auto;
+}
+.mini-player.is-mini-player { position: fixed; }
+#moviePlayerHost, #tvPlayerHost { background: #000; }
 @media (max-width: 640px) {
   .mini-player { right: .65rem; bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); width: min(270px, calc(100vw - 1.3rem)); border-radius: 11px; }
   .mini-player__top { min-height: 36px; padding: .3rem .4rem .3rem .6rem; }
@@ -1168,3 +1182,114 @@ body::after {
     transition: none !important;
   }
 }
+
+
+/* V26: compact Continue Watching shortcut for previously loaded TV episodes. */
+.tv-episodes-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.tv-continue-card { display: inline-flex; align-items: center; gap: 12px; min-width: 220px; max-width: 100%; padding: 9px 13px; border: 1px solid rgba(63,63,70,.72); border-radius: 12px; background: rgba(24,24,27,.88); color: #fff; text-align: left; box-shadow: 0 5px 18px rgba(0,0,0,.18); transition: border-color .18s ease, background .18s ease, transform .18s ease; }
+.tv-continue-card:hover { border-color: rgba(181,248,24,.55); background: rgba(39,39,42,.96); transform: translateY(-1px); }
+.tv-continue-card:active { transform: translateY(1px) scale(.99); }
+.tv-continue-icon { display: inline-flex; width: 34px; height: 34px; flex: 0 0 34px; align-items: center; justify-content: center; border-radius: 9px; background: rgba(181,248,24,.18); color: var(--brand, #b5f818); font-size: 13px; }
+.tv-continue-copy { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.tv-continue-label { font-size: 11px; line-height: 1.1; font-weight: 900; letter-spacing: .025em; }
+.tv-continue-meta { color: #d4d4d8; font-size: 11px; line-height: 1.2; font-weight: 700; white-space: nowrap; }
+@media (max-width: 480px) { .tv-continue-card { min-width: 0; padding: 8px 10px; gap: 9px; } .tv-continue-icon { width: 30px; height: 30px; flex-basis: 30px; } }
+
+
+/* V27: keep Continue Watching beside the TV title inside the frozen player panel. */
+.tv-player-sticky-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+.tv-player-sticky-copy { flex: 1 1 auto; min-width: 0; }
+/* V44: keep the movie title anchored when its Continue shortcut appears,
+   fades, or becomes hidden. The button must not vertically recenter the title. */
+#moviePlayerView .tv-player-sticky-info {
+  align-items: flex-start;
+}
+#moviePlayerView .tv-player-sticky-copy {
+  align-self: flex-start;
+  min-width: 0;
+}
+#moviePlayerView #movieContinueWatching {
+  align-self: flex-start;
+  margin-top: 0;
+}
+.tv-player-sticky-info .tv-continue-card-sticky {
+  flex: 0 0 auto;
+  min-width: 164px;
+  max-width: 230px;
+  padding: 8px 10px;
+  gap: 9px;
+}
+.tv-player-sticky-info .tv-continue-card-sticky .tv-continue-icon {
+  width: 30px; height: 30px; flex-basis: 30px;
+}
+@media (max-width: 480px) {
+  .tv-player-sticky-info { gap: 8px; padding-left: 10px; padding-right: 10px; }
+  .tv-player-sticky-info .tv-continue-card-sticky { min-width: 126px; max-width: 148px; padding: 7px 8px; gap: 7px; }
+  .tv-player-sticky-info .tv-continue-card-sticky .tv-continue-icon { width: 26px; height: 26px; flex-basis: 26px; }
+  .tv-player-sticky-info .tv-continue-card-sticky .tv-continue-label { font-size: 10px; }
+  .tv-player-sticky-info .tv-continue-card-sticky .tv-continue-meta { font-size: 9px; }
+}
+@media (max-width: 360px) {
+  .tv-player-sticky-info { gap: 6px; padding-left: 8px; padding-right: 8px; }
+  .tv-player-sticky-info .tv-continue-card-sticky { min-width: 112px; max-width: 120px; padding: 6px; gap: 5px; }
+  .tv-player-sticky-info .tv-continue-card-sticky .tv-continue-icon { width: 23px; height: 23px; flex-basis: 23px; }
+  .tv-player-sticky-info .tv-continue-card-sticky .tv-continue-meta { white-space: normal; }
+}
+
+
+/* V28: Continue cards use the secondary amber theme for both movies and TV. */
+.tv-continue-card,
+.tv-continue-card-sticky {
+  border-color: rgba(231,179,78,.48);
+  background: rgba(231,179,78,.10);
+  color: #fff;
+}
+.tv-continue-card:hover,
+.tv-continue-card-sticky:hover {
+  border-color: rgba(231,179,78,.78);
+  background: rgba(231,179,78,.17);
+}
+.tv-continue-icon {
+  background: rgba(231,179,78,.20);
+  color: #e7b34e;
+}
+.tv-continue-meta { color: #e7b34e; }
+
+/* V29: fade the Continue shortcut out while its saved TV episode is selected. */
+.tv-continue-card-sticky {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 1.1s ease, transform 1.1s ease, visibility 0s, border-color .18s ease, background .18s ease;
+}
+.tv-continue-card-sticky.continue-progress-hidden {
+  opacity: 0;
+  transform: translateY(-5px);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 1.1s ease, transform 1.1s ease, visibility 0s linear 1.1s;
+}
+
+
+
+
+/* V36: completed TV episodes/seasons are visually dimmed without badges or disabling replay. */
+.tv-completed-dim { opacity: .46 !important; filter: saturate(.58); }
+.tv-completed-dim:hover { opacity: .68 !important; }
+
+
+/* V45: the full-player iframe overlay must never cover the Back control. */
+@media (min-width: 768px) {
+  #moviePlayerView .player-main-row > .player-back-row,
+  #tvPlayerView .player-main-row > .player-back-row { z-index: 12 !important; }
+}
+
+/* V46: Movies use the same frozen title pane layout as TV Series.
+   Keep the shared flex row and responsive Continue card sizing so the
+   title remains naturally positioned beside the shortcut on small screens. */

@@ -9,6 +9,27 @@ let detailTrailerRequestId = 0;
 let currentServer = "vidzee";
 let currentSeason = 1;
 let currentEpisode = 1;
+let activeTvSeasons = [];
+// Prevent duplicate ended messages from the previous iframe document from
+// completing/skipping the newly selected episode during auto-advance.
+let tvIgnoreEndedUntilFreshStart = false;
+let tvEndedSessionKey = null;
+let tvLastEndedPlaybackTime = 0;
+let pendingTvContinueSave = null;
+let skipNextTvContinueSave = false;
+let continuePlaybackSession = null;
+let continuePageState = null; // Resume card eligibility and hide latch for the current player page.
+const TV_CONTINUE_STORAGE_KEY = "popcornContinueWatchingTV";
+const MOVIE_CONTINUE_STORAGE_KEY = "popcornContinueWatchingMovies";
+const CONTINUE_PROGRESS_KEY = "popcornContinuePlaybackProgress";
+const PLAYBACK_COMPLETION_KEY = "popcornPlaybackCompletions";
+const ACTIVE_SERVER_IDS = ["vidcore", "vidlink", "vidsrc", "vidzee"];
+function normalizeServerId(server) {
+  const id = String(server || "").toLowerCase();
+  // CHEESE now points to VidZee. Migrate the retired legacy CHEESE provider.
+  if (id === "videasy" || id === "premium") return "vidzee";
+  return ACTIVE_SERVER_IDS.includes(id) ? id : "vidzee";
+}
 
 // STREAMING PLATFORMS STATE & PROVIDER MAPPINGS (Region: PH)
 const PLATFORMS_CONFIG = [
@@ -286,7 +307,7 @@ function handleInstallAppClick() {
 
 /* ==========================================================================
    PERSISTENT MINI PLAYER
-   The same iframe node is moved between hosts; it is never cloned/reloaded.
+   The live iframe stays mounted in one permanent host; only its shell is repositioned.
    ========================================================================== */
 let activePlayerKind = null;
 let activePlayerItem = null;
@@ -309,6 +330,10 @@ function activatePlayer(kind, item) {
   miniPlayerWasDismissed = false;
   const mini = document.getElementById("miniPlayer");
   if (mini) mini.classList.add("hidden");
+  // Mount the iframe in its permanent root host before its source is loaded.
+  // It must never be reparented during playback: moving a live cross-origin
+  // iframe can interrupt the provider session or require another Play click.
+  movePlayerToHost("miniPlayerHost");
 }
 
 function getActivePlayerIframe() {
@@ -321,18 +346,39 @@ function getActivePlayerIframe() {
 
 function movePlayerToHost(hostId) {
   const iframe = getActivePlayerIframe();
-  const host = document.getElementById(hostId);
+  const host = document.getElementById("miniPlayerHost");
   if (!iframe || !host) return;
 
-  // Keep a single live iframe for the active player. This is defensive against
-  // duplicate nodes left behind by interrupted player-host transitions.
-  document.querySelectorAll(`#${iframe.id}`).forEach((duplicate) => {
-    if (duplicate !== iframe) duplicate.remove();
-  });
-
+  // The iframe has one permanent DOM parent for its entire playback session.
+  // hostId remains accepted for compatibility with existing call sites.
   if (iframe.parentElement !== host) host.appendChild(iframe);
   iframe.style.width = "100%";
   iframe.style.height = "100%";
+}
+
+function positionFullPlayerOverlay() {
+  const mini = document.getElementById("miniPlayer");
+  const placeholderId = activePlayerKind === "movie" ? "moviePlayerHost" : "tvPlayerHost";
+  const placeholder = document.getElementById(placeholderId);
+  if (!mini || !placeholder || !activePlayerKind) return;
+  const rect = placeholder.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  mini.classList.remove("is-mini-player");
+  mini.classList.add("is-full-player");
+  mini.style.left = `${Math.round(rect.left)}px`;
+  mini.style.top = `${Math.round(rect.top)}px`;
+  mini.style.right = "auto";
+  mini.style.bottom = "auto";
+  mini.style.width = `${Math.round(rect.width)}px`;
+  mini.style.height = `${Math.round(rect.height)}px`;
+  mini.classList.remove("hidden");
+}
+
+function showFullPlayerOverlay() {
+  const mini = document.getElementById("miniPlayer");
+  if (!mini) return;
+  miniPlayerWasDismissed = false;
+  positionFullPlayerOverlay();
 }
 
 function showMiniPlayer() {
@@ -345,9 +391,15 @@ function showMiniPlayer() {
   });
   if (pageIsPlayer || miniPlayerWasDismissed) return;
 
-  // Idempotent: repeated history callbacks must reuse the same mini-player host
-  // and the same iframe, never create a second visible player.
-  movePlayerToHost("miniPlayerHost");
+  // The iframe remains in its permanent host; only the shell changes layout.
+  mini.classList.remove("is-full-player");
+  mini.classList.add("is-mini-player");
+  mini.style.left = "";
+  mini.style.top = "";
+  mini.style.right = "";
+  mini.style.bottom = "";
+  mini.style.width = "";
+  mini.style.height = "";
   const activeIframe = getActivePlayerIframe();
   if (activeIframe && activeIframe.parentElement === miniHost) {
     Array.from(miniHost.children).forEach((child) => {
@@ -387,8 +439,9 @@ function returnToFullPlayer() {
     }, "", `#${pageId}`);
   }
 
-  movePlayerToHost(activePlayerKind === "movie" ? "moviePlayerHost" : "tvPlayerHost");
+  // Keep the same iframe mounted; overlay it on the player page's reserved frame.
   // Do not call setupMoviePlayer/setupTvPlayer here: that would reload the iframe.
+  showFullPlayerOverlay();
   const titleEl = document.getElementById(activePlayerKind === "movie" ? "moviePlayerTitle" : "tvPlayerTitle");
   if (titleEl) titleEl.textContent = activePlayerItem.title || activePlayerItem.name || "";
   if (viewId) window.scrollTo({ top: 0, behavior: "auto" });
@@ -398,7 +451,11 @@ function closeMiniPlayer() {
   const iframe = getActivePlayerIframe();
   if (iframe) iframe.src = "about:blank";
   const mini = document.getElementById("miniPlayer");
-  if (mini) mini.classList.add("hidden");
+  if (mini) {
+    mini.classList.add("hidden");
+    mini.classList.remove("is-mini-player", "is-full-player");
+    mini.removeAttribute("style");
+  }
   activePlayerKind = null;
   activePlayerItem = null;
   miniPlayerWasDismissed = true;
@@ -409,6 +466,17 @@ function initMiniPlayerControls() {
   const closeButton = document.getElementById("miniPlayerClose");
   if (returnButton) returnButton.addEventListener("click", returnToFullPlayer);
   if (closeButton) closeButton.addEventListener("click", closeMiniPlayer);
+  let overlayFrame = 0;
+  const syncOverlay = () => {
+    const mini = document.getElementById("miniPlayer");
+    if (!mini || !mini.classList.contains("is-full-player") || overlayFrame) return;
+    overlayFrame = requestAnimationFrame(() => {
+      overlayFrame = 0;
+      positionFullPlayerOverlay();
+    });
+  };
+  window.addEventListener("scroll", syncOverlay, { passive: true });
+  window.addEventListener("resize", syncOverlay);
 }
 
 /* ==========================================================================
@@ -1010,6 +1078,15 @@ function switchPage(pageId, isBackEvent = false) {
   if (pageId === "tv") fetchTvCatalog(1);
   if (pageId === "platforms") renderPlatformsSelectionPage();
   if (pageId === "watchlist") renderWatchlistPage();
+
+  // The player is persistent across every SPA destination, not only Back.
+  if (activePlayerKind && activePlayerItem && !miniPlayerWasDismissed) {
+    if (pageId === "moviePlayer" || pageId === "tvPlayer") {
+      showFullPlayerOverlay();
+    } else {
+      showMiniPlayer();
+    }
+  }
 }
 
 /* ==========================================================================
@@ -2515,6 +2592,576 @@ function renderWatchlistPage() {
 }
 
 /* ==========================================================================
+   CONTINUE WATCHING PLAYBACK POSITION
+   Saves movie positions using the approved movie rules. TV positions are saved
+   only after 1.5% of verified forward playback in the selected episode.
+   ========================================================================== */
+function formatContinueTime(seconds) {
+  const value = Math.max(0, Math.floor(Number(seconds) || 0));
+  const hours = Math.floor(value / 3600);
+  const minutes = Math.floor((value % 3600) / 60);
+  const secs = value % 60;
+  return hours ? `${hours}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}` : `${minutes}:${String(secs).padStart(2, "0")}`;
+}
+function getContinueProgress(type, id, season, episode) {
+  try {
+    const all = JSON.parse(localStorage.getItem(CONTINUE_PROGRESS_KEY) || "{}");
+    const key = type === "tv" ? `tv:${id}:${season}:${episode}` : `movie:${id}`;
+    const record = all[key];
+    return record && Number.isFinite(Number(record.currentTime)) && Number(record.currentTime) > 0 ? record : null;
+  } catch (_) { return null; }
+}
+function resetContinuePlaybackSession(type, id, season, episode) {
+  const key = type === "tv" ? `tv:${id}:${season}:${episode}` : `movie:${id}`;
+  continuePlaybackSession = { key, lastTime: null, lastWallTime: null, playedSeconds: 0 };
+}
+
+function beginContinuePage(type, item) {
+  if (!item || !item.id) { continuePageState = null; return; }
+  const id = String(item.id);
+  let hasSavedResume = false;
+  let resumeTime = 0;
+  if (type === "movie") {
+    const record = getMovieContinueRecords()[id];
+    const progress = getContinueProgress("movie", id);
+    hasSavedResume = Boolean(record && progress && Number(progress.currentTime) > 0 && !isPlaybackCompleted("movie", id));
+    // Freeze the Continue timestamp for this player-page visit. Live progress
+    // may keep updating in storage, but the visible card must remain a snapshot.
+    resumeTime = hasSavedResume ? Number(progress.currentTime) : 0;
+  } else {
+    const record = getTvContinueRecord(id);
+    const progress = record && getContinueProgress("tv", id, record.season, record.episode);
+    hasSavedResume = Boolean(record && progress && Number(progress.currentTime) > 0 && !isPlaybackCompleted("tv", id, record.season, record.episode));
+  }
+  continuePageState = { key: `${type}:${id}`, eligible: hasSavedResume, resumeTime, hiddenUntilExit: false, completed: false };
+}
+
+function isContinuePageVisible(type, item) {
+  const key = item && item.id ? `${type}:${item.id}` : "";
+  return Boolean(continuePageState && continuePageState.key === key && continuePageState.eligible && !continuePageState.hiddenUntilExit);
+}
+
+function hideContinueForCurrentPage(type, item) {
+  const key = item && item.id ? `${type}:${item.id}` : "";
+  if (continuePageState && continuePageState.key === key) continuePageState.hiddenUntilExit = true;
+}
+
+function scrollPlayerPageToTop() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// Keep the action tab mounted while fading so the transition is visible.
+function hideContinueAction(button) {
+  if (!button) return;
+  button.setAttribute("aria-hidden", "true");
+  button.classList.remove("hidden");
+  button.classList.add("continue-progress-hidden");
+  button.onclick = null;
+  window.setTimeout(() => {
+    if (button.classList.contains("continue-progress-hidden")) button.classList.add("hidden");
+  }, 1150);
+}
+
+function showContinueAction(button) {
+  if (!button) return;
+  button.classList.remove("hidden", "continue-progress-hidden");
+  button.setAttribute("aria-hidden", "false");
+}
+
+function getContinueSessionWatchedSeconds(type, id, season, episode) {
+  const key = type === "tv" ? `tv:${id}:${season}:${episode}` : `movie:${id}`;
+  if (!continuePlaybackSession || continuePlaybackSession.key !== key) return 0;
+  return Math.max(0, Number(continuePlaybackSession.playedSeconds) || 0);
+}
+
+function saveContinueProgress(type, id, currentTime, duration) {
+  if (type === "movie" && continuePageState && continuePageState.key === `movie:${id}` && continuePageState.completed) return;
+  const time = Number(currentTime);
+  const total = Number(duration);
+  if (!id || !Number.isFinite(time) || time <= 0) return;
+  try {
+    const all = JSON.parse(localStorage.getItem(CONTINUE_PROGRESS_KEY) || "{}");
+    const season = Number(currentSeason) || 1;
+    const episode = Number(currentEpisode) || 1;
+    const key = type === "tv" ? `tv:${id}:${season}:${episode}` : `movie:${id}`;
+    const previous = all[key] || {};
+    const validDuration = total > 0 ? total : Number(previous.duration) || 0;
+    all[key] = { currentTime: time, duration: validDuration, percent: validDuration > 0 ? time / validDuration : 0, updatedAt: Date.now() };
+    localStorage.setItem(CONTINUE_PROGRESS_KEY, JSON.stringify(all));
+
+    // Save a resume record on any real playback progress. There is no 10% save threshold.
+    if (type === "tv" && activePlayerKind === "tv" && activePlayerItem && String(activePlayerItem.id) === String(id)) {
+      saveTvContinueRecord({
+        id: Number(id), title: activePlayerItem.title || activePlayerItem.name || "Untitled",
+        poster: activePlayerItem.poster || activePlayerItem.poster_path || "",
+        season, episode, server: currentServer || "vidzee"
+      });
+      renderTvContinueWatching(activePlayerItem);
+    }
+    if (type === "movie" && activePlayerKind === "movie" && activePlayerItem && String(activePlayerItem.id) === String(id)) {
+      const records = getMovieContinueRecords();
+      records[String(id)] = { id: Number(id), title: String(activePlayerItem.title || "Untitled"), server: currentServer || "vidzee", updatedAt: Date.now() };
+      localStorage.setItem(MOVIE_CONTINUE_STORAGE_KEY, JSON.stringify(records));
+      renderMovieContinueWatching(activePlayerItem);
+    }
+  } catch (_) {}
+}
+
+function findPlaybackField(root, keys, depth = 0) {
+  if (!root || typeof root !== "object" || depth > 5) return undefined;
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(root, key)) {
+      const value = root[key];
+      if (value !== null && value !== undefined && value !== "") return value;
+    }
+  }
+  for (const value of Object.values(root)) {
+    if (value && typeof value === "object") {
+      const found = findPlaybackField(value, keys, depth + 1);
+      if (found !== undefined) return found;
+    }
+  }
+  return undefined;
+}
+
+function parsePlaybackNumber(value) {
+  if (typeof value === "string" && value.includes(":")) {
+    const parts = value.split(":").map(Number);
+    if (parts.some(part => !Number.isFinite(part))) return NaN;
+    return parts.reduce((total, part) => total * 60 + part, 0);
+  }
+  return Number(value);
+}
+
+function getPlaybackCompletions() {
+  try {
+    const value = JSON.parse(localStorage.getItem(PLAYBACK_COMPLETION_KEY) || "{}");
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  } catch (_) { return {}; }
+}
+
+function getPlaybackCompletionId(type, id, season, episode) {
+  return type === "tv" ? `tv:${id}:${season}:${episode}` : `movie:${id}`;
+}
+
+function isPlaybackCompleted(type, id, season, episode) {
+  return Boolean(getPlaybackCompletions()[getPlaybackCompletionId(type, id, season, episode)]);
+}
+
+function setPlaybackCompleted(type, id, season, episode, completed) {
+  const all = getPlaybackCompletions();
+  const key = getPlaybackCompletionId(type, id, season, episode);
+  if (completed) all[key] = { completedAt: Date.now() };
+  else delete all[key];
+  try { localStorage.setItem(PLAYBACK_COMPLETION_KEY, JSON.stringify(all)); } catch (_) {}
+}
+
+function markMovieContinueCompleted(item) {
+  if (!item || !item.id) return;
+  const id = String(item.id);
+  setPlaybackCompleted("movie", id, 1, 1, true);
+  if (continuePageState && continuePageState.key === `movie:${id}`) {
+    continuePageState.completed = true;
+    continuePageState.hiddenUntilExit = true;
+  }
+  // Keep the last resume position and record. Completion only hides the shortcut.
+  hideContinueAction(document.getElementById("movieContinueWatching"));
+}
+
+function markTvEpisodeCompleted(item, season, episode) {
+  if (!item || !item.id) return;
+  const id = String(item.id);
+  setPlaybackCompleted("tv", id, season, episode, true);
+  if (continuePageState && continuePageState.key === `tv:${id}` && Number(currentSeason) === Number(season) && Number(currentEpisode) === Number(episode)) {
+    continuePageState.completed = true;
+  }
+  updateTvCompletionVisuals();
+  renderTvContinueWatching(item);
+}
+
+// Advance only after the provider reports a genuine ended event. Seeking or
+// dragging near the end never calls this function.
+async function advanceToNextTvEpisode(item, completedSeason, completedEpisode) {
+  if (!item || !Array.isArray(activeTvSeasons) || !activeTvSeasons.length) return;
+  const seasons = [...activeTvSeasons].filter(s => Number(s.season_number) > 0)
+    .sort((a, b) => Number(a.season_number) - Number(b.season_number));
+  const seasonIndex = seasons.findIndex(s => Number(s.season_number) === Number(completedSeason));
+  if (seasonIndex < 0) return;
+
+  const currentSeasonInfo = seasons[seasonIndex];
+  const knownCount = Number(currentSeasonInfo.knownEpisodeCount || currentSeasonInfo.episode_count);
+  if (!(knownCount > 0)) return;
+
+  let nextSeasonInfo = currentSeasonInfo;
+  let nextEpisode = Number(completedEpisode) + 1;
+  if (nextEpisode > knownCount) {
+    nextSeasonInfo = seasons[seasonIndex + 1];
+    if (!nextSeasonInfo) return; // Final known episode of the series.
+    nextEpisode = 1;
+  }
+
+  currentSeason = Number(nextSeasonInfo.season_number);
+  currentEpisode = nextEpisode;
+  continuePlaybackSession = null;
+
+  const context = document.getElementById("tvPlayerContextDetail");
+  if (context) context.innerText = `Season ${currentSeason} Episode ${currentEpisode}`;
+
+  document.querySelectorAll("#seasonTabs button").forEach(button => {
+    const active = Number(button.dataset.seasonNumber) === currentSeason;
+    button.className = active
+      ? "px-4 py-2 rounded-lg font-bold text-xs transition bg-brand text-black"
+      : "px-4 py-2 rounded-lg font-bold text-xs transition bg-zinc-800 text-zinc-300 hover:bg-zinc-700";
+  });
+
+  // Switch the iframe immediately. Ignore trailing ended events from the old
+  // document until the next episode reports playback near its beginning.
+  tvIgnoreEndedUntilFreshStart = true;
+  loadTvIframe(item.id, { autoAdvance: true });
+  await renderTvEpisodes(item.id, nextSeasonInfo.episode_count);
+  if (String(activePlayerItem && activePlayerItem.id) !== String(item.id) ||
+      Number(currentSeason) !== Number(nextSeasonInfo.season_number) ||
+      Number(currentEpisode) !== nextEpisode) return;
+  syncTvActiveSelection();
+  updateTvCompletionVisuals();
+}
+
+function updateTvPlayerEpisodeHeading(episodeTitle = "") {
+  const context = document.getElementById("tvPlayerContextDetail");
+  if (!context) return;
+  const base = `Season ${currentSeason} Episode ${currentEpisode}`;
+  context.innerText = episodeTitle ? `${base} · ${episodeTitle}` : base;
+}
+
+function syncTvActiveSelection() {
+  document.querySelectorAll("#seasonTabs button[data-season-number]").forEach(button => {
+    const active = Number(button.dataset.seasonNumber) === Number(currentSeason);
+    button.classList.toggle("bg-brand", active);
+    button.classList.toggle("text-black", active);
+    button.classList.toggle("bg-zinc-800", !active);
+    button.classList.toggle("text-zinc-300", !active);
+    button.classList.toggle("hover:bg-zinc-700", !active);
+  });
+  document.querySelectorAll("#episodesGrid button[data-episode-number]").forEach(button => {
+    const active = Number(button.dataset.seasonNumber) === Number(currentSeason) &&
+      Number(button.dataset.episodeNumber) === Number(currentEpisode);
+    button.classList.toggle("bg-zinc-800", active);
+    button.classList.toggle("border-brand", active);
+    button.classList.toggle("bg-zinc-900", !active);
+    button.classList.toggle("border-zinc-800", !active);
+    button.classList.toggle("hover:border-brand/50", !active);
+  });
+}
+
+function updateTvCompletionVisuals() {
+  const tvId = String(activePlayerItem && activePlayerItem.id || "");
+  if (!tvId) return;
+  document.querySelectorAll("#episodesGrid button[data-episode-number]").forEach(button => {
+    const episode = Number(button.dataset.episodeNumber);
+    const season = Number(button.dataset.seasonNumber);
+    button.classList.toggle("tv-completed-dim", isPlaybackCompleted("tv", tvId, season, episode));
+  });
+  document.querySelectorAll("#seasonTabs button[data-season-number]").forEach(button => {
+    const seasonNumber = Number(button.dataset.seasonNumber);
+    const seasonInfo = activeTvSeasons.find(season => Number(season.season_number) === seasonNumber);
+    const knownEpisodes = seasonInfo && Array.isArray(seasonInfo.knownEpisodeNumbers)
+      ? seasonInfo.knownEpisodeNumbers
+      : Array.from({ length: Math.max(0, Number(seasonInfo && (seasonInfo.knownEpisodeCount || seasonInfo.episode_count)) || 0) }, (_, index) => index + 1);
+    const allKnownEpisodesCompleted = knownEpisodes.length > 0 &&
+      knownEpisodes.every(episode => isPlaybackCompleted("tv", tvId, seasonNumber, episode));
+    button.classList.toggle("tv-completed-dim", allKnownEpisodesCompleted);
+  });
+}
+
+function isPlaybackEndedMessage(message) {
+  // Providers may wrap the player event in several levels of `data`/`payload`.
+  // Do not use findPlaybackField here: a generic `type: "video"` can appear
+  // before the actual nested `event: "ended"` and mask the completion event.
+  const eventKeys = new Set(["event", "eventtype", "event_type", "action", "status", "state", "type", "name", "method"]);
+  const endedValues = new Set([
+    "ended", "onended", "videoended", "onvideoended", "playbackended",
+    "complete", "completed", "playbackcompleted", "finished", "videocomplete"
+  ]);
+  const visited = new Set();
+  const scan = (value, depth = 0) => {
+    if (depth > 7 || value == null) return false;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      const normalized = trimmed.toLowerCase().replace(/[\\s_-]+/g, "");
+      if (endedValues.has(normalized)) return true;
+
+      // VidZee may send player events as a plain query-string message
+      // (for example: "event=ended"), not only as a JSON object.
+      if (trimmed.includes("=") && !trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+        try {
+          const params = new URLSearchParams(trimmed.replace(/^[?#]/, ""));
+          for (const [key, child] of params.entries()) {
+            const normalizedKey = String(key).toLowerCase().replace(/[\\s_-]+/g, "");
+            const normalizedValue = String(child).toLowerCase().replace(/[\\s_-]+/g, "");
+            if (eventKeys.has(normalizedKey) && endedValues.has(normalizedValue)) return true;
+          }
+        } catch (_) {}
+      }
+
+      // Some providers send a JSON string nested inside their message.
+      if ((trimmed.startsWith("{") || trimmed.startsWith("[")) && depth < 7) {
+        try { return scan(JSON.parse(trimmed), depth + 1); } catch (_) {}
+      }
+      return false;
+    }
+    if (typeof value !== "object" || visited.has(value)) return false;
+    visited.add(value);
+    for (const [key, child] of Object.entries(value)) {
+      const normalizedKey = String(key).toLowerCase().replace(/[\s_-]+/g, "");
+      if (eventKeys.has(normalizedKey) && typeof child === "string" &&
+          endedValues.has(child.toLowerCase().replace(/[\s_-]+/g, ""))) return true;
+      if (scan(child, depth + 1)) return true;
+    }
+    return false;
+  };
+  return scan(message);
+}
+
+function setupContinueProgressTracking(type) {
+  const iframe = document.getElementById(type === "movie" ? "movieIframe" : "tvIframe");
+  if (!iframe || iframe.dataset.progressTrackingBound === "true") return;
+  iframe.dataset.progressTrackingBound = "true";
+
+  window.addEventListener("message", event => {
+    // Accept messages only from the currently selected provider iframe.
+    // This keeps the source/origin check strict while allowing all four
+    // configured servers instead of hard-coding VidZee only.
+    if (event.source !== iframe.contentWindow) return;
+    let expectedOrigin = "";
+    try { expectedOrigin = new URL(iframe.src, window.location.href).origin; } catch (_) { return; }
+    if (!expectedOrigin || event.origin !== expectedOrigin) return;
+
+    let message = event.data;
+    if (typeof message === "string") {
+      const trimmed = message.trim();
+      try { message = JSON.parse(trimmed); }
+      catch (_) { message = trimmed; }
+    }
+    if (message == null || (typeof message !== "object" && typeof message !== "string")) return;
+    if (!activePlayerItem || activePlayerKind !== type) return;
+    const messageType = typeof message === "object" ? findPlaybackField(message, ["mediaType", "media_type"]) : null;
+    if (messageType && String(messageType).toLowerCase() !== type) return;
+    const messageId = typeof message === "object" ? findPlaybackField(message, ["tmdbId", "tmdb_id"]) : null;
+    if (messageId != null && String(messageId) !== String(activePlayerItem.id)) return;
+    if (isPlaybackEndedMessage(message)) {
+      if (type === "movie") {
+        markMovieContinueCompleted(activePlayerItem);
+      } else {
+        // An iframe can emit more than one ended message. After auto-next, ignore
+        // any trailing messages from the previous episode until the new episode
+        // reports a fresh near-start playback position.
+        if (tvIgnoreEndedUntilFreshStart) return;
+        const endedItem = activePlayerItem;
+        const endedSeason = Number(currentSeason) || 1;
+        const endedEpisode = Number(currentEpisode) || 1;
+        const endedSessionKey = `tv:${endedItem.id}:${endedSeason}:${endedEpisode}`;
+        if (tvEndedSessionKey === endedSessionKey) return;
+        tvEndedSessionKey = endedSessionKey;
+        tvLastEndedPlaybackTime = Number(continuePlaybackSession && continuePlaybackSession.lastTime) || 0;
+        markTvEpisodeCompleted(endedItem, endedSeason, endedEpisode);
+        advanceToNextTvEpisode(endedItem, endedSeason, endedEpisode);
+      }
+      return;
+    }
+
+    if (typeof message !== "object") return;
+    const rawTime = findPlaybackField(message, ["currentTime", "current_time", "player_progress", "position", "playbackTime", "playback_time", "time"]);
+    const rawDuration = findPlaybackField(message, ["duration", "totalDuration", "total_duration", "player_duration", "videoDuration", "video_duration"]);
+    const time = parsePlaybackNumber(rawTime);
+    const duration = parsePlaybackNumber(rawDuration);
+    if (!Number.isFinite(time) || time <= 0 || !Number.isFinite(duration) || duration <= 0) return;
+    if (type === "tv" && tvIgnoreEndedUntilFreshStart &&
+        (time <= 15 || (tvLastEndedPlaybackTime > 15 && time < tvLastEndedPlaybackTime - 15))) {
+      tvIgnoreEndedUntilFreshStart = false;
+      tvLastEndedPlaybackTime = 0;
+    }
+    const season = Number(currentSeason) || 1;
+    const episode = Number(currentEpisode) || 1;
+    const sessionKey = type === "tv" ? `tv:${activePlayerItem.id}:${season}:${episode}` : `movie:${activePlayerItem.id}`;
+    const now = Date.now();
+    if (!continuePlaybackSession || continuePlaybackSession.key !== sessionKey) {
+      continuePlaybackSession = { key: sessionKey, lastTime: time, lastWallTime: now, playedSeconds: 0 };
+    } else {
+      const mediaDelta = time - Number(continuePlaybackSession.lastTime);
+      const wallDelta = Math.max(0, (now - Number(continuePlaybackSession.lastWallTime)) / 1000);
+      // Count only plausible forward playback. Slider seeks/drags are not watched time.
+      // The tighter tolerance also prevents short manual seeks from satisfying TV's save threshold.
+      if (mediaDelta > 0 && mediaDelta <= Math.max(2, wallDelta * 2 + 0.5)) {
+        continuePlaybackSession.playedSeconds += mediaDelta;
+      }
+      continuePlaybackSession.lastTime = time;
+      continuePlaybackSession.lastWallTime = now;
+    }
+
+    const watchedSeconds = getContinueSessionWatchedSeconds(type, activePlayerItem.id, season, episode);
+    if (type === "movie") {
+      // Fixed thresholds use accumulated real forward-playback time, not video duration.
+      // A genuine replay clears completion only after 20 seconds; seeks do not count.
+      if (watchedSeconds >= 20 && isPlaybackCompleted("movie", activePlayerItem.id)) {
+        setPlaybackCompleted("movie", activePlayerItem.id, 1, 1, false);
+        if (continuePageState && continuePageState.key === `movie:${activePlayerItem.id}`) continuePageState.completed = false;
+      }
+      saveContinueProgress(type, activePlayerItem.id, time, duration);
+      if (watchedSeconds >= 15) hideContinueForCurrentPage(type, activePlayerItem);
+      renderMovieContinueWatching(activePlayerItem);
+    } else {
+      // TV progress is committed only after 15 seconds of real forward playback in THIS episode.
+      // Before that point, users can sample seasons/episodes without polluting Continue history.
+      if (watchedSeconds >= 15) {
+        // A real replay (not a seek) restores the episode's normal, uncompleted appearance.
+        if (isPlaybackCompleted("tv", activePlayerItem.id, season, episode)) {
+          setPlaybackCompleted("tv", activePlayerItem.id, season, episode, false);
+          updateTvCompletionVisuals();
+        }
+        saveContinueProgress(type, activePlayerItem.id, time, duration);
+      }
+      if (watchedSeconds >= 20) hideContinueForCurrentPage(type, activePlayerItem);
+      renderTvContinueWatching(activePlayerItem);
+      // Keep the 2% hide latch authoritative even if another render just ran.
+      if (watchedSeconds >= 20) hideContinueAction(document.getElementById("tvContinueWatching"));
+    }
+  });
+}
+
+function getMovieContinueRecords() {
+  try { const value = JSON.parse(localStorage.getItem(MOVIE_CONTINUE_STORAGE_KEY) || "{}"); return value && typeof value === "object" && !Array.isArray(value) ? value : {}; }
+  catch (_) { return {}; }
+}
+function renderMovieContinueWatching(item) {
+  const button = document.getElementById("movieContinueWatching");
+  if (!button) return;
+  const record = item && getMovieContinueRecords()[String(item.id)];
+  const progress = item && getContinueProgress("movie", item.id);
+  if (!record || !progress || isPlaybackCompleted("movie", item.id) || !isContinuePageVisible("movie", item)) {
+    hideContinueAction(button);
+    return;
+  }
+  const displayedResumeTime = continuePageState && continuePageState.key === `movie:${item.id}` &&
+    Number(continuePageState.resumeTime) > 0 ? continuePageState.resumeTime : Number(progress.currentTime);
+  button.innerHTML = `<span class="tv-continue-icon"><i class="fa-solid fa-play" aria-hidden="true"></i></span><span class="tv-continue-copy"><span class="tv-continue-label">CONTINUE</span><span class="tv-continue-meta">${formatContinueTime(displayedResumeTime)}</span></span>`;
+  showContinueAction(button);
+  button.onclick = () => continueWatchingMovie(item);
+}
+
+function continueWatchingMovie(item) {
+  if (!item || !item.id) return;
+  const record = getMovieContinueRecords()[String(item.id)];
+  const progress = getContinueProgress("movie", item.id);
+  const pageSnapshot = continuePageState && continuePageState.key === `movie:${item.id}`
+    ? Number(continuePageState.resumeTime) : 0;
+  const resumeTime = pageSnapshot > 0 ? pageSnapshot : Number(progress && progress.currentTime);
+  if (!record || !Number.isFinite(resumeTime) || resumeTime <= 0) return;
+
+  currentServer = normalizeServerId(record.server);
+  hideContinueForCurrentPage("movie", item);
+  hideContinueAction(document.getElementById("movieContinueWatching"));
+  loadMovieIframe(item.id, resumeTime);
+  scrollPlayerPageToTop();
+}
+function setupMovieContinueTracking() {
+  // Movie Continue behavior remains unchanged; it is driven by verified playback progress.
+}
+
+
+/* ==========================================================================
+   TV CONTINUE WATCHING
+   Stores the last episode and verified playback position for resume.
+   ========================================================================== */
+function getTvContinueRecords() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(TV_CONTINUE_STORAGE_KEY) || "{}");
+    return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function getTvContinueRecord(itemOrId) {
+  const id = String(typeof itemOrId === "object" ? itemOrId && itemOrId.id : itemOrId || "");
+  return id ? getTvContinueRecords()[id] || null : null;
+}
+
+function saveTvContinueRecord(record) {
+  if (!record || !record.id) return;
+  try {
+    const records = getTvContinueRecords();
+    records[String(record.id)] = {
+      id: Number(record.id),
+      title: String(record.title || "Untitled"),
+      poster: String(record.poster || ""),
+      season: Math.max(0, Number(record.season) || 0),
+      episode: Math.max(1, Number(record.episode) || 1),
+      server: String(record.server || "vidzee"),
+      updatedAt: Date.now()
+    };
+    localStorage.setItem(TV_CONTINUE_STORAGE_KEY, JSON.stringify(records));
+  } catch (error) {
+    console.warn("PopcornHUB: unable to save Continue Watching state.", error);
+  }
+}
+
+function renderTvContinueWatching(item) {
+  const button = document.getElementById("tvContinueWatching");
+  if (!button) return;
+  const record = getTvContinueRecord(item);
+  const progress = record && getContinueProgress("tv", item.id, record.season, record.episode);
+  if (!record || !progress || !Number.isFinite(Number(record.season)) || !Number.isFinite(Number(record.episode))) {
+    hideContinueAction(button);
+    return;
+  }
+
+  button.innerHTML = `
+    <span class="tv-continue-icon"><i class="fa-solid fa-play" aria-hidden="true"></i></span>
+    <span class="tv-continue-copy">
+      <span class="tv-continue-label">CONTINUE</span>
+      <span class="tv-continue-meta">S${record.season} · E${record.episode}</span>
+    </span>
+  `;
+  const savedEpisodeIsSelected = Number(record.season) === Number(currentSeason) && Number(record.episode) === Number(currentEpisode);
+  const savedEpisodeCompleted = isPlaybackCompleted("tv", item.id, record.season, record.episode);
+  if (!isContinuePageVisible("tv", item) || savedEpisodeIsSelected || savedEpisodeCompleted) {
+    hideContinueAction(button);
+    return;
+  }
+  showContinueAction(button);
+  button.onclick = () => continueWatchingTv(item);
+}
+
+async function continueWatchingTv(item) {
+  const record = getTvContinueRecord(item);
+  if (!item || !record) return;
+
+  const season = activeTvSeasons.find(s => Number(s.season_number) === Number(record.season));
+  if (!season) return;
+
+  currentSeason = Number(season.season_number);
+  currentEpisode = Math.max(1, Number(record.episode) || 1);
+  renderTvContinueWatching(item);
+  currentServer = normalizeServerId(record.server);
+
+  const context = document.getElementById("tvPlayerContextDetail");
+  if (context) context.innerText = `Season ${currentSeason} Episode ${currentEpisode}`;
+
+  document.querySelectorAll("#seasonTabs button").forEach(button => {
+    const isActive = Number(button.dataset.seasonNumber) === currentSeason;
+    button.className = `px-4 py-2 rounded-lg font-bold text-xs transition ${isActive ? 'bg-brand text-black' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`;
+  });
+
+  renderServers("tvServerList", server => {
+    currentServer = server;
+    loadTvIframe(item.id);
+  });
+  await renderTvEpisodes(item.id, season.episode_count);
+  loadTvIframe(item.id);
+  scrollPlayerPageToTop();
+}
+
+/* ==========================================================================
    PLAYERS & SERVER SELECTION
    ========================================================================== */
 function launchPlayer(item) {
@@ -2534,6 +3181,11 @@ function setupMoviePlayer(item, isBackEvent = false) {
   }
 
   document.getElementById("moviePlayerTitle").innerText = item.title;
+  beginContinuePage("movie", item);
+  resetContinuePlaybackSession("movie", item.id, 1, 1);
+  renderMovieContinueWatching(item);
+  setupMovieContinueTracking();
+  setupContinueProgressTracking("movie");
   
   const movieContextTitle = document.getElementById("moviePlayerContextTitle");
   if (movieContextTitle) {
@@ -2551,7 +3203,7 @@ function setupMoviePlayer(item, isBackEvent = false) {
   fetchRelated(item.type, item.id, "movieRelatedGrid");
 }
 
-function loadMovieIframe(id) {
+function loadMovieIframe(id, resumeAt = 0) {
   const safeId = Number.parseInt(id, 10);
   const iframe = document.getElementById("movieIframe");
   if (!iframe) return;
@@ -2568,8 +3220,6 @@ function loadMovieIframe(id) {
     url = `https://vidlink.pro/movie/${id}`;
   } else if (currentServer === "vidsrc") {
     url = `https://vidsrc.sh/embed/movie/${id}`;
-  } else if (currentServer === "videasy") {
-    url = `https://player.videasy.to/movie/${id}`;
   } else if (currentServer === "vidzee") {
     url = `https://player.vidzee.wtf/embed/movie/${id}`;
   }
@@ -2579,7 +3229,15 @@ function loadMovieIframe(id) {
     console.warn("PopcornHUB: no valid movie provider selected.");
     return;
   }
-  iframe.src = url;
+  resetContinuePlaybackSession("movie", id, 1, 1);
+  const resumeSeconds = Number(resumeAt);
+  if (Number.isFinite(resumeSeconds) && resumeSeconds > 0) {
+    const resumeUrl = new URL(url);
+    resumeUrl.searchParams.set("startAt", String(Math.floor(resumeSeconds)));
+    iframe.src = resumeUrl.toString();
+  } else {
+    iframe.src = url;
+  }
 }
 
 async function setupTvPlayer(item, isBackEvent = false) {
@@ -2592,8 +3250,16 @@ async function setupTvPlayer(item, isBackEvent = false) {
 
   document.getElementById("tvPlayerTitle").innerText = item.title;
 
+  activeTvSeasons = [];
   currentSeason = 1;
   currentEpisode = 1;
+  tvIgnoreEndedUntilFreshStart = false;
+  tvEndedSessionKey = null;
+  tvLastEndedPlaybackTime = 0;
+  beginContinuePage("tv", item);
+  resetContinuePlaybackSession("tv", item.id, currentSeason, currentEpisode);
+  renderTvContinueWatching(item);
+  setupContinueProgressTracking("tv");
 
   const tvContextDetail = document.getElementById("tvPlayerContextDetail");
   if (tvContextDetail) {
@@ -2616,6 +3282,7 @@ async function setupTvPlayer(item, isBackEvent = false) {
 
   const tvData = await fetchTMDB(`tv/${item.id}`);
   const seasons = (tvData && tvData.seasons) ? tvData.seasons.filter(s => s.season_number > 0) : [];
+  activeTvSeasons = seasons;
 
   seasonTabs.innerHTML = "";
   if (seasonsHeading) seasonsHeading.textContent = `Seasons · ${seasons.length}`;
@@ -2628,18 +3295,19 @@ async function setupTvPlayer(item, isBackEvent = false) {
     const btn = document.createElement("button");
     btn.className = `px-4 py-2 rounded-lg font-bold text-xs transition ${s.season_number === currentSeason ? 'bg-brand text-black' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`;
     btn.innerText = `Season ${s.season_number}`;
+    btn.dataset.seasonNumber = String(s.season_number);
     btn.onclick = () => {
       currentSeason = s.season_number;
       currentEpisode = 1;
+      renderTvContinueWatching(item);
 
-      if (tvContextDetail) {
-        tvContextDetail.innerText = `Season ${currentSeason} Episode ${currentEpisode}`;
-      }
+      updateTvPlayerEpisodeHeading();
       
       document.querySelectorAll("#seasonTabs button").forEach(b => {
         b.className = "px-4 py-2 rounded-lg font-bold text-xs transition bg-zinc-800 text-zinc-300 hover:bg-zinc-700";
       });
-      btn.className = "px-4 py-2 rounded-lg font-bold text-xs transition bg-brand text-black";
+      syncTvActiveSelection();
+      updateTvCompletionVisuals();
 
       renderTvEpisodes(item.id, s.episode_count);
       loadTvIframe(item.id);
@@ -2648,6 +3316,7 @@ async function setupTvPlayer(item, isBackEvent = false) {
   });
 
   renderTvEpisodes(item.id, seasons[0].episode_count);
+  updateTvCompletionVisuals();
   loadTvIframe(item.id);
   fetchRelated(item.type, item.id, "tvRelatedGrid");
 }
@@ -2662,9 +3331,14 @@ async function renderTvEpisodes(tvId, episodeCount) {
   const requestedTvId = String(tvId);
   const seasonData = await fetchTMDB(`tv/${tvId}/season/${requestedSeason}`);
   // Ignore stale responses if another show/season was selected while loading.
-  if (requestedSeason !== currentSeason || requestedTvId !== String(activeItem && activeItem.id)) return;
+  if (requestedSeason !== currentSeason || requestedTvId !== String(activePlayerItem && activePlayerItem.id)) return;
   const episodes = seasonData && Array.isArray(seasonData.episodes) ? seasonData.episodes : [];
-  const count = episodeCount || episodes.length || 10;
+  const seasonInfo = activeTvSeasons.find(season => Number(season.season_number) === Number(requestedSeason));
+  if (seasonInfo && episodes.length) {
+    seasonInfo.knownEpisodeCount = episodes.length;
+    seasonInfo.knownEpisodeNumbers = episodes.map(ep => Number(ep.episode_number)).filter(n => Number.isInteger(n) && n > 0);
+  }
+  const count = episodes.length || episodeCount || 10;
   if (episodesHeading) episodesHeading.textContent = `Episodes · ${episodes.length || count}`;
   epGrid.innerHTML = "";
   for (let e = 1; e <= count; e++) {
@@ -2676,16 +3350,16 @@ async function renderTvEpisodes(tvId, episodeCount) {
       : "Runtime unavailable";
     const epBtn = document.createElement("button");
     epBtn.className = `p-3 rounded-xl text-left flex items-center gap-3 transition border ${e === currentEpisode ? 'bg-zinc-800 border-brand' : 'bg-zinc-900 border-zinc-800 hover:border-brand/50'}`;
+    epBtn.dataset.episodeNumber = String(e);
+    epBtn.dataset.seasonNumber = String(requestedSeason);
+    if (isPlaybackCompleted("tv", tvId, requestedSeason, e)) epBtn.classList.add("tv-completed-dim");
     epBtn.onclick = () => {
       currentEpisode = e;
+      renderTvContinueWatching(activePlayerItem);
       const tvContextDetail = document.getElementById("tvPlayerContextDetail");
-      if (tvContextDetail) {
-        tvContextDetail.innerText = `Season ${currentSeason} Episode ${currentEpisode}`;
-      }
-      document.querySelectorAll("#episodesGrid button").forEach(b => {
-        b.className = "bg-zinc-900 border border-zinc-800 hover:border-brand/50 p-3 rounded-xl text-left flex items-center gap-3 transition";
-      });
-      epBtn.className = "bg-zinc-800 border border-brand p-3 rounded-xl text-left flex items-center gap-3 transition";
+      updateTvPlayerEpisodeHeading();
+      syncTvActiveSelection();
+      updateTvCompletionVisuals();
       loadTvIframe(tvId);
     };
 
@@ -2698,9 +3372,18 @@ async function renderTvEpisodes(tvId, episodeCount) {
     `;
     epGrid.appendChild(epBtn);
   }
+  const selectedEpisodeInfo = episodes.find(ep => Number(ep.episode_number) === Number(currentEpisode));
+  updateTvPlayerEpisodeHeading(selectedEpisodeInfo && selectedEpisodeInfo.name ? selectedEpisodeInfo.name : "");
+  syncTvActiveSelection();
+  updateTvCompletionVisuals();
 }
 
-function loadTvIframe(id) {
+function loadTvIframe(id, options = {}) {
+  if (!options.autoAdvance) {
+    tvIgnoreEndedUntilFreshStart = false;
+    tvEndedSessionKey = null;
+    tvLastEndedPlaybackTime = 0;
+  }
   const safeId = Number.parseInt(id, 10);
   const iframe = document.getElementById("tvIframe");
   if (!iframe) return;
@@ -2717,8 +3400,6 @@ function loadTvIframe(id) {
     url = `https://vidlink.pro/tv/${id}/${currentSeason}/${currentEpisode}`;
   } else if (currentServer === "vidsrc") {
     url = `https://vidsrc.sh/embed/tv/${id}/${currentSeason}/${currentEpisode}`;
-  } else if (currentServer === "videasy") {
-    url = `https://player.videasy.to/tv/${id}/${currentSeason}/${currentEpisode}`;
   } else if (currentServer === "vidzee") {
     url = `https://player.vidzee.wtf/embed/tv/${id}/${currentSeason}/${currentEpisode}`;
   }
@@ -2727,6 +3408,10 @@ function loadTvIframe(id) {
     console.warn("PopcornHUB: no valid TV provider selected.");
     return;
   }
+  const item = activePlayerItem && String(activePlayerItem.id) === String(id) ? activePlayerItem : null;
+  pendingTvContinueSave = null;
+  skipNextTvContinueSave = false;
+  resetContinuePlaybackSession("tv", id, currentSeason, currentEpisode);
   iframe.src = url;
 }
 
@@ -2738,8 +3423,7 @@ function renderServers(containerId, onClick) {
   { id: "vidcore", name: "KERNEL" },
   { id: "vidlink", name: "BUTTER" },
   { id: "vidsrc", name: "CARAMEL" },
-  { id: "videasy", name: "CHEESE" },
-  { id: "vidzee", name: "PREMIUM" }
+  { id: "vidzee", name: "CHEESE" }
   ];
 
   container.innerHTML = "";
