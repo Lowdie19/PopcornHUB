@@ -1458,3 +1458,16 @@ body::after {
     transform: translateY(calc(-50% + 1px)) scale(.99);
   }
 }
+
+
+/* Official AdBlock entry: understated until hover/focus. */
+.desktop-add-blocker-btn, #drawer-nav-add-blocker { opacity: .48; }
+.desktop-add-blocker-btn:hover, .desktop-add-blocker-btn:focus-visible, #drawer-nav-add-blocker:hover, #drawer-nav-add-blocker:focus-visible { opacity: 1; color: #fff; background-color: rgba(39,39,42,.72); }
+.desktop-add-blocker-btn:focus-visible, #drawer-nav-add-blocker:focus-visible { outline: 2px solid #b5f818; outline-offset: 2px; }
+@media (min-width: 1024px) and (max-width: 1279px) {
+  /* Keep the same simple plus-and-label button, centered in compact desktop top bars. */
+  .desktop-add-blocker-btn { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: auto; min-width: max-content; height: 38px; padding: 0 12px; border-radius: 8px; }
+  .desktop-add-blocker-btn > span { display: inline; }
+  .desktop-add-blocker-btn > i { position: static; font-size: 14px !important; width: auto; height: auto; display: inline-block; }
+}
+@media (max-width: 1023px) { .desktop-add-blocker-btn { display: none !important; } }
