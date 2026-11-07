@@ -1,5 +1,5 @@
 /* PopcornHUB service worker — resilient, same-origin app caching. */
-const CACHE_NAME = "PopcornHUB-v58-tv-style-movie-title-pane-46";
+const CACHE_NAME = "PopcornHUB-v62-v50-mobile-continue-title-position";
 const APP_SHELL = [
   "./",
   "./index.html",

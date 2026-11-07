@@ -1293,3 +1293,168 @@ body::after {
 /* V46: Movies use the same frozen title pane layout as TV Series.
    Keep the shared flex row and responsive Continue card sizing so the
    title remains naturally positioned beside the shortcut on small screens. */
+
+/* V47: on compact screens, float the existing Continue card above the
+   bottom navigation without changing its visual design or affecting title width.
+   Disable the sticky pane's backdrop filter here so fixed positioning is
+   viewport-relative rather than trapped inside the sticky stacking context. */
+@media (max-width: 767px) {
+  #moviePlayerView .player-sticky-info,
+  #tvPlayerView .player-sticky-info {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  #moviePlayerView #movieContinueWatching,
+  #tvPlayerView #tvContinueWatching {
+    position: fixed !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    z-index: 59 !important;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100vw - 28px);
+    margin: 0 !important;
+  }
+
+  #moviePlayerView #movieContinueWatching:active,
+  #tvPlayerView #tvContinueWatching:active {
+    transform: translateX(-50%) translateY(1px) scale(.99);
+  }
+
+  /* Keep See more details as a simple text action, not a pill/button. */
+  #moviePlayerView .player-sticky-info .player-mobile-back,
+  #tvPlayerView .player-sticky-info .player-mobile-back {
+    display: inline-flex !important;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    width: auto;
+    min-height: 0;
+    padding: 0 !important;
+    margin: 8px 0 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #a1a1aa;
+    font-size: .82rem;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  #moviePlayerView .player-mobile-back-dots,
+  #tvPlayerView .player-mobile-back-dots { display: none !important; }
+}
+
+
+/* V48: restore the same frosted frozen-pane treatment on mobile and desktop.
+   The mobile floating Continue shortcut no longer participates in title sizing. */
+@media (max-width: 767px) {
+  #moviePlayerView .player-sticky-info,
+  #tvPlayerView .player-sticky-info {
+    background: rgba(11, 11, 14, 0.5) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    backdrop-filter: blur(16px) !important;
+  }
+
+  /* Keep the original card design, but use a fully opaque surface while
+     floating above the bottom navigation. */
+  #moviePlayerView #movieContinueWatching,
+  #tvPlayerView #tvContinueWatching {
+    background: #18181b !important;
+    border-color: rgba(231,179,78,.65) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,.42) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+/* V48: See more details is the single return control on player pages.
+   Remove the separate Back control to avoid duplicate navigation actions. */
+#moviePlayerView .player-main-row > .player-back-row,
+#tvPlayerView .player-main-row > .player-back-row {
+  display: none !important;
+}
+#moviePlayerView .player-mobile-back,
+#tvPlayerView .player-mobile-back {
+  display: inline-flex !important;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: auto;
+  min-height: 0;
+  padding: 0 !important;
+  margin: 8px 0 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #a1a1aa;
+  font-size: .82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0;
+  text-transform: none;
+}
+#moviePlayerView .player-mobile-back:hover,
+#moviePlayerView .player-mobile-back:focus-visible,
+#tvPlayerView .player-mobile-back:hover,
+#tvPlayerView .player-mobile-back:focus-visible {
+  color: var(--brand, #b5f818);
+}
+#moviePlayerView .player-mobile-back-dots,
+#tvPlayerView .player-mobile-back-dots { display: none !important; }
+
+/* V49: center the Continue card vertically within the desktop frozen pane.
+   On compact screens, keep the floating card above (not underneath) bottom nav. */
+@media (min-width: 768px) {
+  #moviePlayerView .tv-player-sticky-info,
+  #tvPlayerView .tv-player-sticky-info {
+    align-items: center !important;
+  }
+  #moviePlayerView .tv-player-sticky-copy,
+  #moviePlayerView #movieContinueWatching {
+    align-self: center !important;
+  }
+}
+@media (max-width: 767px) {
+  /* V50: place Continue beside the title on mobile, matching the user's
+     marked position. Keep it inside the frozen pane; do not float above nav. */
+  #moviePlayerView .tv-player-sticky-info,
+  #tvPlayerView .tv-player-sticky-info {
+    position: sticky;
+    position: -webkit-sticky;
+    align-items: center !important;
+  }
+
+  #moviePlayerView .tv-player-sticky-copy,
+  #tvPlayerView .tv-player-sticky-copy {
+    box-sizing: border-box;
+    width: 100%;
+    padding-right: 132px;
+  }
+
+  #moviePlayerView #movieContinueWatching,
+  #tvPlayerView #tvContinueWatching {
+    position: absolute !important;
+    left: auto !important;
+    right: 10px !important;
+    top: 50% !important;
+    bottom: auto !important;
+    z-index: 61 !important;
+    transform: translateY(-50%);
+    width: max-content;
+    min-width: 112px;
+    max-width: 124px;
+    margin: 0 !important;
+  }
+
+  #moviePlayerView #movieContinueWatching:active,
+  #tvPlayerView #tvContinueWatching:active {
+    transform: translateY(calc(-50% + 1px)) scale(.99);
+  }
+}
