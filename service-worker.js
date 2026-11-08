@@ -1,5 +1,5 @@
 /* PopcornHUB service worker — resilient, same-origin app caching. */
-const CACHE_NAME = "PopcornHUB-v78-v56-firefox-icon-title-installed-state";
+const CACHE_NAME = "PopcornHUB-v79-v56-firefox-favicon-fix";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -7,6 +7,8 @@ const APP_SHELL = [
   "./app.js",
   "./manifest.json",
   "./icon.png",
+  "./favicon.ico",
+  "./favicon-48.png",
   "./icon-192.png",
   "./icon-512.png"
 ];
