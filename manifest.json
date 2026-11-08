@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "PopcornHUB",
-  "short_name": "PopcornHUB",
+  "name": "Popcorn HUB",
+  "short_name": "Popcorn HUB",
   "description": "Discover movies and TV series on PopcornHUB.",
   "start_url": "/",
   "scope": "/",

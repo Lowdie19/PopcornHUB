@@ -283,7 +283,8 @@ function updateInstallButtonState() {
     btnText.innerText = "Installed";
     btn.disabled = false;
     btn.title = "View browser options";
-    btn.classList.remove("opacity-40", "cursor-not-allowed", "pointer-events-none");
+    btn.classList.add("opacity-40");
+    btn.classList.remove("cursor-not-allowed", "pointer-events-none");
     btn.classList.add("hover:text-secondary", "hover:bg-zinc-900");
   } else {
     btnText.innerText = "Install App";

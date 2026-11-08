@@ -1,5 +1,5 @@
 /* PopcornHUB service worker — resilient, same-origin app caching. */
-const CACHE_NAME = "PopcornHUB-v77-v56-firefox-pwa-manifest-fix";
+const CACHE_NAME = "PopcornHUB-v78-v56-firefox-icon-title-installed-state";
 const APP_SHELL = [
   "./",
   "./index.html",
