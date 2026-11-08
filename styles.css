@@ -1461,8 +1461,11 @@ body::after {
 
 
 /* Official AdBlock entry: understated until hover/focus. */
-.desktop-add-blocker-btn, #drawer-nav-add-blocker { opacity: .48; }
+.desktop-add-blocker-btn { opacity: .48; }
+#drawer-nav-add-blocker { opacity: 1; color: #a1a1aa; }
+#drawer-nav-add-blocker.is-active { color: #e7b34e; }
 .desktop-add-blocker-btn:hover, .desktop-add-blocker-btn:focus-visible, #drawer-nav-add-blocker:hover, #drawer-nav-add-blocker:focus-visible { opacity: 1; color: #fff; background-color: rgba(39,39,42,.72); }
+#drawer-nav-add-blocker.is-active:hover, #drawer-nav-add-blocker.is-active:focus-visible { color: #e7b34e; }
 .desktop-add-blocker-btn:focus-visible, #drawer-nav-add-blocker:focus-visible { outline: 2px solid #b5f818; outline-offset: 2px; }
 @media (min-width: 1024px) and (max-width: 1279px) {
   /* Keep the same simple plus-and-label button, centered in compact desktop top bars. */
@@ -1471,3 +1474,170 @@ body::after {
   .desktop-add-blocker-btn > i { position: static; font-size: 14px !important; width: auto; height: auto; display: inline-block; }
 }
 @media (max-width: 1023px) { .desktop-add-blocker-btn { display: none !important; } }
+
+/* V56 Smart Install Selector: isolated modal styles; existing app layout is unchanged. */
+body.smart-install-open { overflow: hidden; }
+.smart-install-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(0.75rem, env(safe-area-inset-top)) 0.75rem max(0.75rem, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+}
+.smart-install-modal.hidden { display: none !important; }
+.smart-install-card {
+  position: relative;
+  width: min(100%, 440px);
+  max-height: min(90vh, 760px);
+  max-height: min(90dvh, 760px);
+  overflow-y: auto;
+  padding: 1.5rem;
+  border: 1px solid rgba(63, 63, 70, 0.9);
+  border-radius: 1.25rem;
+  background: #18181b;
+  color: #f4f4f5;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  text-align: left;
+}
+.smart-install-close {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.9rem;
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 999px;
+  color: #a1a1aa;
+  background: #27272a;
+}
+.smart-install-close:hover { color: #fff; background: #3f3f46; }
+.smart-install-icon {
+  display: grid;
+  width: 2.8rem;
+  height: 2.8rem;
+  margin-bottom: 0.9rem;
+  place-items: center;
+  border-radius: 0.9rem;
+  color: #b5f818;
+  background: rgba(181, 248, 24, 0.12);
+  font-size: 1.15rem;
+}
+.smart-install-card h2 { margin: 0 2rem 0.45rem 0; font-size: 1.25rem; font-weight: 900; letter-spacing: -0.02em; }
+.smart-install-card > p { margin: 0; color: #a1a1aa; font-size: 0.84rem; line-height: 1.55; }
+.smart-install-options { display: grid; gap: 0.65rem; margin-top: 1.25rem; }
+.smart-install-option {
+  display: flex;
+  width: 100%;
+  min-height: 4.25rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #3f3f46;
+  border-radius: 0.9rem;
+  background: #202024;
+  color: #f4f4f5;
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.smart-install-option:hover, .smart-install-option:focus-visible { border-color: rgba(181, 248, 24, 0.65); background: #27272a; outline: none; }
+.smart-install-option-icon {
+  display: grid;
+  flex: 0 0 2.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: #303036;
+  color: #e4e4e7;
+  font-size: 1.25rem;
+}
+.smart-install-option-icon.firefox { color: #ff9b38; }
+.smart-install-option-icon.brave { color: #ff6847; }
+.smart-install-option-icon.chrome { color: #8ab4f8; }
+.smart-install-option-icon.edge { color: #62a4f7; }
+.smart-install-option-copy { display: grid; min-width: 0; flex: 1; gap: 0.15rem; }
+.smart-install-option-copy strong { font-size: 0.88rem; font-weight: 800; }
+.smart-install-option-copy small { color: #a1a1aa; font-size: 0.7rem; line-height: 1.35; }
+.smart-install-option-tag { padding: 0.2rem 0.4rem; border-radius: 999px; color: #b5f818; background: rgba(181, 248, 24, 0.1); font-size: 0.58rem; font-weight: 800; white-space: nowrap; }
+.smart-install-chevron { color: #71717a; font-size: 0.7rem; }
+.smart-install-details { margin-top: 1.15rem; }
+.smart-install-details.hidden, .smart-install-desktop-help.hidden { display: none !important; }
+.smart-install-detail-heading { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.9rem; }
+.smart-install-detail-heading h3 { margin: 0; font-size: 1rem; font-weight: 850; }
+.smart-install-detail-heading p { margin: 0.15rem 0 0; color: #a1a1aa; font-size: 0.72rem; }
+.smart-install-detail-message { margin: 0 0 0.9rem; padding: 0.75rem 0.85rem; border: 1px solid rgba(181, 248, 24, 0.18); border-radius: 0.8rem; background: rgba(181, 248, 24, 0.06); color: #e4e4e7; font-size: 0.84rem; line-height: 1.55; }
+.smart-install-steps { display: grid; gap: 0.6rem; margin: 0; padding-left: 1.65rem; color: #e4e4e7; font-size: 0.84rem; line-height: 1.55; counter-reset: install-step; }
+.smart-install-steps li { padding: 0.58rem 0.65rem; border: 1px solid #35353b; border-radius: 0.7rem; background: #202024; }
+.smart-install-steps li::marker { color: #b5f818; font-weight: 900; }
+.smart-install-detail-actions { margin-top: 1.1rem; }
+.smart-install-primary, .smart-install-secondary, .smart-install-addon { min-height: 3rem; font-size: 0.82rem; }
+.smart-install-detail-actions { display: grid; gap: 0.55rem; margin-top: 1rem; }
+.smart-install-primary, .smart-install-secondary, .smart-install-addon {
+  display: flex;
+  min-height: 2.7rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+}
+.smart-install-primary { border: 1px solid #b5f818; background: #b5f818; color: #09090b; }
+.smart-install-secondary { border: 1px solid #52525b; background: #27272a; color: #f4f4f5; }
+.smart-install-addon { border: 1px solid rgba(181, 248, 24, 0.35); background: rgba(181, 248, 24, 0.08); color: #d9f99d; }
+.smart-install-primary:hover { filter: brightness(0.96); }
+.smart-install-secondary:hover, .smart-install-addon:hover { background: #3f3f46; }
+.smart-install-back, .smart-install-cancel { display: block; width: 100%; margin-top: 0.85rem; padding: 0.55rem; color: #a1a1aa; font-size: 0.75rem; font-weight: 700; }
+.smart-install-back:hover, .smart-install-cancel:hover { color: #fff; }
+.smart-install-desktop-help { margin-top: 1rem; padding: 0.9rem; border: 1px solid #3f3f46; border-radius: 0.8rem; background: #202024; color: #d4d4d8; font-size: 0.8rem; line-height: 1.55; }
+.smart-install-desktop-help p { margin: 0; }
+.smart-install-desktop-help strong { color: #b5f818; }
+@media (max-width: 600px) {
+  .smart-install-modal { align-items: center; }
+  .smart-install-card { width: 100%; max-width: 460px; max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1.5rem); margin: 0 auto; padding: 1.15rem; border-radius: 1rem; }
+  .smart-install-card h2 { font-size: 1.15rem; }
+  .smart-install-card > p { font-size: 0.82rem; }
+  .smart-install-option { min-height: 4.15rem; gap: 0.55rem; padding: 0.7rem; }
+  .smart-install-option-tag { font-size: 0.54rem; }
+  .smart-install-detail-heading { gap: 0.6rem; }
+  .smart-install-detail-message { font-size: 0.83rem; }
+  .smart-install-steps { gap: 0.5rem; font-size: 0.82rem; }
+}
+@media (max-height: 620px) and (max-width: 600px) {
+  .smart-install-modal { align-items: center; }
+  .smart-install-card { max-height: calc(100dvh - 1rem); }
+  .smart-install-icon { width: 2.35rem; height: 2.35rem; margin-bottom: 0.55rem; }
+  .smart-install-options { margin-top: 0.8rem; gap: 0.45rem; }
+}
+
+
+
+/* V56 mobile install selector: center the introductory header for a cleaner layout. */
+@media (max-width: 600px) {
+  .smart-install-card > .smart-install-icon {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .smart-install-card > h2 {
+    margin-left: 2.25rem;
+    margin-right: 2.25rem;
+    text-align: center;
+  }
+  .smart-install-card > p {
+    text-align: center;
+    max-width: 30rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

@@ -1,5 +1,5 @@
 /* PopcornHUB service worker — resilient, same-origin app caching. */
-const CACHE_NAME = "PopcornHUB-v62-v50-mobile-continue-title-position-v53-v55-simple-adblock-button";
+const CACHE_NAME = "PopcornHUB-v76-v56-ublock-modal-cleanup";
 const APP_SHELL = [
   "./",
   "./index.html",

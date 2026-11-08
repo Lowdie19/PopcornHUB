@@ -36,7 +36,7 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=53" />
+  <link rel="stylesheet" href="styles.css?v=56" />
 </head>
 <body class="bg-[#0b0b0e] text-zinc-100 font-sans antialiased min-h-screen flex flex-col selection:bg-brand selection:text-black pb-20 md:pb-0">
 
@@ -82,7 +82,7 @@
         </div>
       </div>
 
-      <a id="desktopAddBlockerBtn" href="https://getadblock.com/en/" target="_blank" rel="noopener noreferrer" class="desktop-add-blocker-btn hidden lg:inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-zinc-300 transition text-xs font-semibold whitespace-nowrap" aria-label="Install AdBlock" title="Install AdBlock"><i class="fa-solid fa-plus text-sm" aria-hidden="true"></i><span>Ad blocker</span></a>
+      <button id="desktopAddBlockerBtn" type="button" onclick="openAdBlockerGuide()" class="desktop-add-blocker-btn hidden lg:inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-zinc-300 transition text-xs font-semibold whitespace-nowrap border-0 bg-transparent cursor-pointer" aria-label="Ad blocker options" title="Ad blocker options"><i class="fa-solid fa-plus text-sm" aria-hidden="true"></i><span>Ad blocker</span></button>
       <div id="desktopNavLinks" class="desktop-nav-links hidden lg:flex items-center justify-end gap-4 xl:gap-6 text-xs xl:text-sm font-semibold text-zinc-400 ml-auto whitespace-nowrap flex-shrink-0" aria-label="Main navigation">
         <button onclick="switchPage('home')" id="nav-home" class="nav-btn text-brand transition" aria-label="Home" title="Home"><i class="fa-solid fa-house text-xs mr-1" aria-hidden="true"></i><span class="nav-label">Home</span></button>
         <button onclick="switchPage('movies')" id="nav-movies" class="nav-btn hover:text-brand transition" aria-label="Movies" title="Movies"><i class="fa-solid fa-film text-xs mr-1" aria-hidden="true"></i><span class="nav-label">Movies</span></button>
@@ -511,15 +511,64 @@
 
     <div class="pt-6 border-t border-zinc-800/80 space-y-4">
       <button id="drawer-nav-install" onclick="handleInstallAppClick()" class="w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-zinc-300 hover:text-secondary hover:bg-zinc-900 font-semibold text-sm">
-        <i class="fa-solid fa-download text-base w-6 text-center"></i> <span id="installBtnText">Install App</span>
+        <i class="fa-solid fa-download text-base w-6 text-center"></i> <span id="installBtnText">Install / Browser Options</span>
       </button>
-      <a id="drawer-nav-add-blocker" href="https://getadblock.com/en/" target="_blank" rel="noopener noreferrer" class="w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-zinc-300 font-semibold text-sm" aria-label="Install AdBlock" title="Install AdBlock"><i class="fa-solid fa-plus text-base w-6 text-center" aria-hidden="true"></i><span>Ad blocker</span></a>
+      <button id="drawer-nav-add-blocker" type="button" onclick="openAdBlockerGuide()" class="w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-zinc-300 font-semibold text-sm border-0 bg-transparent cursor-pointer" aria-label="Ad blocker options" title="Ad blocker options"><i class="fa-solid fa-plus text-base w-6 text-center" aria-hidden="true"></i><span>Ad blocker</span></button>
 
       <div class="text-[11px] text-zinc-500 font-medium leading-relaxed">
         PopcornHUB &copy; 2026. Free streaming platform.
       </div>
     </div>
   </aside>
+
+  <!-- Smart PWA install selector; preserves the existing native install prompt. -->
+  <div id="smartInstallModal" class="smart-install-modal hidden" role="dialog" aria-modal="true" aria-labelledby="smartInstallTitle" aria-describedby="smartInstallDescription" aria-hidden="true">
+    <div class="smart-install-card">
+      <button id="smartInstallClose" type="button" class="smart-install-close" aria-label="Close install options" title="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+      <div class="smart-install-icon" aria-hidden="true"><i class="fa-solid fa-download"></i></div>
+      <h2 id="smartInstallTitle">Install PopcornHUB</h2>
+      <p id="smartInstallDescription">Choose the browser you want to use. We’ll guide you through the next steps.</p>
+
+      <div id="smartInstallOptions" class="smart-install-options">
+        <button type="button" class="smart-install-option" data-install-browser="firefox">
+          <span class="smart-install-option-icon firefox"><i class="fa-brands fa-firefox-browser" aria-hidden="true"></i></span>
+          <span class="smart-install-option-copy"><strong>Firefox</strong><small>Android · Firefox required for uBlock Origin</small></span>
+          <span class="smart-install-option-tag">Recommended</span>
+          <i class="fa-solid fa-chevron-right smart-install-chevron" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="smart-install-option" data-install-browser="chrome">
+          <span class="smart-install-option-icon chrome"><i class="fa-brands fa-chrome" aria-hidden="true"></i></span>
+          <span class="smart-install-option-copy"><strong>Chrome</strong><small>Android · Standard Home Screen install</small></span>
+          <i class="fa-solid fa-chevron-right smart-install-chevron" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="smart-install-option" data-install-browser="edge">
+          <span class="smart-install-option-icon edge"><i class="fa-brands fa-edge" aria-hidden="true"></i></span>
+          <span class="smart-install-option-copy"><strong>Microsoft Edge</strong><small>Desktop · Browser installation</small></span>
+          <i class="fa-solid fa-chevron-right smart-install-chevron" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <div id="smartInstallDetails" class="smart-install-details hidden" aria-live="polite">
+        <div class="smart-install-detail-heading">
+          <span id="smartInstallDetailIcon" class="smart-install-option-icon"><i class="fa-solid fa-globe" aria-hidden="true"></i></span>
+          <div><h3 id="smartInstallDetailTitle">Install in your browser</h3><p id="smartInstallDetailSubtitle"></p></div>
+        </div>
+        <p id="smartInstallDetailMessage" class="smart-install-detail-message"></p>
+        <ol id="smartInstallSteps" class="smart-install-steps"></ol>
+        <div class="smart-install-detail-actions">
+          <button id="smartInstallNativePrompt" type="button" class="smart-install-primary hidden"><i class="fa-solid fa-download" aria-hidden="true"></i> Install in this browser</button>
+          <a id="smartInstallGetBrowser" class="smart-install-primary hidden" href="#" target="_blank" rel="noopener noreferrer">Get browser <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
+          <button id="smartInstallCopyLink" type="button" class="smart-install-secondary"><i class="fa-solid fa-copy" aria-hidden="true"></i> Copy website link</button>
+          <a id="smartInstallAddonLink" class="smart-install-addon hidden" href="https://addons.mozilla.org/android/addon/ublock-origin/" target="_blank" rel="noopener noreferrer">Get uBlock Origin <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
+        </div>
+        <button id="smartInstallBack" type="button" class="smart-install-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to browser choices</button>
+      </div>
+
+      <div id="smartInstallDesktopHelp" class="smart-install-desktop-help hidden">
+        <p>Use your browser's menu and choose <strong>Install PopcornHUB</strong> or <strong>Add to Home Screen</strong>. If your browser supports the native install prompt, the usual installation prompt will appear automatically.</p>
+      </div>
+    </div>
+  </div>
 
   <!-- Watchlist removal confirmation modal. -->
   <div id="watchlistRemoveModal" class="vivamax-age-gate hidden" role="dialog" aria-modal="true" aria-labelledby="watchlistRemoveTitle" aria-describedby="watchlistRemoveDescription" aria-hidden="true">
@@ -547,7 +596,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=50"></script>
+  <script src="app.js?v=53"></script>
 
     <!-- Persistent mini player: iframe is moved here (not cloned) to avoid restarting playback. -->
     <aside id="miniPlayer" class="mini-player hidden" aria-label="Mini player">

@@ -121,6 +121,7 @@ let displayedTvIds = new Set();
 // PWA INSTALL STATE
 let deferredPrompt = null;
 let isInstalled = false;
+let smartInstallMode = "install";
 
 // SPA HISTORY STATE LOCK
 let isNavigatingHistory = false;
@@ -245,6 +246,7 @@ function initBackToTopButton() {
    PWA SERVICE WORKER & INSTALLATION
    ========================================================================== */
 function initPWA() {
+  initSmartInstallSelector();
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('service-worker.js')
@@ -276,33 +278,423 @@ function updateInstallButtonState() {
   if (!btn || !btnText) return;
 
   if (isInstalled) {
+    // Keep this entry available so users who installed the PWA earlier can
+    // still view browser options and add a second shortcut in another browser.
     btnText.innerText = "Installed";
-    btn.disabled = true;
-    btn.classList.add("opacity-40", "cursor-not-allowed", "pointer-events-none");
-    btn.classList.remove("hover:text-secondary", "hover:bg-zinc-900");
+    btn.disabled = false;
+    btn.title = "View browser options";
+    btn.classList.remove("opacity-40", "cursor-not-allowed", "pointer-events-none");
+    btn.classList.add("hover:text-secondary", "hover:bg-zinc-900");
   } else {
     btnText.innerText = "Install App";
     btn.disabled = false;
+    btn.title = "Install PopcornHUB";
     btn.classList.remove("opacity-40", "cursor-not-allowed", "pointer-events-none");
     btn.classList.add("hover:text-secondary", "hover:bg-zinc-900");
   }
 }
 
 function handleInstallAppClick() {
-  if (isInstalled) return;
+  // Keep the native install prompt available, but let users see browser choices first.
+  // The prompt is offered from the selected current-browser detail screen.
+  openSmartInstallModal(getSmartInstallPlatform(), "install");
+}
 
-  if (deferredPrompt) {
+function getDesktopAdBlockerUrl() {
+  const ua = navigator.userAgent || "";
+
+  // Use the official extension listing that matches the current desktop browser.
+  // Chrome no longer offers the full MV2 uBlock Origin listing, so Chromium
+  // browsers use uBlock Origin Lite instead.
+  if (/Firefox\//i.test(ua)) {
+    return "https://addons.mozilla.org/firefox/addon/ublock-origin/";
+  }
+  if (/Edg\//i.test(ua)) {
+    return "https://microsoftedge.microsoft.com/addons/detail/cimighlppcgcoapaliogpjjdehbnofhn";
+  }
+  if (/OPR\//i.test(ua)) {
+    return "https://addons.opera.com/extensions/details/ublock/";
+  }
+  if (/Safari\//i.test(ua) && !/(Chrome|Chromium|CriOS|Edg|OPR|Brave)/i.test(ua)) {
+    return "https://apps.apple.com/app/ublock-origin-lite/id6745342698";
+  }
+  if (/(Chrome|Chromium|CriOS|Brave)/i.test(ua)) {
+    return "https://chromewebstore.google.com/detail/ublock-origin-lite/ddkjiahejlhfcafbddmgiahcphecmpfh";
+  }
+
+  // Unknown desktop browsers can choose the matching official store from the
+  // uBlock Origin Lite project's maintained browser links.
+  return "https://github.com/uBlockOrigin/uBOL-home#readme";
+}
+
+function openAdBlockerGuide() {
+  const platform = getSmartInstallPlatform();
+  if (platform === "desktop") {
+    const installUrl = getDesktopAdBlockerUrl();
+    // Open synchronously from the user's click so browser popup protection
+    // does not block the extension-store navigation.
+    window.open(installUrl, "_blank", "noopener,noreferrer");
+    return;
+  }
+  openSmartInstallModal(platform, "adblock");
+}
+
+function closeSmartInstallModal() {
+  const modal = document.getElementById("smartInstallModal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("smart-install-open");
+  document.getElementById("drawer-nav-add-blocker")?.classList.remove("is-active");
+}
+
+function getSmartInstallPlatform() {
+  const ua = navigator.userAgent || "";
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (isIOS) return "ios";
+  if (/Android/i.test(ua)) return "android";
+  return "desktop";
+}
+
+function openSmartInstallModal(platform, mode = "install") {
+  const modal = document.getElementById("smartInstallModal");
+  const options = document.getElementById("smartInstallOptions");
+  const details = document.getElementById("smartInstallDetails");
+  const desktopHelp = document.getElementById("smartInstallDesktopHelp");
+  const title = document.getElementById("smartInstallTitle");
+  const description = document.getElementById("smartInstallDescription");
+  const back = document.getElementById("smartInstallBack");
+  if (!modal || !options || !details || !desktopHelp || !back) return;
+
+  smartInstallMode = mode;
+  const drawerAdBlockerButton = document.getElementById("drawer-nav-add-blocker");
+  drawerAdBlockerButton?.classList.toggle("is-active", mode === "adblock");
+  options.classList.add("hidden");
+  details.classList.add("hidden");
+  desktopHelp.classList.add("hidden");
+  back.classList.add("hidden");
+
+  const browserButtons = options.querySelectorAll("[data-install-browser]");
+  browserButtons.forEach((button) => {
+    const browser = button.dataset.installBrowser;
+    let visible = true;
+    if (platform === "android") {
+      visible = mode === "adblock"
+        ? browser === "firefox"
+        : ["firefox", "chrome"].includes(browser);
+    } else if (platform === "ios") {
+      visible = browser === "safari";
+    } else if (mode === "adblock") {
+      visible = ["firefox", "chrome", "edge"].includes(browser);
+    } else {
+      visible = ["firefox", "chrome", "edge"].includes(browser);
+    }
+    button.classList.toggle("hidden", !visible);
+    const small = button.querySelector("small");
+    const strong = button.querySelector("strong");
+    if (strong && browser === "firefox") {
+      strong.textContent = platform === "android" ? "Firefox + Ads Free" : "Firefox";
+    }
+    if (small) {
+      const labels = {
+        firefox: platform === "android"
+          ? "Recommended · Install Firefox and uBlock Origin"
+          : "Desktop · uBlock Origin extension",
+        chrome: platform === "android"
+          ? "Install PopcornHUB directly in Chrome"
+          : "Desktop · Standard installation",
+        edge: "Desktop · Standard installation"
+      };
+      small.textContent = labels[browser] || small.textContent;
+    }
+  });
+
+  if (platform === "ios") {
+    title.textContent = mode === "adblock" ? "Ad blocker for iPhone / iPad" : (isInstalled ? "Use Safari for PopcornHUB" : "Install on iPhone or iPad");
+    description.textContent = mode === "adblock"
+      ? "Safari supports content-blocking extensions. Follow the steps to install and enable a compatible blocker."
+      : "Use Safari to add PopcornHUB to your Home Screen.";
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("smart-install-open");
+    showSmartInstallDetails("safari", true);
+  } else if (platform === "android" && mode === "adblock") {
+    title.textContent = "Get uBlock Origin";
+    description.textContent = "uBlock Origin works as an add-on in Firefox for Android. It does not install in Chrome.";
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("smart-install-open");
+    showSmartInstallDetails("firefox");
+  } else {
+    title.textContent = mode === "adblock"
+      ? "Choose an ad blocker"
+      : (isInstalled ? "Use PopcornHUB in another browser" : "Choose where to install PopcornHUB");
+    if (platform === "android") {
+      description.textContent = isInstalled
+        ? "Choose Firefox for uBlock Origin, or Chrome to add another PopcornHUB shortcut."
+        : "Choose Firefox for uBlock Origin, or install PopcornHUB directly in Chrome.";
+    } else {
+      description.textContent = mode === "adblock"
+        ? "Choose a browser to see its compatible ad-blocking option."
+        : (isInstalled
+          ? "PopcornHUB is already installed here. You can also add a separate shortcut in another browser."
+          : "Choose a browser. We’ll show the correct installation steps.");
+    }
+    options.classList.remove("hidden");
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("smart-install-open");
+  }
+
+  const closeButton = document.getElementById("smartInstallClose");
+  if (closeButton) closeButton.focus();
+}
+
+function getSmartInstallCurrentBrowser() {
+  const ua = navigator.userAgent || "";
+  if (/FxiOS|Firefox/i.test(ua)) return "firefox";
+  if (/EdgA|EdgiOS|Edg\//i.test(ua)) return "edge";
+  if (/CriOS|Chrome/i.test(ua) && !/OPR|SamsungBrowser/i.test(ua)) return "chrome";
+  if (/Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|Edg|OPR/i.test(ua)) return "safari";
+  return "other";
+}
+
+async function isSmartInstallBrowserCurrent(browser) {
+  if (browser === "brave") {
+    try {
+      return Boolean(navigator.brave && await navigator.brave.isBrave());
+    } catch (_) {
+      return false;
+    }
+  }
+  return getSmartInstallCurrentBrowser() === browser;
+}
+
+async function showSmartInstallDetails(browser, isIOS = false) {
+  const options = document.getElementById("smartInstallOptions");
+  const details = document.getElementById("smartInstallDetails");
+  const title = document.getElementById("smartInstallDetailTitle");
+  const subtitle = document.getElementById("smartInstallDetailSubtitle");
+  const message = document.getElementById("smartInstallDetailMessage");
+  const steps = document.getElementById("smartInstallSteps");
+  const icon = document.getElementById("smartInstallDetailIcon");
+  const getBrowser = document.getElementById("smartInstallGetBrowser");
+  const addon = document.getElementById("smartInstallAddonLink");
+  const nativePromptButton = document.getElementById("smartInstallNativePrompt");
+  const copyLinkButton = document.getElementById("smartInstallCopyLink");
+  const back = document.getElementById("smartInstallBack");
+  if (!options || !details || !title || !subtitle || !message || !steps || !icon) return;
+
+  const current = await isSmartInstallBrowserCurrent(browser);
+  const android = getSmartInstallPlatform() === "android";
+  const config = {
+    firefox: {
+      name: "Firefox",
+      subtitle: android ? "Android · uBlock Origin extension support" : "Desktop · uBlock Origin extension support",
+      icon: "fa-brands fa-firefox-browser",
+      iconClass: "firefox",
+      store: android ? "https://play.google.com/store/apps/details?id=org.mozilla.firefox" : "https://www.mozilla.org/firefox/new/",
+      addonUrl: android ? "https://addons.mozilla.org/android/addon/ublock-origin/" : "https://addons.mozilla.org/firefox/addon/ublock-origin/"
+    },
+    brave: {
+      name: "Brave",
+      subtitle: android ? "Android · built-in Shields ad and tracker blocking" : "Desktop · built-in Shields ad and tracker blocking",
+      icon: "fa-brands fa-brave",
+      iconClass: "brave",
+      store: android ? "https://play.google.com/store/apps/details?id=com.brave.browser" : "https://brave.com/download/"
+    },
+    chrome: {
+      name: "Chrome",
+      subtitle: "Standard browser installation",
+      icon: "fa-brands fa-chrome",
+      iconClass: "chrome",
+      store: android ? "https://play.google.com/store/apps/details?id=com.android.chrome" : "https://www.google.com/chrome/",
+      addonUrl: android ? "" : "https://chromewebstore.google.com/detail/ublock-origin-lite/ddkjiahejlhfcafbddmgiahcphecmpfh"
+    },
+    edge: {
+      name: "Microsoft Edge",
+      subtitle: "Desktop · browser installation",
+      icon: "fa-brands fa-edge",
+      iconClass: "edge",
+      store: "https://www.microsoft.com/edge/download",
+      addonUrl: "https://microsoftedge.microsoft.com/addons/detail/ublock-origin-lite/cimighlppcgcoapaliogpjjdehbnofhn"
+    },
+    safari: {
+      name: "Safari",
+      subtitle: "iPhone / iPad · Safari content-blocking support",
+      icon: "fa-brands fa-safari",
+      iconClass: "",
+      store: "",
+      addonUrl: "https://apps.apple.com/app/ublock-origin-lite/id6745342698"
+    }
+  }[browser];
+  if (!config) return;
+
+  let detailSteps;
+  if (smartInstallMode === "adblock") {
+    if (browser === "firefox") {
+      detailSteps = current
+        ? ["Tap Get uBlock Origin below.", "On the Firefox Add-ons page, tap Add to Firefox and confirm.", "Return to PopcornHUB and reload the page."]
+        : ["uBlock Origin for Android works only as an add-on in Firefox, not Chrome.", "Install Firefox, then open PopcornHUB in Firefox.", "In Firefox, tap + Ad blocker again and choose Get uBlock Origin."];
+    } else if (browser === "brave") {
+      detailSteps = current
+        ? ["Look for the Brave Shields (lion) icon beside the address bar.", "Make sure Shields are turned on for this website.", "Reload PopcornHUB. Brave blocks many ads and trackers automatically; no extension is needed."]
+        : ["Install Brave using the button below, if you do not have it yet.", "Tap Copy website link, then open Brave and paste the link in its address bar.", "Brave Shields is on by default. Tap the lion icon to check that protection is enabled, then reload PopcornHUB."];
+    } else if (browser === "chrome" || browser === "edge") {
+      detailSteps = current
+        ? ["Tap the uBlock Origin Lite button below.", `Install uBlock Origin Lite from the ${config.name} extension store.`, "Follow the browser prompts, then reload PopcornHUB."]
+        : [`Install or open ${config.name} using the button below.`, "Tap Copy website link, then open the link in that browser.", "Open the browser's extension store, install uBlock Origin Lite, and reload PopcornHUB."];
+    } else if (browser === "safari") {
+      detailSteps = current
+        ? ["Tap the App Store button below and install uBlock Origin Lite.", "On your iPhone/iPad, open Settings → Apps → Safari → Extensions.", "Turn on uBlock Origin Lite, allow website access, then return to Safari and reload PopcornHUB."]
+        : ["Open Safari on your iPhone or iPad.", "Visit PopcornHUB in Safari, then return here if needed.", "Install uBlock Origin Lite from the App Store and enable it in Settings → Apps → Safari → Extensions."];
+    }
+  } else {
+    if (browser === "safari") {
+      detailSteps = current
+        ? ["In Safari, tap the Share button (square with an arrow).", "Scroll down and tap Add to Home Screen.", "Tap Add. The PopcornHUB icon will appear on your Home Screen."]
+        : ["Open Safari on your iPhone or iPad.", "Tap Copy website link here, then paste it into Safari's address bar.", "Tap Share → Add to Home Screen → Add."];
+    } else {
+      const installSteps = {
+        firefox: ["Tap the Firefox menu (⋮) beside the address bar.", "Choose Install (or Add to Home screen, depending on your Firefox version).", "Tap Add/Install to finish. PopcornHUB will appear on your Home Screen."],
+        brave: ["Tap the Brave menu (⋮).", "Choose Install app or Add to Home screen.", "Confirm Add/Install. PopcornHUB will appear on your Home Screen."],
+        chrome: ["Tap the Chrome menu (⋮) in the top corner.", "Choose Install app or Add to Home screen.", "Tap Install or Add to finish. PopcornHUB will appear on your Home Screen."],
+        edge: ["Tap the Edge menu (⋯).", "Choose Add to phone or Add to Home screen, if available.", "Follow the prompt to add PopcornHUB to your Home Screen."]
+      };
+      detailSteps = current
+        ? (installSteps[browser] || ["Open the browser menu.", "Choose Install or Add to Home screen.", "Follow the confirmation prompt."])
+        : [`Install or open ${config.name} using the button below, if needed.`, "Tap Copy website link, then open that browser and paste the link in its address bar.", ...(installSteps[browser] || ["Open the browser menu.", "Choose Install or Add to Home screen.", "Confirm the installation."])];
+    }
+  }
+
+  title.textContent = smartInstallMode === "adblock"
+    ? (browser === "firefox" && android
+        ? (current ? "Add uBlock Origin" : "Firefox is required")
+        : (current ? `Protect browsing in ${config.name}` : `Use ${config.name} for protection`))
+    : (current ? `Continue in ${config.name}` : `Use ${config.name}`);
+  subtitle.textContent = config.subtitle;
+  if (current) {
+    if (smartInstallMode === "adblock") {
+      message.textContent = browser === "brave"
+        ? "Good choice. Brave already includes ad and tracker protection. Just check that Shields are on, then reload the page. No extension is needed."
+        : browser === "safari"
+          ? "Install the content blocker, enable it in your iPhone/iPad settings, then return to Safari."
+          : browser === "firefox" && android
+            ? "uBlock Origin is a Firefox add-on. Add it once, then reload PopcornHUB."
+            : "Follow the short steps below. You only need to install the blocker once in this browser.";
+    } else {
+      message.textContent = "You're already using this browser. Follow the steps below to add PopcornHUB to this device's Home Screen.";
+    }
+  } else {
+    message.textContent = smartInstallMode === "adblock"
+      ? (browser === "firefox" && android
+          ? "uBlock Origin for Android works only in Firefox. Install Firefox, open PopcornHUB there, then tap + Ad blocker again to add it."
+          : `You selected ${config.name}. First open PopcornHUB in that browser; this page cannot switch apps for you automatically.`)
+      : `You selected ${config.name}. First open PopcornHUB in that browser; then follow the steps to add its Home Screen icon.`;
+  }
+  icon.className = `smart-install-option-icon ${config.iconClass}`.trim();
+  icon.innerHTML = `<i class="${config.icon}" aria-hidden="true"></i>`;
+  steps.innerHTML = (detailSteps || []).map((step) => `<li>${step}</li>`).join("");
+
+  getBrowser.classList.toggle("hidden", !config.store || current);
+  getBrowser.href = config.store || "#";
+  const browserActionLabel = browser === "safari"
+    ? "Open Safari"
+    : (android && browser === "firefox" ? "Install Firefox" : `Get ${config.name}`);
+  getBrowser.textContent = browserActionLabel;
+  if (config.store) getBrowser.innerHTML = `${browserActionLabel} <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>`;
+
+  // On Android, show the official uBlock Origin add-on link even before Firefox
+  // is the current browser. The instructions clearly tell users to open it in Firefox.
+  const showAddon = smartInstallMode === "adblock" && Boolean(config.addonUrl) &&
+    (android ? (browser === "firefox" && current) : (current || browser !== "firefox"));
+  addon.classList.toggle("hidden", !showAddon);
+  if (showAddon) {
+    addon.href = config.addonUrl;
+    const addonLabel = android && browser === "firefox"
+      ? "Get uBlock Origin"
+      : (["chrome", "edge", "safari"].includes(browser) ? "Get uBlock Origin Lite" : "Get uBlock Origin");
+    addon.textContent = addonLabel;
+    addon.innerHTML = `${addonLabel} <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>`;
+  }
+  nativePromptButton.classList.toggle("hidden", !(smartInstallMode === "install" && current && Boolean(deferredPrompt)));
+  // The Ad blocker guide is a focused flow: hide install-selector navigation
+  // and website-link copying, which are not needed in this modal.
+  copyLinkButton.classList.toggle("hidden", current || smartInstallMode === "adblock");
+  if (!current) copyLinkButton.innerHTML = '<i class="fa-solid fa-copy" aria-hidden="true"></i> Copy website link';
+  back.classList.toggle("hidden", isIOS || smartInstallMode === "adblock");
+  options.classList.add("hidden");
+  details.classList.remove("hidden");
+}
+
+async function copySmartInstallLink() {
+  const siteUrl = window.location.origin + window.location.pathname;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(siteUrl);
+    } else {
+      window.prompt("Copy this PopcornHUB link and open it in your selected browser:", siteUrl);
+      return;
+    }
+    const button = document.getElementById("smartInstallCopyLink");
+    if (button) {
+      const original = button.innerHTML;
+      button.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i> Link copied';
+      window.setTimeout(() => { button.innerHTML = original; }, 1800);
+    }
+  } catch (_) {
+    window.prompt("Copy this PopcornHUB link and open it in your selected browser:", siteUrl);
+  }
+}
+
+function initSmartInstallSelector() {
+  const modal = document.getElementById("smartInstallModal");
+  if (!modal) return;
+  modal.querySelectorAll("[data-install-browser]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const browser = button.dataset.installBrowser;
+      const platform = getSmartInstallPlatform();
+      if (smartInstallMode === "install" && platform === "android" &&
+          browser === "chrome" && getSmartInstallCurrentBrowser() === "chrome" &&
+          deferredPrompt && !isInstalled) {
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        if (choice?.outcome === "accepted") {
+          isInstalled = true;
+          updateInstallButtonState();
+          closeSmartInstallModal();
+        }
+        return;
+      }
+      showSmartInstallDetails(browser);
+    });
+  });
+  document.getElementById("smartInstallClose")?.addEventListener("click", closeSmartInstallModal);
+  document.getElementById("smartInstallBack")?.addEventListener("click", () => {
+    document.getElementById("smartInstallDetails")?.classList.add("hidden");
+    document.getElementById("smartInstallOptions")?.classList.remove("hidden");
+    document.getElementById("smartInstallBack")?.classList.add("hidden");
+  });
+  document.getElementById("smartInstallCopyLink")?.addEventListener("click", copySmartInstallLink);
+  document.getElementById("smartInstallNativePrompt")?.addEventListener("click", () => {
+    if (!deferredPrompt) return;
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === 'accepted') {
+      if (choiceResult.outcome === "accepted") {
         isInstalled = true;
         updateInstallButtonState();
+        closeSmartInstallModal();
       }
       deferredPrompt = null;
     });
-  } else {
-    alert("To install PopcornHUB, use your browser menu and select 'Add to Home Screen' or 'Install'.");
-  }
+  });
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) closeSmartInstallModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modal.classList.contains("hidden")) closeSmartInstallModal();
+  });
 }
 
 /* ==========================================================================
