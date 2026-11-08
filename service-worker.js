@@ -1,5 +1,5 @@
 /* PopcornHUB service worker — resilient, same-origin app caching. */
-const CACHE_NAME = "PopcornHUB-v76-v56-ublock-modal-cleanup";
+const CACHE_NAME = "PopcornHUB-v77-v56-firefox-pwa-manifest-fix";
 const APP_SHELL = [
   "./",
   "./index.html",
