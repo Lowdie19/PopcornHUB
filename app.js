@@ -249,7 +249,7 @@ function initPWA() {
   initSmartInstallSelector();
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('service-worker.js')
+      navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
         .catch(err => console.error('ServiceWorker registration failed: ', err));
     });
   }
