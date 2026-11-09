@@ -7,6 +7,7 @@ const APP_SHELL = [
   "./app.js",
   "./manifest.json",
   "./icon.png",
+  "./firefox-shortcut.png",
   "./favicon.ico",
   "./favicon-48.png",
   "./icon-192.png",
