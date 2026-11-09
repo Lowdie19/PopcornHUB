@@ -402,7 +402,7 @@ function openSmartInstallModal(platform, mode = "install") {
           ? "Recommended · Install Firefox and uBlock Origin"
           : "Desktop · uBlock Origin extension",
         chrome: platform === "android"
-          ? "Install PopcornHUB directly in Chrome"
+          ? "Native install prompt when available"
           : "Desktop · Standard installation",
         edge: "Desktop · Standard installation"
       };
@@ -557,9 +557,9 @@ async function showSmartInstallDetails(browser, isIOS = false) {
         : ["Open Safari on your iPhone or iPad.", "Tap Copy website link here, then paste it into Safari's address bar.", "Tap Share → Add to Home Screen → Add."];
     } else {
       const installSteps = {
-        firefox: ["Tap the Firefox menu (⋮) beside the address bar.", "Choose Install (or Add to Home screen, depending on your Firefox version).", "Tap Add/Install to finish. PopcornHUB will appear on your Home Screen."],
+        firefox: ["Tap the Firefox menu (⋮) beside the address bar.", "Choose Add to Home Screen.", "Tap Add to confirm. Firefox manages this shortcut; a website cannot open the confirmation prompt directly."],
         brave: ["Tap the Brave menu (⋮).", "Choose Install app or Add to Home screen.", "Confirm Add/Install. PopcornHUB will appear on your Home Screen."],
-        chrome: ["Tap the Chrome menu (⋮) in the top corner.", "Choose Install app or Add to Home screen.", "Tap Install or Add to finish. PopcornHUB will appear on your Home Screen."],
+        chrome: ["If the Install button appears, tap it and confirm the native Chrome prompt.", "If no prompt appears, tap the Chrome menu (⋮).", "Choose Install app or Add to Home screen, then confirm."],
         edge: ["Tap the Edge menu (⋯).", "Choose Add to phone or Add to Home screen, if available.", "Follow the prompt to add PopcornHUB to your Home Screen."]
       };
       detailSteps = current
