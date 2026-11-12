@@ -705,6 +705,7 @@ function initSmartInstallSelector() {
 let activePlayerKind = null;
 let activePlayerItem = null;
 let miniPlayerWasDismissed = false;
+let miniPlayerPosition = null;
 
 function activatePlayer(kind, item) {
   const nextId = String(item && item.id || "");
@@ -787,12 +788,19 @@ function showMiniPlayer() {
   // The iframe remains in its permanent host; only the shell changes layout.
   mini.classList.remove("is-full-player");
   mini.classList.add("is-mini-player");
-  mini.style.left = "";
-  mini.style.top = "";
-  mini.style.right = "";
-  mini.style.bottom = "";
   mini.style.width = "";
   mini.style.height = "";
+  if (miniPlayerPosition) {
+    mini.style.left = `${miniPlayerPosition.left}px`;
+    mini.style.top = `${miniPlayerPosition.top}px`;
+    mini.style.right = "auto";
+    mini.style.bottom = "auto";
+  } else {
+    mini.style.left = "";
+    mini.style.top = "";
+    mini.style.right = "";
+    mini.style.bottom = "";
+  }
   const activeIframe = getActivePlayerIframe();
   if (activeIframe && activeIframe.parentElement === miniHost) {
     Array.from(miniHost.children).forEach((child) => {
@@ -851,6 +859,7 @@ function closeMiniPlayer() {
   }
   activePlayerKind = null;
   activePlayerItem = null;
+  miniPlayerPosition = null;
   miniPlayerWasDismissed = true;
 }
 
@@ -859,6 +868,88 @@ function initMiniPlayerControls() {
   const closeButton = document.getElementById("miniPlayerClose");
   if (returnButton) returnButton.addEventListener("click", returnToFullPlayer);
   if (closeButton) closeButton.addEventListener("click", closeMiniPlayer);
+
+  // Drag the mini-player by its header without interfering with its action buttons.
+  const mini = document.getElementById("miniPlayer");
+  const dragHandle = mini && mini.querySelector(".mini-player__top");
+  if (mini && dragHandle) {
+    let dragState = null;
+
+    const clamp = (value, min, max) => Math.min(Math.max(value, min), Math.max(min, max));
+    // Keep the draggable header below the fixed/sticky main navigation so it
+    // remains reachable even when the mini-player is moved to the top edge.
+    const getMiniPlayerTopLimit = () => {
+      const navbar = document.getElementById("mainNavbar");
+      const navbarBottom = navbar ? navbar.getBoundingClientRect().bottom : 0;
+      return Math.max(8, Math.ceil(navbarBottom) + 8);
+    };
+    const keepMiniPlayerInView = () => {
+      if (!mini.classList.contains("is-mini-player") || mini.classList.contains("hidden")) return;
+      const rect = mini.getBoundingClientRect();
+      const left = clamp(rect.left, 8, window.innerWidth - rect.width - 8);
+      const top = clamp(rect.top, getMiniPlayerTopLimit(), window.innerHeight - rect.height - 8);
+      mini.style.left = `${left}px`;
+      mini.style.top = `${top}px`;
+      mini.style.right = "auto";
+      mini.style.bottom = "auto";
+      miniPlayerPosition = { left, top };
+    };
+
+    dragHandle.addEventListener("pointerdown", (event) => {
+      if (!mini.classList.contains("is-mini-player") || event.button !== 0) return;
+      if (event.target.closest("button")) return;
+      const rect = mini.getBoundingClientRect();
+      dragState = {
+        pointerId: event.pointerId,
+        offsetX: event.clientX - rect.left,
+        offsetY: event.clientY - rect.top,
+        startX: event.clientX,
+        startY: event.clientY,
+        moved: false
+      };
+      dragHandle.setPointerCapture(event.pointerId);
+      mini.classList.add("is-dragging");
+      event.preventDefault();
+    });
+
+    dragHandle.addEventListener("pointermove", (event) => {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+      const deltaX = event.clientX - dragState.startX;
+      const deltaY = event.clientY - dragState.startY;
+      if (Math.abs(deltaX) + Math.abs(deltaY) > 3) dragState.moved = true;
+      if (!dragState.moved) return;
+      const rect = mini.getBoundingClientRect();
+      const left = clamp(event.clientX - dragState.offsetX, 8, window.innerWidth - rect.width - 8);
+      const top = clamp(event.clientY - dragState.offsetY, getMiniPlayerTopLimit(), window.innerHeight - rect.height - 8);
+      mini.style.left = `${left}px`;
+      mini.style.top = `${top}px`;
+      mini.style.right = "auto";
+      mini.style.bottom = "auto";
+      miniPlayerPosition = { left, top };
+    });
+
+    const finishMiniPlayerDrag = (event) => {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+      if (dragState.moved) {
+        const rect = mini.getBoundingClientRect();
+        const left = rect.left + rect.width / 2 < window.innerWidth / 2
+          ? 8
+          : window.innerWidth - rect.width - 8;
+        const top = clamp(rect.top, getMiniPlayerTopLimit(), window.innerHeight - rect.height - 8);
+        mini.style.left = `${left}px`;
+        mini.style.top = `${top}px`;
+        miniPlayerPosition = { left, top };
+      }
+      mini.classList.remove("is-dragging");
+      if (dragHandle.hasPointerCapture(event.pointerId)) dragHandle.releasePointerCapture(event.pointerId);
+      dragState = null;
+    };
+
+    dragHandle.addEventListener("pointerup", finishMiniPlayerDrag);
+    dragHandle.addEventListener("pointercancel", finishMiniPlayerDrag);
+    window.addEventListener("resize", keepMiniPlayerInView);
+  }
+
   let overlayFrame = 0;
   const syncOverlay = () => {
     const mini = document.getElementById("miniPlayer");
