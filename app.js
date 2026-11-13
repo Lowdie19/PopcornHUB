@@ -179,6 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initPWA();
   initSpaNavigation();
   initBackToTopButton();
+  initLandscapeBottomNavAutoHide();
 });
 
 
@@ -863,6 +864,72 @@ function closeMiniPlayer() {
   activePlayerItem = null;
   miniPlayerPosition = null;
   miniPlayerWasDismissed = true;
+}
+
+/* Auto-hide the mobile bottom navigation only in landscape after inactivity.
+   Any page interaction reveals it; a small bottom-edge touch zone also lets
+   users reveal it when the video iframe has focus (cross-origin events do not bubble). */
+function initLandscapeBottomNavAutoHide() {
+  const nav = document.getElementById("mobileBottomNav");
+  if (!nav) return;
+
+  const landscapeMobile = window.matchMedia("(max-width: 767px) and (orientation: landscape)");
+  let hideTimer = 0;
+  let revealZone = null;
+
+  const ensureRevealZone = () => {
+    if (revealZone) return;
+    revealZone = document.createElement("div");
+    revealZone.setAttribute("aria-hidden", "true");
+    revealZone.style.cssText = "position:fixed;left:0;right:0;bottom:0;height:14px;z-index:59;background:transparent;touch-action:pan-y;";
+    revealZone.addEventListener("pointerdown", revealAndSchedule, { passive: true });
+    revealZone.addEventListener("touchstart", revealAndSchedule, { passive: true });
+    document.body.appendChild(revealZone);
+  };
+
+  const clearHideTimer = () => {
+    if (hideTimer) window.clearTimeout(hideTimer);
+    hideTimer = 0;
+  };
+
+  const revealAndSchedule = () => {
+    clearHideTimer();
+    nav.classList.remove("is-idle-hidden");
+    if (!landscapeMobile.matches) return;
+    hideTimer = window.setTimeout(() => {
+      const drawer = document.getElementById("mobileDrawer");
+      const overlay = document.getElementById("mobileDrawerOverlay");
+      const drawerOpen = drawer && !drawer.classList.contains("hidden")
+        || overlay && !overlay.classList.contains("hidden");
+      if (!drawerOpen) nav.classList.add("is-idle-hidden");
+    }, 2400);
+  };
+
+  const syncMode = () => {
+    clearHideTimer();
+    if (landscapeMobile.matches) {
+      ensureRevealZone();
+      revealAndSchedule();
+    } else {
+      nav.classList.remove("is-idle-hidden");
+      if (revealZone) revealZone.remove();
+      revealZone = null;
+    }
+  };
+
+  ["pointerdown", "touchstart", "wheel", "keydown", "click", "scroll"].forEach(type => {
+    window.addEventListener(type, () => {
+      if (landscapeMobile.matches) revealAndSchedule();
+    }, { passive: true });
+  });
+
+  if (typeof landscapeMobile.addEventListener === "function") {
+    landscapeMobile.addEventListener("change", syncMode);
+  } else {
+    landscapeMobile.addListener(syncMode);
+  }
+  window.addEventListener("orientationchange", () => window.setTimeout(syncMode, 100), { passive: true });
+  syncMode();
 }
 
 function initMiniPlayerControls() {
