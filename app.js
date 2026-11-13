@@ -3361,8 +3361,8 @@ function markTvEpisodeCompleted(item, season, episode) {
   renderTvContinueWatching(item);
 }
 
-// Advance only after the provider reports a genuine ended event. Seeking or
-// dragging near the end never calls this function.
+// Advance the selected TV episode, either from a genuine ended event or the
+// user-requested Next action. Seeking never triggers this function.
 async function advanceToNextTvEpisode(item, completedSeason, completedEpisode) {
   if (!item || !Array.isArray(activeTvSeasons) || !activeTvSeasons.length) return;
   const seasons = [...activeTvSeasons].filter(s => Number(s.season_number) > 0)
@@ -3406,6 +3406,34 @@ async function advanceToNextTvEpisode(item, completedSeason, completedEpisode) {
       Number(currentEpisode) !== nextEpisode) return;
   syncTvActiveSelection();
   updateTvCompletionVisuals();
+}
+
+function updateTvNextEpisodeButton() {
+  const button = document.getElementById("tvNextEpisode");
+  if (!button) return;
+  const seasons = [...(Array.isArray(activeTvSeasons) ? activeTvSeasons : [])]
+    .filter(season => Number(season.season_number) > 0)
+    .sort((a, b) => Number(a.season_number) - Number(b.season_number));
+  const seasonIndex = seasons.findIndex(season => Number(season.season_number) === Number(currentSeason));
+  const season = seasonIndex >= 0 ? seasons[seasonIndex] : null;
+  const episodeCount = Number(season && (season.knownEpisodeCount || season.episode_count));
+  const hasNextEpisode = Boolean(season && episodeCount > 0 && (
+    Number(currentEpisode) < episodeCount || seasonIndex < seasons.length - 1
+  ));
+  button.disabled = !hasNextEpisode;
+  button.setAttribute("aria-disabled", String(!hasNextEpisode));
+}
+
+async function goToNextTvEpisode() {
+  if (!activePlayerItem || activePlayerKind !== "tv") return;
+  const button = document.getElementById("tvNextEpisode");
+  if (!button || button.disabled) return;
+  button.disabled = true;
+  try {
+    await advanceToNextTvEpisode(activePlayerItem, currentSeason, currentEpisode);
+  } finally {
+    updateTvNextEpisodeButton();
+  }
 }
 
 function updateTvPlayerEpisodeHeading(episodeTitle = "") {
@@ -3833,6 +3861,7 @@ async function setupTvPlayer(item, isBackEvent = false) {
   document.getElementById("tvPlayerTitle").innerText = item.title;
 
   activeTvSeasons = [];
+  updateTvNextEpisodeButton();
   currentSeason = 1;
   currentEpisode = 1;
   tvIgnoreEndedUntilFreshStart = false;
@@ -3865,6 +3894,7 @@ async function setupTvPlayer(item, isBackEvent = false) {
   const tvData = await fetchTMDB(`tv/${item.id}`);
   const seasons = (tvData && tvData.seasons) ? tvData.seasons.filter(s => s.season_number > 0) : [];
   activeTvSeasons = seasons;
+  updateTvNextEpisodeButton();
 
   seasonTabs.innerHTML = "";
   if (seasonsHeading) seasonsHeading.textContent = `Seasons · ${seasons.length}`;
@@ -3881,6 +3911,7 @@ async function setupTvPlayer(item, isBackEvent = false) {
     btn.onclick = () => {
       currentSeason = s.season_number;
       currentEpisode = 1;
+      updateTvNextEpisodeButton();
       renderTvContinueWatching(item);
 
       updateTvPlayerEpisodeHeading();
@@ -3958,6 +3989,7 @@ async function renderTvEpisodes(tvId, episodeCount) {
   updateTvPlayerEpisodeHeading(selectedEpisodeInfo && selectedEpisodeInfo.name ? selectedEpisodeInfo.name : "");
   syncTvActiveSelection();
   updateTvCompletionVisuals();
+  updateTvNextEpisodeButton();
 }
 
 function loadTvIframe(id, options = {}) {

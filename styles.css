@@ -1797,3 +1797,89 @@ body.smart-install-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   #mobileBottomNav { transition-duration: 0.01ms !important; }
 }
+
+/* V64: Keep Next as a simple text action matching See more details. */
+#tvPlayerView .tv-player-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.35rem;
+  margin-top: 8px;
+}
+#tvPlayerView .tv-player-actions .player-mobile-back {
+  margin: 0 !important;
+}
+#tvPlayerView .tv-next-episode-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 0;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #e7b34e;
+  font-size: .82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0;
+  text-transform: none;
+  transition: color .18s ease, opacity .18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+#tvPlayerView .tv-next-episode-btn:not(:disabled):hover,
+#tvPlayerView .tv-next-episode-btn:not(:disabled):focus-visible {
+  color: #f0c36d;
+}
+#tvPlayerView .tv-next-episode-btn:disabled {
+  opacity: .38;
+  cursor: not-allowed;
+}
+#tvPlayerView .tv-next-episode-btn:focus-visible {
+  outline: 2px solid var(--brand, #b5f818);
+  outline-offset: 3px;
+}
+
+/* V65: Keep player actions' colors stable and use a subtle pressed/sunken feel. */
+#tvPlayerView .tv-next-episode-btn {
+  color: #e7b34e !important;
+  transition: color .18s ease, transform .12s ease, opacity .18s ease;
+}
+#tvPlayerView .tv-next-episode-btn:not(:disabled):hover,
+#tvPlayerView .tv-next-episode-btn:not(:disabled):focus-visible {
+  color: #e7b34e !important;
+}
+#tvPlayerView .tv-next-episode-btn:not(:disabled):active {
+  color: #e7b34e !important;
+  transform: translateY(2px) scale(.98);
+}
+
+#moviePlayerView .player-mobile-back,
+#tvPlayerView .player-mobile-back {
+  color: #a1a1aa !important;
+  transition: color .18s ease, transform .12s ease;
+}
+#moviePlayerView .player-mobile-back:hover,
+#moviePlayerView .player-mobile-back:focus-visible,
+#moviePlayerView .player-mobile-back:active,
+#moviePlayerView .player-mobile-back.is-loading,
+#tvPlayerView .player-mobile-back:hover,
+#tvPlayerView .player-mobile-back:focus-visible,
+#tvPlayerView .player-mobile-back:active,
+#tvPlayerView .player-mobile-back.is-loading {
+  color: var(--brand, #b5f818) !important;
+}
+#moviePlayerView .player-mobile-back:active,
+#tvPlayerView .player-mobile-back:active {
+  transform: translateY(2px) scale(.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #tvPlayerView .tv-next-episode-btn,
+  #moviePlayerView .player-mobile-back,
+  #tvPlayerView .player-mobile-back {
+    transition-duration: .01ms !important;
+  }
+}
