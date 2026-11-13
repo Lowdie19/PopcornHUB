@@ -82,7 +82,9 @@ let latestSearchRequestId = 0;
 
 // PAGINATION / LOAD MORE / SEE MORE STATE
 let currentSearchQuery = "";
-let searchOriginPage = "home"; // Restore the same browsing section when search is cleared.
+let searchOriginPage = "home"; // Keeps the existing catalog/media-type context for unified search.
+let searchReturnPageId = null; // Exact page that was visible when the current search began.
+let searchReturnState = null; // Preserve the route/item/scroll state behind the search overlay.
 let currentSearchType = "all"; // context-aware: all, movie, tv
 let currentSearchGenre = "";
 let currentSearchSort = "relevance";
@@ -1015,10 +1017,33 @@ function captureHistoryViewState() {
   window.history.replaceState(nextState, "", window.location.href);
 }
 
+// Search results are an overlay, so remember the exact route underneath them.
+// searchOriginPage remains the catalog context used for result scoping; this
+// separate state lets clearing search return to Details or the active Player.
+function captureSearchReturnContext() {
+  const searchView = document.getElementById("searchView");
+  if (searchView && !searchView.classList.contains("hidden")) return;
+  if (searchReturnPageId) return;
+
+  captureHistoryViewState();
+  const state = window.history.state;
+  const visiblePage = ["detail", "moviePlayer", "tvPlayer", "home", "movies", "tv", "platforms", "platformCatalog", "watchlist"]
+    .find(pageId => {
+      const view = document.getElementById(`${pageId}View`);
+      return view && !view.classList.contains("hidden");
+    });
+  searchReturnPageId = (state && state.pageId) || visiblePage || searchOriginPage || "home";
+  searchReturnState = state ? { ...state } : { pageId: searchReturnPageId, scrollY: window.scrollY };
+}
+
 async function restoreHistoryViewState(state) {
   if (!state) return;
   // Rebuild the search overlay from its saved context instead of returning to a blank catalog.
   if (state.searchVisible && state.searchQuery) {
+    // Browser Back can restore a search overlay over Details or Player. Rebuild
+    // the same return target used by a newly typed search before rendering it.
+    searchReturnPageId = state.pageId || state.searchOriginPage || "home";
+    searchReturnState = { ...state, searchVisible: false, searchQuery: "", searchInputValue: "" };
     currentSearchQuery = state.searchQuery;
     searchOriginPage = state.searchOriginPage || state.pageId || "home";
     currentSearchType = state.searchType || "all";
@@ -1466,6 +1491,12 @@ function initNavigationLoadingFeedback() {
    ROUTING & NAVIGATION
    ========================================================================== */
 function switchPage(pageId, isBackEvent = false) {
+  // A deliberate route change starts a fresh search-return context. Back/restore
+  // transitions keep their saved context so browser history remains predictable.
+  if (!isBackEvent) {
+    searchReturnPageId = null;
+    searchReturnState = null;
+  }
   // VivaMax is a temporary reveal: hide it when the user leaves Catalogs for a main section.
   // Keep it available while moving within Catalogs / the selected VivaMax catalog.
   if (["home", "movies", "tv", "watchlist"].includes(pageId)) {
@@ -4299,6 +4330,7 @@ function setupSearch() {
     if (query.length >= 2) {
       clearTimeout(timer);
       if (document.getElementById("searchView")?.classList.contains("hidden")) {
+        captureSearchReturnContext();
         searchOriginPage = getVisibleBrowsingPage();
         currentSearchType = getContextTypeForPage(searchOriginPage);
       }
@@ -4332,6 +4364,7 @@ function setupSearch() {
     timer = setTimeout(() => {
       if (query.length >= 2) {
         if (document.getElementById("searchView")?.classList.contains("hidden")) {
+          captureSearchReturnContext();
           searchOriginPage = getVisibleBrowsingPage();
           currentSearchType = getContextTypeForPage(searchOriginPage);
         }
@@ -4469,12 +4502,22 @@ function clearSearchFilters() {
 }
 
 function clearSearch() {
-  // Clearing text is not a navigation command: return to the same section and
-  // leave its selected filters intact. Reset Filters is a separate action.
+  // Clearing text is not a navigation command: return to the exact page that
+  // was underneath Search (including Details/Player), not the last catalog tab.
   const input = document.getElementById("searchInput");
   const clearBtn = document.getElementById("clearSearch");
+  const searchView = document.getElementById("searchView");
+  const searchOverlayVisible = Boolean(searchView && !searchView.classList.contains("hidden"));
+  const hadActiveSearch = searchOverlayVisible || Boolean(searchReturnPageId && currentSearchQuery);
   if (input) input.value = "";
   if (clearBtn) clearBtn.classList.add("hidden");
+  // A result card may have opened a new Details page while the old query text
+  // remains in the navbar. Clearing that leftover text must not navigate away.
+  if (!hadActiveSearch) {
+    currentSearchQuery = "";
+    return;
+  }
+
   currentSearchQuery = "";
   const platformQuery = document.getElementById("platformSearchFilter");
   if (platformQuery) platformQuery.value = "";
@@ -4484,15 +4527,26 @@ function clearSearch() {
   searchTotalPages = 1;
   isSearchLoadingMore = false;
   displayedMovieSearchIds.clear();
-  document.getElementById("searchView")?.classList.add("hidden");
+  searchView?.classList.add("hidden");
   updateSearchContextUI();
-  const destination = searchOriginPage || "home";
-  // Search results are an overlay, not a separate history entry. Restore the
-  // origin page without pushing a duplicate route onto browser history.
+
+  const destination = searchReturnPageId || searchOriginPage || "home";
+  const returnState = searchReturnState;
+  searchReturnPageId = null;
+  searchReturnState = null;
+
+  // Search results are an overlay, not a separate history route. Reveal the
+  // original page; switchPage also restores the full player overlay when the
+  // saved destination is a Player page.
   switchPage(destination, true);
-  // Platform catalog search is rendered inside its own catalog grid. Reload the
-  // unfiltered provider catalog when the shared search field is cleared.
   if (destination === "platformCatalog") fetchPlatformCatalog(1);
+
+  // switchPage scrolls to the top for ordinary navigation. Clearing search is
+  // a return action, so restore the exact prior position after the view paints.
+  const savedScrollY = Number(returnState?.scrollY);
+  if (Number.isFinite(savedScrollY) && savedScrollY > 0) {
+    requestAnimationFrame(() => window.scrollTo({ top: savedScrollY, behavior: "auto" }));
+  }
 }
 
 async function performSearch(query, page = 1) {
@@ -4508,6 +4562,12 @@ async function performSearch(query, page = 1) {
   if (page === 1) {
     document.querySelectorAll(".page-view").forEach(el => el.classList.add("hidden"));
     document.getElementById("searchView").classList.remove("hidden");
+    // The full player overlay shares the persistent mini-player shell. Once
+    // Search replaces the Player page, shrink that same live player into its
+    // floating mini state without reparenting or reloading the iframe.
+    if (searchReturnPageId === "moviePlayer" || searchReturnPageId === "tvPlayer") {
+      showMiniPlayer();
+    }
     renderGridLoading("searchResultsGrid");
     removeLoadMoreButton("searchLoadMoreContainer");
     searchCurrentPage = 1;

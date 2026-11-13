@@ -1643,3 +1643,113 @@ body.smart-install-open { overflow: hidden; }
     margin-right: auto;
   }
 }
+
+/* V58: mobile-only full-bleed cinematic player frame.
+   Desktop keeps the original chamfered/bordered player styling from the markup.
+   On mobile, extend the video row edge-to-edge while preserving the navbar
+   clearance and the existing page spacing below the player. */
+@media (max-width: 767px) {
+  #moviePlayerView .player-main-row,
+  #tvPlayerView .player-main-row {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin-top: -24px !important;
+    margin-left: calc(50% - 50vw) !important;
+    margin-right: calc(50% - 50vw) !important;
+  }
+
+  #moviePlayerView #moviePlayerHost,
+  #tvPlayerView #tvPlayerHost {
+    width: 100% !important;
+    max-width: 100% !important;
+    border: 0 !important;
+    border-width: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Soft fade into the page background, matching the Home hero treatment. */
+  #moviePlayerView #moviePlayerHost::after,
+  #tvPlayerView #tvPlayerHost::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: clamp(32px, 7vh, 76px);
+    background: linear-gradient(
+      to bottom,
+      rgba(11, 11, 14, 0) 0%,
+      rgba(11, 11, 14, 0.22) 48%,
+      #0b0b0e 100%
+    );
+    pointer-events: none;
+  }
+
+  /* Keep the player page's scroll target clear of the sticky navbar. */
+  #moviePlayerView,
+  #tvPlayerView {
+    scroll-margin-top: var(--main-navbar-height, 65px);
+  }
+}
+
+
+/* V59: remove the remaining mobile outline from the live full-player overlay.
+   The live iframe is displayed inside #miniPlayer, not directly inside the
+   placeholder host, so reset the overlay shell as well as the placeholder. */
+@media (max-width: 767px) {
+  .mini-player.is-full-player {
+    border: 0 !important;
+    border-width: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    background: #000 !important;
+  }
+
+  .mini-player.is-full-player .mini-player__video,
+  .mini-player.is-full-player #miniPlayerHost,
+  .mini-player.is-full-player iframe {
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Apply the fade to the visible overlay shell, above the iframe. */
+  .mini-player.is-full-player::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: clamp(32px, 7vh, 76px);
+    background: linear-gradient(
+      to bottom,
+      rgba(11, 11, 14, 0) 0%,
+      rgba(11, 11, 14, 0.22) 48%,
+      #0b0b0e 100%
+    );
+    pointer-events: none;
+  }
+}
+
+/* V60: tighten the mobile player-to-sticky-info spacing and keep the floating
+   mini-player above every app UI layer. Full-player overlay stacking remains
+   unchanged so player-page navigation controls retain their intended order. */
+@media (max-width: 767px) {
+  #moviePlayerView .player-main-row + .player-sticky-info,
+  #tvPlayerView .player-main-row + .player-sticky-info {
+    margin-top: -16px !important;
+  }
+}
+
+/* Floating mini-player only: stay above navigation, drawers, dialogs and cards. */
+.mini-player.is-mini-player {
+  z-index: 2147483647 !important;
+}
